@@ -13,12 +13,12 @@ class CreateRddMembers extends Migration
      */
     public function up()
     {
-        Schema::create('tbl_rdd_members', function (Blueprint $table) {
+        Schema::create('users', function (Blueprint $table) {
             $table->bigIncrements('mem_id');
             $table->mediumInteger('mem_org_id');
             $table->text('mem_name');
-            $table->string('mem_email',30);
-            $table->string('mem_password',255);
+            $table->string('email',30);
+            $table->string('password',255);
             $table->integer('mem_designation');
             $table->text('mem_signature_path');
             $table->integer('mem_level');

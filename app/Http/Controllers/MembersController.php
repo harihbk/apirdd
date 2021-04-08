@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Members;
+use App\Models\Tenant;
+use App\Models\Superuser;
 use Response;
 use Validator;
 
@@ -12,8 +14,8 @@ class MembersController extends Controller
 {
     function index()
     {
-        $limit = 1;
-        $offset = 1;
+        $limit = 100;
+        $offset = 0;
         $members = Members::offset($offset)->limit($limit)->get();
         if($members!=null) {
             $data = array ("message" => 'Members data',"data" => $members );
@@ -33,8 +35,7 @@ class MembersController extends Controller
             'mem_designation' => 'required',
             'mem_signature_path' => 'required',
             'mem_designation' => 'required',
-            'mem_level' => 'required', 
-            'user_id' => 'required'
+            'mem_level' => 'required'
         ]);
 
         if ($validator->fails()) { 
@@ -64,20 +65,19 @@ class MembersController extends Controller
             echo json_encode($response); 
         } 
     }
-    function update(Request $request,$id)
+    function update(Request $request)
     {
         $validator = Validator::make($request->all(), [ 
-            'org_id' => 'required', 
+            'mem_id' => 'required',
+            'mem_org_id' => 'required', 
             'mem_name' => 'required', 
             'email' => 'required', 
-            'password' => 'required', 
             'mobile_no' => 'required',
             'gender' => 'required',
             'mem_designation' => 'required',
             'mem_signature_path' => 'required',
             'mem_designation' => 'required',
             'mem_level' => 'required', 
-            'user_id' => 'required',
             'active_status' => 'required'
         ]);
 
@@ -85,7 +85,7 @@ class MembersController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $members = Members::where("mem_id",$id)->update( 
+        $members = Members::where("mem_id",$request->input('mem_id'))->update( 
                             array( 
                              "mem_name" => $request->input('mem_name'),
                              "mem_last_name" => $request->input('mem_last_name'),
@@ -101,7 +101,7 @@ class MembersController extends Controller
                              ));
         if($members>0)
         {
-            $returnData = Members::find($id);
+            $returnData = Members::find($request->input('mem_id'));
             $data = array ("message" => 'Member Updated successfully',"data" => $returnData );
             $response = Response::json($data,200);
             echo json_encode($response); 
@@ -109,7 +109,23 @@ class MembersController extends Controller
     }
     function retrieveByOrg(Request $request,$id)
     {
-        $members = Members::where("mem_org_id",$id)->get();
+        $limit = 40;
+        $offset = 0;
+
+        $searchTerm = $request->input('searchkey');
+
+        $query = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.active_status',1)->where('users.mem_org_id',$id)->select('users.mem_id','users.mem_org_id','users.mem_name','users.mem_signature_path','users.created_at','users.mem_last_name','users.email','users.mobile_no','users.mem_designation','tbl_designation_master.designation_name','users.gender','users.access_type','users.active_status');
+
+        if (!empty($request->input('searchkey')))
+        {
+            $query->whereLike(['mem_name','mem_last_name'], $searchTerm);
+        }
+        if (!empty($request->input('member_role')))
+        {
+            $query->where('mem_designation',$request->input('member_role'));
+        }
+
+        $members = $query->get();
         echo json_encode($members); 
     }
     function getMember(Request $request,$id)
@@ -122,6 +138,36 @@ class MembersController extends Controller
     {
         $members = Members::select('mem_org_id','mem_name','mem_last_name','email','mobile_no','mem_designation','mem_signature_path')->where("mem_org_id",$id)->where("access_type",$tid)->get();
         echo json_encode($members); 
+    }
+    function getMemberByDesignation(Request $request,$org_id,$designation_id)
+    {
+        $members='';
+        if($designation_id!=7 && $designation_id!=8 && $designation_id!=9)
+        {
+            $members = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.mem_designation',$designation_id)->where('users.mem_org_id',$org_id)->select('users.mem_id','users.mem_name','users.mem_last_name','users.mem_designation','tbl_designation_master.designation_name','users.email','users.mobile_no')->get();
+        }
+        else
+        {
+            $members = Tenant::join('tbl_designation_master','tbl_designation_master.designation_id','=','tbl_tenant_master.tenant_designation')->where('tbl_tenant_master.tenant_designation',$designation_id)->select('tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_tenant_master.email','tbl_designation_master.designation_name','tbl_tenant_master.email','tbl_tenant_master.tenant_mobile')->get();
+        }
+        // return response()->json(['response'=>$members], 200);
+        echo json_encode($members);
+    }
+    function createSuperuser(Request $request)
+    {
+        $members = new Superuser();
+
+      
+        $members->mem_name = $request->input('mem_name');
+        $members->email = $request->input('email');
+        $members->password = Hash::make($request->input('password'));
+        $members->created_at = date('Y-m-d H:i:s');
+        $members->updated_at = date('Y-m-d H:i:s');
+        
+        if($members->save()) {
+            $returnData = $members->find($members->id);
+            echo json_encode($returnData); 
+        } 
     }
     
 }

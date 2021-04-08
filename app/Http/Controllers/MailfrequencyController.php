@@ -13,7 +13,8 @@ class MailfrequencyController extends Controller
     {
         $limit = 1;
         $offset = 1;
-        $types = Mailfrequency::offset($offset)->limit($limit)->get();
+        //$types = Mailfrequency::offset($offset)->limit($limit)->get();
+        $types = Mailfrequency::all();
         if($types!=null) {
             $data = array ("message" => 'Mail Frequency data',"data" => $types );
             $response = Response::json($data,200);
@@ -52,9 +53,10 @@ class MailfrequencyController extends Controller
             echo json_encode($response); 
         } 
     }
-    function update(Request $request,$id)
+    function update(Request $request)
     {
         $validator = Validator::make($request->all(), [ 
+            'freq_id' => 'required',
             'notification_frequency' => 'required', 
             'interval_days' => 'required|numeric', 
             'due_date_percentage' => 'required',
@@ -66,7 +68,7 @@ class MailfrequencyController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $types = Mailfrequency::where("fre_id",$id)->update( 
+        $types = Mailfrequency::where("fre_id",$request->input('freq_id'))->update( 
             array(
              "notification_frequency" => $request->input('notification_frequency'), 
              "esc_level" => $request->input('esc_level'),
@@ -78,7 +80,7 @@ class MailfrequencyController extends Controller
         
              if($types>0)
              {
-                 $returnData = Mailfrequency::find($id);
+                 $returnData = Mailfrequency::find($request->input('freq_id'));
                  $data = array ("message" => 'Project Type Updated successfully',"data" => $returnData );
                  $response = Response::json($data,200);
                  echo json_encode($response); 
@@ -88,8 +90,9 @@ class MailfrequencyController extends Controller
     {
         $limit = 1;
         $offset = 1;
-        $types = Mailfrequency::where("org_id",$id)->offset($offset)->limit($limit)->get();
-        echo json_encode($types); 
+        //$types = Mailfrequency::where("org_id",$id)->offset($offset)->limit($limit)->get();
+        $types = Mailfrequency::where("org_id",$id)->get();
+        return Response::json(["response"=>$types],200);
     }
     function updateDeletion(Request $request,$id)
     {

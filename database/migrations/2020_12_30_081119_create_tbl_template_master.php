@@ -18,7 +18,8 @@ class CreateTblTemplateMaster extends Migration
             $table->mediumInteger('template_id');
             $table->mediumInteger('org_id');
             $table->integer('task_id');
-            $table->text('phase_name');
+            $table->integer('task_type');
+            $table->integer('phase_id');
             $table->text('activity_desc');
             $table->integer('person');
             $table->integer('approvers');
@@ -26,10 +27,10 @@ class CreateTblTemplateMaster extends Migration
             $table->integer('fre_id');
             $table->integer('seq_status')->default(0);
             $table->integer('seq_no')->nullable();
-            $table->string('seq_char','4')->nullable();
             $table->integer('duration');
             $table->dateTime('start_date');
             $table->dateTime('end_date');
+            $table->text('file_upload_path');
             $table->dateTime('created_at');
             $table->dateTime('updated_at');
             $table->integer('created_by');

@@ -13,7 +13,8 @@ class ProjecttypeController extends Controller
     {
         $limit = 1;
         $offset = 1;
-        $types = Projecttype::offset($offset)->limit($limit)->get();
+        //$types = Projecttype::offset($offset)->limit($limit)->get();
+        $types = Projecttype::all();
         if($types!=null) {
             $data = array ("message" => 'Project types data',"data" => $types );
             $response = Response::json($data,200);
@@ -51,9 +52,10 @@ class ProjecttypeController extends Controller
             echo json_encode($response); 
         } 
     }
-    function update(Request $request,$id)
+    function update(Request $request)
     {
         $validator = Validator::make($request->all(), [ 
+            'type_id' => 'required',
             'attachment_path' => 'required', 
             'template_id' => 'required', 
             'type_name' => 'required', 
@@ -65,28 +67,28 @@ class ProjecttypeController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $types = Projecttype::where("type_id",$id)->update( 
+        $types = Projecttype::where("type_id",$request->input('type_id'))->update( 
             array(
              "attachment_path" => $request->input('attachment_path'), 
              "template_id" => $request->input('template_id'),
              "type_name" => $request->input('type_name'),
              "updated_at" => date('Y-m-d H:i:s'),
              "active_status" => $request->input('active_status'),
-             "isDeleted" => $request->input('isdeleted')
+             "isDeleted" => $request->input('isDeleted')
              ));
         
              if($types>0)
              {
-                 $returnData = Projecttype::find($id);
+                 $returnData = Projecttype::find($request->input('type_id'));
                  $data = array ("message" => 'Project Type Updated successfully',"data" => $returnData );
                  $response = Response::json($data,200);
                  echo json_encode($response); 
              }
     }
-    function retrieveByOrg(Request $request,$id)
+    function retrieveByOrg($id)
     {
-        $limit = 1;
-        $offset = 1;
+        $limit = 40;
+        $offset = 0;
         $types = Projecttype::where("org_id",$id)->offset($offset)->limit($limit)->get();
         echo json_encode($types); 
     }

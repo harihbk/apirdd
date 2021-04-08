@@ -22,6 +22,7 @@ class InspectionrootController extends Controller
     {
         $validator = Validator::make($request->all(), [ 
             'org_id' => 'required', 
+            'template_id' => 'required',
             'root_name' => 'required', 
             'user_id' => 'required'
         ]);
@@ -33,6 +34,7 @@ class InspectionrootController extends Controller
         $types = new Inspectionroot();
 
         $types->org_id = $request->input('org_id');
+        $types->template_id = $request->input('template_id');
         $types->root_name = $request->input('root_name');
         $types->created_at = date('Y-m-d H:i:s');
         $types->updated_at = date('Y-m-d H:i:s');
@@ -45,10 +47,12 @@ class InspectionrootController extends Controller
             echo json_encode($response); 
         } 
     }
-    function update(Request $request,$id)
+    function update(Request $request)
     {
         $validator = Validator::make($request->all(), [ 
-            'org_id' => 'required', 
+            'org_id' => 'required',
+            'root_id' => 'required', 
+            'template_id' => 'required',
             'root_name' => 'required',  
             'user_id' => 'required',
             'active_status' => 'required',
@@ -58,7 +62,7 @@ class InspectionrootController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $types = Inspectionroot::where("root_id",$id)->update( 
+        $types = Inspectionroot::where("root_id",$request->input('root_id'))->where("template_id",$request->input('template_id'))->update( 
             array(
              "root_name" => $request->input('root_name'), 
              "updated_at" => date('Y-m-d H:i:s'),
@@ -67,15 +71,17 @@ class InspectionrootController extends Controller
         
              if($types>0)
              {
-                 $returnData = Inspectionroot::find($id);
+                 $returnData = Inspectionroot::find($request->input('root_id'));
                  $data = array ("message" => 'Inspection root Updated successfully',"data" => $returnData );
                  $response = Response::json($data,200);
                  echo json_encode($response); 
              }
     }
-    function retrieveByOrg(Request $request,$id)
+    function retrieveByOrg(Request $request,$id,$tempid)
     {
-        $types = Inspectionroot::where("org_id",$id)->where("isDeleted",0)->get();
+        $limit = 100;
+        $offset = 0;
+        $types = Inspectionroot::where("org_id",$id)->where("template_id",$tempid)->where("isDeleted",0)->offset($offset)->limit($limit)->get();
         echo json_encode($types); 
     }
     function updateDeletion(Request $request,$id)
@@ -89,5 +95,35 @@ class InspectionrootController extends Controller
                 $response = Response::json($data,200);
                 echo json_encode($response); 
             }
+    }
+    function updateMember(Request $request)
+    {
+        $validator = Validator::make($request->all(), [ 
+            'org_id' => 'required',
+            'root_id' => 'required', 
+            'template_id' => 'required'
+        ]);
+        $designation = $request->input('mem_designation');
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+        if($request->input('members')==null)
+        {
+            $designation = 0;
+        }
+
+        $types = Inspectionroot::where("root_id",$request->input('root_id'))->where("template_id",$request->input('template_id'))->update( 
+            array(
+             "mem_designation" => $designation,
+             "members" => $request->input('members'), 
+             "updated_at" => date('Y-m-d H:i:s')
+             ));
+        
+            
+        $returnData = Inspectionroot::find($request->input('root_id'));
+        $data = array ("message" => 'Member Updated successfully',"data" => $returnData );
+        $response = Response::json($data,200);
+        echo json_encode($response); 
+
     }
 }

@@ -10,7 +10,7 @@ class FitoutdepositController extends Controller
 {
     function index()
     {
-        $fitouts = Fitoutdeposit::all();
+        $fitouts = Fitoutdeposit::where('active_status',1)->get();
         if($fitouts!=null) {
             $data = array ("message" => 'Status data',"data" => $fitouts );
             $response = Response::json($data,200);
@@ -34,18 +34,19 @@ class FitoutdepositController extends Controller
             echo json_encode($response); 
         }  
     }
-    function update(Request $request,$id)
+    function update(Request $request)
     {
-        $fitouts = Fitoutdeposit::where("status_id",$id)->update( 
+        $fitouts = Fitoutdeposit::where("status_id",$request->input('status_id'))->update( 
             array( 
              "status_name" => $request->input('status_name'),
              "updated_at" => date('Y-m-d H:i:s'),
+             "created_by" => $request->input('user_id'),
              "active_status" => $request->input('active_status')
              ));
         
              if($fitouts>0)
              {
-                 $returnData = Fitoutdeposit::find($id);
+                 $returnData = Fitoutdeposit::find($request->input('status_id'));
                  $data = array ("message" => 'Status Updated successfully',"data" => $returnData );
                  $response = Response::json($data,200);
                  echo json_encode($response); 
@@ -53,7 +54,7 @@ class FitoutdepositController extends Controller
     }
     function retrieveByOrg(Request $request,$id)
     {
-        $fitouts = Fitoutdeposit::where("org_id",$id)->get();
+        $fitouts = Fitoutdeposit::where("org_id",$id)->where("active_status",1)->get();
         echo json_encode($fitouts); 
     }
 

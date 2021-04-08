@@ -19,6 +19,8 @@ class CreateUnitsMaster extends Migration
             $table->bigInteger('property_id');
             $table->integer('floor_no');
             $table->string('floor_code',15);
+            $table->text('unit_name')->nullable();
+            $table->text('zone');
             $table->mediumInteger('unit_area');
             $table->text('pod_image_path');
             $table->dateTime('created_at');

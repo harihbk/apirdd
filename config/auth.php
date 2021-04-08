@@ -46,6 +46,14 @@ return [
             'provider' => 'users',
             'hash' => false,
         ],
+        'tenant-api' => [
+            'driver' => 'session',
+            'provider' => 'tbl_tenant_master',
+        ],
+        'superuser-api' => [
+            'driver' => 'session',
+            'provider' => 'tbl_super_users',
+        ]
     ],
 
     /*
@@ -70,11 +78,14 @@ return [
             'driver' => 'eloquent',
             'model' => App\Models\User::class,
         ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        'tbl_tenant_master' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Tenant::class,
+        ],
+        'tbl_super_users' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Superuser::class,
+        ],
     ],
 
     /*

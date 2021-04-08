@@ -2,32 +2,92 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User; 
+use App\Models\User;
+use App\Models\ForgotPassword; 
+use App\Models\Members;
+use App\Models\Superuser; 
 use Validator;
 use Exception;
+use Response;
 use GuzzleHttp\Client;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; 
 use Laravel\Passport\Client as OClient;
+use Hash;
 
 class AuthController extends Controller
 {
     public $successStatus = 200;
 
-    public function login(Request $request) { 
+    public function login(Request $request) {
+        $updated_at = date('Y-m-d H:i:s'); 
         if (Auth::attempt(['email' => request('email'), 'password' => request('password')])) { 
-            $oClient = OClient::where('password_client', 1)->first();
-            return $this->getTokenAndRefreshToken($oClient, request('email'), request('password'));
+            $oClient = OClient::where('password_client', 1)->where('id',2)->first();
+            $finalres = $this->getTokenAndRefreshToken($oClient, request('email'), request('password'),2);
+
+            $members = Members::where("email",request('email'))->update( 
+                array( 
+                 "access_token" => $finalres->getData()->access_token,
+                 "refresh_token" => $finalres->getData()->refresh_token,
+                 "updated_at" => $updated_at
+                 ));
+
+            if($members>0)
+            {
+                $returnData = Members::where("email",request('email'))->first();
+                $user_response = array('token_type' =>  $finalres->getData()->token_type,
+                            'access_token' => $finalres->getData()->access_token,
+                            'refresh_token' => $finalres->getData()->refresh_token,
+                            'user_id' => $returnData->mem_id,
+                            'first_name' => $returnData->mem_name,
+                            'last_name' => $returnData->mem_last_name,
+                            'org_id'=> $returnData->mem_org_id,
+                            'access_type' => $returnData->access_type,
+                            );
+                            return response()->json(['user_info'=>$user_response], 200);
+            }
+            else
+            {
+                return response()->json(['error'=>'Login Failed'], 401); 
+            }   
         } 
         else { 
-            return response()->json(['error'=>'Unauthorised'], 401); 
+            // check if crdentials belongs to super user
+            if (Auth::guard('superuser-api')->attempt(['email' => request('email'), 'password' => request('password')])) { 
+                $oClient = OClient::where('password_client', 1)->where('id',8)->first();
+                $finalres = $this->getTokenAndRefreshToken($oClient, request('email'), request('password'),8);
+                $members = Superuser::where("email",request('email'))->update( 
+                    array( 
+                     "access_token" => $finalres->getData()->access_token,
+                     "refresh_token" => $finalres->getData()->refresh_token,
+                     "updated_at" => $updated_at
+                     ));
+                if($members>0)
+                {
+                    $returnData = Superuser::where("email",request('email'))->first();
+                    $user_response = array('token_type' =>  $finalres->getData()->token_type,
+                                'access_token' => $finalres->getData()->access_token,
+                                'refresh_token' => $finalres->getData()->refresh_token,
+                                'user_id' => $returnData->id,
+                                'name' => $returnData->mem_name,
+                                'access_type' => $returnData->access_type,
+                                );
+                                return response()->json(['user_info'=>$user_response], 200);
+                }
+                else
+                {
+                    return response()->json(['error'=>'Login Failed'], 401); 
+                }  
+            }
+
+            return response()->json(['error'=>'Invalid Credentials'], 401); 
         } 
     }
-    public function getTokenAndRefreshToken(OClient $oClient, $email, $password) { 
-         $oClient = OClient::where('password_client', 1)->first();
+    public function getTokenAndRefreshToken(OClient $oClient, $email, $password,$usertype) { 
+         $oClient = OClient::where('password_client', 1)->where('id',$usertype)->first();
         $http = new Client;
-        $response = $http->request('POST', 'http://127.0.0.1:8001/oauth/token', [
+        $response = $http->request('POST', 'http://192.168.221.30/rdd_server/public/oauth/token', [
             'form_params' => [
                 'grant_type' => 'password',
                 'client_id' => $oClient->id,
@@ -42,13 +102,13 @@ class AuthController extends Controller
         return response()->json($result, $this->successStatus);
     }
 
-    public function getnewToken() {
-        $oClient = OClient::where('password_client', 1)->first();
+    public function getnewToken(Request $request) {
+        $oClient = OClient::where('password_client', 1)->where('id',2)->first();
        $http = new Client;
-       $response = $http->request('POST', 'http://127.0.0.1:8001/oauth/token', [
+       $response = $http->request('POST', 'http://192.168.221.30/rdd_server/public/oauth/token', [
            'form_params' => [
                'grant_type' => 'refresh_token',
-               'refresh_token' => 'def502005c40dbffe4fab3cc7493e3ae0fb8a89c7b2c0dd73b257a46497fe9bd33c50c7c30939a60d6709cfff7229f85afc05b0ae9c5f2f2d1fc5bd9a067767ed97c0f4a8cbf799ce990292935179f50ca1f1efd0cd798560f1f85d95bf6a1b2bc12efd070b4c4527e076ad0b93516b91f45a777d217c2c4d40ad1db5cc9ba5968b0a37cd36725a8bc99e83d10055d5a5ab7d5c6fc738fd4896785e7c3bf3f1d3477739ec398f070f72a19d64649abb227b19dbfef8d0dc2c654123183dda5ea21ebca3fa54e1adff09786524e9e48143908141f9b5fc07d117c2f1a2abfce5aad11dc475e52c5105478e0a0c872d9494dd83ee8a7e1bf632dc7d2fd976bd2d2c6d060a5c4e33ef8f1af1feaef25c41cc7bf24660deefdea6df38afb94ef2cc6cbab3e91e6d09d46b982a13f821e1a79995f5cc4c119249830c5bf9f5f0014d24741eb75372e1589b952219ad1383ee64d0c78067d39f0884e7dfe8d13bff9bd61de14fd',
+               'refresh_token' => $request->input('refresh_token'),
                'client_id' => $oClient->id,
                'client_secret' => $oClient->secret,
                'scope' => '*',
@@ -56,7 +116,34 @@ class AuthController extends Controller
        ]);
 
        $result = json_decode((string) $response->getBody(), true);
-       return response()->json($result, $this->successStatus);
+       $finalres = response()->json($result, $this->successStatus);
+
+       $members = Members::where("email",request('email'))->where("mem_id",request('id'))->update( 
+        array( 
+         "access_token" => $finalres->getData()->access_token,
+         "refresh_token" => $finalres->getData()->refresh_token
+         )
+         );
+
+        if($members>0)
+        {
+            $returnData = Members::where("email",request('email'))->where("mem_id",request('id'))->first();
+            $user_response = array('token_type' =>  $finalres->getData()->token_type,
+                        'access_token' => $finalres->getData()->access_token,
+                        'refresh_token' => $finalres->getData()->refresh_token,
+                        'user_id' => $returnData->mem_id,
+                        'first_name' => $returnData->mem_name,
+                        'last_name' => $returnData->mem_last_name,
+                        'org_id' => $returnData->mem_org_id,
+                        'access_type' => $returnData->access_type,
+                        );
+                        return response()->json(['user_info'=>$user_response], 200);
+        }
+        else
+        {
+            return response()->json(['error'=>'Login Failed'], 401); 
+        }
+
    }
    public function getUser(Request $request)
    {
@@ -64,7 +151,7 @@ class AuthController extends Controller
    }
     public function emailCheck(Request $request)
     {
-        $user = User::select('mem_id','mem_org_id','mem_name','mem_last_name','mem_email','access_type')->where('mem_email', $request->input('email'))->first();
+        $user = User::select('mem_id','mem_org_id','mem_name','mem_last_name','email','access_type')->where('email', $request->input('email'))->first();
         if ($user === null) {
             return response()->json(['message'=>'User does not exist'], 200);
         }
@@ -76,7 +163,7 @@ class AuthController extends Controller
                     $otpDetails = new ForgotPassword();
         
                     $otpDetails->user_id = $user->mem_id;
-                    $otpDetails->user_email = $user->mem_email;
+                    $otpDetails->user_email = $user->email;
                     $otpDetails->user_type = 1;
                     $otpDetails->otp = $randomNum;
                     $otpDetails->created_at = date('Y-m-d H:i:s');
@@ -133,7 +220,7 @@ class AuthController extends Controller
                 
                 if($updateOtp>0)
                 {
-                    $user = User::select('mem_id','mem_org_id','mem_name','mem_last_name','mem_email','access_type')->where('mem_email', $otpCheck->user_email)->where('mem_id', $otpCheck->user_id)->first();
+                    $user = User::select('mem_id','mem_org_id','mem_name','mem_last_name','email','access_type')->where('email', $otpCheck->user_email)->where('mem_id', $otpCheck->user_id)->first();
                     return response()->json(['message'=>$user], 200);
                 }
             }
@@ -143,7 +230,7 @@ class AuthController extends Controller
     {
         $validator = Validator::make($request->all(), [ 
             'mem_id' => 'required', 
-            'mem_email' => 'required', 
+            'email' => 'required', 
             'password' => 'required', 
             'c_password' => 'required_with:password|same:password', 
         ]);
@@ -152,9 +239,9 @@ class AuthController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $members = User::where("mem_id",$request->mem_id)->where("mem_email",$request->mem_email)->update( 
+        $members = User::where("mem_id",$request->mem_id)->where("email",$request->email)->update( 
             array( 
-             "mem_password" => Hash::make($request->password),
+             "password" => Hash::make($request->password),
              "updated_at" => date('Y-m-d H:i:s'),
              ));
 

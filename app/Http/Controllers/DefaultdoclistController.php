@@ -47,9 +47,10 @@ class DefaultdoclistController extends Controller
             echo json_encode($response); 
         } 
     }
-    function update(Request $request,$id)
+    function update(Request $request)
     {
         $validator = Validator::make($request->all(), [ 
+            'doc_id' => 'required',
             'org_id' => 'required', 
             'doc_name' => 'required', 
             'doc_path' => 'required', 
@@ -61,7 +62,7 @@ class DefaultdoclistController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $types = Defaultdoclist::where("doc_id",$id)->where("org_id",$request->input('org_id'))->update( 
+        $types = Defaultdoclist::where("doc_id",$request->input('doc_id'))->where("org_id",$request->input('org_id'))->update( 
             array(
              "doc_name" => $request->input('doc_name'), 
              "doc_path" => $request->input('doc_path'),
@@ -71,7 +72,7 @@ class DefaultdoclistController extends Controller
         
              if($types>0)
              {
-                 $returnData = Defaultdoclist::find($id);
+                 $returnData = Defaultdoclist::find($request->input('doc_id'));
                  $data = array ("message" => 'Project Type Updated successfully',"data" => $returnData );
                  $response = Response::json($data,200);
                  echo json_encode($response); 

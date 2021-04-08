@@ -21,6 +21,7 @@ class CreateOrganisationsMaster extends Migration
             $table->dateTime('updated_at');
             $table->integer('created_by');
             $table->integer('active_status')->default(1);
+            $table->integer('isDeleted')->default(0);
         });
     }
 

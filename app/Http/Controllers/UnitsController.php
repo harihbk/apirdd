@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Units;
 use Response;
+use Validator;
 
 class UnitsController extends Controller
 {
@@ -12,7 +13,8 @@ class UnitsController extends Controller
     {
         $limit = 1;
         $offset = 1;
-        $units = Units::offset($offset)->limit($limit)->get();
+        //$units = Units::offset($offset)->limit($limit)->get();
+        $units = Units::all();
         if($units!=null) {
             $data = array ("message" => 'Units data',"data" => $units );
             $response = Response::json($data,200);
@@ -24,8 +26,10 @@ class UnitsController extends Controller
         $validator = Validator::make($request->all(), [ 
             'org_id' => 'required', 
             'property_id' => 'required', 
+            'unit_name' => 'required',
             'unit_area' => 'required', 
             'floor_id' => 'required',
+            'pod_image_path' => 'required',
             'user_id' => 'required'
         ]);
 
@@ -37,6 +41,8 @@ class UnitsController extends Controller
 
         $units->org_id = $request->input('org_id');
         $units->property_id = $request->input('property_id');
+        $units->unit_name = $request->input('unit_name');
+        $units->zone = $request->input('zone');
         $units->unit_area = $request->input('unit_area');
         $units->floor_id = $request->input('floor_id');
         $units->pod_image_path = $request->input('pod_image_path');
@@ -52,23 +58,27 @@ class UnitsController extends Controller
             echo json_encode($response); 
         } 
     }
-    function update(Request $request,$id)
+    function update(Request $request)
     {   
         $validator = Validator::make($request->all(), [ 
+            'unit_id' => 'required',
             'org_id' => 'required', 
-            'property_id' => 'required', 
+            'property_id' => 'required',
+            'unit_name' => 'required', 
             'unit_area' => 'required', 
             'floor_id' => 'required',
             'user_id' => 'required',
-            'active_status' => "1"
+            'active_status' => "required"
         ]);
 
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $units = Units::where("unit_id",$id)->update( 
+        $units = Units::where("unit_id",$request->input('unit_id'))->update( 
             array( 
+             "unit_name"=> $request->input('unit_name'),
+             "zone"=> $request->input('zone'),
              "unit_area" => $request->input('unit_area'),
              "floor_id" => $request->input('floor_id'),
              "pod_image_path" => $request->input('pod_image_path'),
@@ -79,7 +89,7 @@ class UnitsController extends Controller
         
              if($units>0)
              {
-                $returnData = Units::find($id);
+                $returnData = Units::find($request->input('unit_id'));
                 $data = array ("message" => 'Unit Updated successfully',"data" => $returnData );
                 $response = Response::json($data,200);
                 echo json_encode($response); 
@@ -87,7 +97,36 @@ class UnitsController extends Controller
     }
     function retrieveByOrg(Request $request,$id,$propid)
     {
-        $units = Units::where("org_id",$id)->where('property_id', $propid)->get();
+        $limit = 10;
+        $offset = 0;
+
+        $searchTerm = $request->input('searchkey');
+
+        $query = Units::where("org_id",$id)->select('unit_id','unit_name','zone','property_id','unit_area','floor_id','pod_image_path','created_at','updated_at','active_status');
+
+        if (!empty($request->input('searchkey')))
+        {
+            $query->whereLike(['unit_name'], $searchTerm);
+        }
+
+        $units = $query->where('property_id', $propid)->offset($offset)->limit($limit)->get();
+        echo json_encode($units); 
+    }
+    function retrieveByFloor(Request $request,$propid,$floorid)
+    {
+        $limit = 10;
+        $offset = 0;
+
+        $searchTerm = $request->input('searchkey');
+
+        $query = Units::where("floor_id",$floorid)->where("property_id",$propid)->select('unit_id','unit_name','zone','property_id','unit_area','floor_id','pod_image_path','created_at','updated_at','active_status');
+
+        if (!empty($request->input('searchkey')))
+        {
+            $query->whereLike(['unit_name'], $searchTerm);
+        }
+
+        $units = $query->offset($offset)->limit($limit)->get();
         echo json_encode($units); 
     }
 }

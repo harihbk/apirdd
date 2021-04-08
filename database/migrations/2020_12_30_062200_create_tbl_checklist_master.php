@@ -16,6 +16,8 @@ class CreateTblChecklistMaster extends Migration
         Schema::create('tbl_checklist_master', function (Blueprint $table) {
             $table->increments('ch_id');
             $table->mediumInteger('org_id');
+            $table->mediumInteger('template_id');
+            $table->integer('template_id');
             $table->integer('root_id');
             $table->text('checklist_desc');
             $table->dateTime('created_at');

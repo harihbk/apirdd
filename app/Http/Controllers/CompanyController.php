@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Company;
 use Response;
+use Validator;
 
 class CompanyController extends Controller
 {
@@ -12,7 +13,8 @@ class CompanyController extends Controller
     {
         $limit = 1;
         $offset = 1;
-        $companies = Company::offset($offset)->limit($limit)->get();
+        $companies = Company::all();
+        //$companies = Company::offset($offset)->limit($limit)->get();
         if($companies!=null) {
             $data = array ("message" => 'Companies data',"data" => $companies );
             $response = Response::json($data,200);
@@ -23,7 +25,8 @@ class CompanyController extends Controller
     {
         $validator = Validator::make($request->all(), [ 
             'org_id' => 'required', 
-            'company_name' => 'required', 
+            'company_name' => 'required',
+            'brand_name' => 'required',  
             'contact_person' => 'required', 
             'contact_email' => 'required', 
             'mobile_no' => 'required',
@@ -38,6 +41,7 @@ class CompanyController extends Controller
 
         $companies->org_id = $request->input('org_id');
         $companies->company_name = $request->input('company_name');
+        $companies->brand_name = $request->input('brand_name');
         $companies->contact_person = $request->input('contact_person');
         $companies->contact_email = $request->input('contact_email');
         $companies->mobile_no = $request->input('mobile_no');
@@ -52,11 +56,13 @@ class CompanyController extends Controller
             echo json_encode($response); 
         } 
     }
-    function update(Request $request,$id)
+    function update(Request $request)
     {
         $validator = Validator::make($request->all(), [ 
-            'org_id' => 'required', 
-            'company_name' => 'required', 
+            'org_id' => 'required',
+            'company_id' => 'required', 
+            'company_name' => 'required',
+            'brand_name' => 'required',
             'contact_person' => 'required', 
             'contact_email' => 'required', 
             'mobile_no' => 'required',
@@ -69,9 +75,10 @@ class CompanyController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $companies = Company::where("company_id",$id)->update( 
+        $companies = Company::where("company_id",$request->input('company_id'))->update( 
             array( 
              "company_name" => $request->input('company_name'),
+             "brand_name" => $request->input('brand_name'),
              "contact_person" => $request->input('contact_person'),
              "contact_email" => $request->input('contact_email'),
              "mobile_no" => $request->input('mobile_no'),
@@ -81,7 +88,7 @@ class CompanyController extends Controller
         
              if($companies>0)
              {
-                 $returnData = Company::find($id);
+                 $returnData = Company::find($request->input('company_id'));
                  $data = array ("message" => 'Company Updated successfully',"data" => $returnData );
                  $response = Response::json($data,200);
                  echo json_encode($response); 
@@ -89,9 +96,19 @@ class CompanyController extends Controller
     }
     function retrieveByOrg(Request $request,$id)
     {
-        $limit = 1;
-        $offset = 1;
-        $companies = Company::where("org_id",$id)->offset($offset)->limit($limit)->get();
+        $limit = 10;
+        $offset = 0;
+        $query = Company::where("org_id",$id)->where("active_status",1);
+        if (!empty($request->input('searchkey')))
+        {
+            $query->whereLike(['company_name'], $request->input('searchkey'));
+        }
+        if (!empty($request->input('active_status')))
+        {
+            $query->where('active_status',$request->input('active_status'));
+        }
+
+        $companies = $query->offset($offset)->limit($limit)->get();
         echo json_encode($companies); 
     }
     function getCompany(Request $request,$id)

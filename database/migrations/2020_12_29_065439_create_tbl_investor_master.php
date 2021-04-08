@@ -20,14 +20,14 @@ class CreateTblInvestorMaster extends Migration
             $table->text('brand_name');
             $table->text('tenant_name');
             $table->text('tenant_last_name');
-            $table->string('tenant_email',20);
+            $table->string('email',45);
             $table->string('tenant_mobile',20);
             $table->text('tenant_designation');
             $table->integer('tenant_type');
             $table->text('tenant_address');
             $table->dateTime('start_date');
             $table->dateTime('end_date');
-            $table->string('tenant_password',255);
+            $table->string('password',255);
             $table->integer('tenant_gender');
             $table->dateTime('created_at');
             $table->dateTime('updated_at');

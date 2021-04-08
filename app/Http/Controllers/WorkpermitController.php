@@ -13,7 +13,8 @@ class WorkpermitController extends Controller
     {
         $limit = 1;
         $offset = 1;
-        $types = Workpermit::offset($offset)->limit($limit)->get();
+        //$types = Workpermit::offset($offset)->limit($limit)->get();
+        $types = Workpermit::where('isDeleted',0)->get();
         if($types!=null) {
             $data = array ("message" => 'Work permit data',"data" => $types );
             $response = Response::json($data,200);
@@ -50,10 +51,10 @@ class WorkpermitController extends Controller
             echo json_encode($response); 
         } 
     }
-    function update(Request $request,$id)
+    function update(Request $request)
     {
         $validator = Validator::make($request->all(), [ 
-            'org_id' => 'required', 
+            'permit_id' => 'required', 
             'permit_type' => 'required', 
             'user_id' => 'required',
             'active_status' => 'required',
@@ -63,7 +64,7 @@ class WorkpermitController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $types = Workpermit::where("permit_id",$id)->update( 
+        $types = Workpermit::where("permit_id",$request->input('permit_id'))->update( 
             array(
              "permit_type" => $request->input('permit_type'), 
              "permit_desc" => $request->input('permit_desc'),
@@ -73,7 +74,7 @@ class WorkpermitController extends Controller
         
              if($types>0)
              {
-                 $returnData = Workpermit::find($id);
+                 $returnData = Workpermit::find($request->input('type_id'));
                  $data = array ("message" => 'Work Permit Updated successfully',"data" => $returnData );
                  $response = Response::json($data,200);
                  echo json_encode($response); 
@@ -83,7 +84,8 @@ class WorkpermitController extends Controller
     {
         $limit = 1;
         $offset = 1;
-        $types = Workpermit::where("org_id",$id)->offset($offset)->limit($limit)->get();
+        //$types = Workpermit::where("org_id",$id)->offset($offset)->limit($limit)->get();
+        $types = Workpermit::where("org_id",$id)->where("isDeleted",0)->get();
         echo json_encode($types); 
     }
     function updateDeletion(Request $request,$id)

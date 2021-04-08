@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Level;
 use Response;
+use Validator;
 
 class LevelController extends Controller
 {
@@ -44,9 +45,10 @@ class LevelController extends Controller
             echo json_encode($response); 
         } 
     }
-    function update(Request $request,$id)
+    function update(Request $request)
     {
         $validator = Validator::make($request->all(), [ 
+            'level_id' => 'required',
             'level_name' => 'required', 
             'user_id' => 'required',
             'active_status' => 'required'
@@ -56,7 +58,7 @@ class LevelController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $levels = Level::where("level_id",$id)->update( 
+        $levels = Level::where("level_id",$request->input('level_id'))->update( 
             array( 
              "level_name" => $request->input('level_name'),
              "updated_at" => date('Y-m-d H:i:s'),
@@ -65,7 +67,7 @@ class LevelController extends Controller
         
              if($levels>0)
              {
-                 $returnData = Level::find($id);
+                 $returnData = Level::find($request->input('level_id'));
                  $data = array ("message" => 'Level Updated successfully',"data" => $returnData );
                  $response = Response::json($data,200);
                  echo json_encode($response); 

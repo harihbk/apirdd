@@ -17,6 +17,7 @@ class CreateDesignationMaster extends Migration
             $table->increments('designation_id');
             $table->mediumInteger('org_id');
             $table->text('designation_name');
+            $table->integer('designation_user_type');
             $table->dateTime('created_at');
             $table->dateTime('updated_at');
             $table->integer('created_by');

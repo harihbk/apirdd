@@ -15,4 +15,10 @@ class User extends Authenticatable
     protected $table = 'users';
     protected $primaryKey = 'mem_id';
     public $timestamps = false;
+
+    protected $hidden = [
+        'password',
+        'access_token',
+        'refresh_token'
+    ];
 }

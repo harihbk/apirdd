@@ -89,7 +89,7 @@ class ProjecttypeController extends Controller
     {
         $limit = 40;
         $offset = 0;
-        $types = Projecttype::where("org_id",$id)->offset($offset)->limit($limit)->get();
+        $types = Projecttype::join('tbl_templatename_master','tbl_templatename_master.template_id','=','tbl_projecttype_master.template_id')->select('tbl_projecttype_master.*','tbl_templatename_master.template_name')->where("tbl_projecttype_master.org_id",$id)->offset($offset)->limit($limit)->get();
         echo json_encode($types); 
     }
     function getType(Request $request,$id)

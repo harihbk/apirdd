@@ -6,9 +6,11 @@ use Illuminate\Http\Request;
 use App\Models\MailConfig;
 use App\Models\Orgmilestoneconfig;
 use App\Models\Docpathconfig;
+use App\Models\Organisations;
 use App\Models\MilestoneConfig;
 use Response;
 use Validator;
+use File;
 
 class ConfigController extends Controller
 {
@@ -173,8 +175,10 @@ class ConfigController extends Controller
         if ($validator->fails()) { 
             return response()->json(['response'=>$validator->errors()], 401);            
         }
-
+        $org_data = Organisations::find($request->input('org_id'));
         $paths  = Docpathconfig::where('org_id',$request->input('org_id'))->where('isDeleted',0)->get();
+        $doc_path = public_path().'/uploads/'.$org_data['org_code'].'/'.$request->input('doc_path');
+        $img_path = public_path().'/uploads/'.$org_data['org_code'].'/'.$request->input('image_path');
         if(count($paths)>0)
         {
             $update = Docpathconfig::where('org_id',$request->input('org_id'))->where('isDeleted',0)->update(
@@ -186,13 +190,19 @@ class ConfigController extends Controller
             {
                 //insert new data
                 $path->org_id = $request->input('org_id');
-                $path->doc_path = $request->input('doc_path');
-                $path->image_path = $request->input('image_path');
+                $path->doc_path = "/uploads/".$org_data['org_code'].'/'.$request->input('doc_path');
+                $path->image_path = "/uploads/".$org_data['org_code'].'/'.$request->input('image_path');
                 $path->created_at = $created_at;
                 $path->updated_at = $updated_at;
 
                 if($path->save())
                 {
+                    if(!File::isDirectory($doc_path)){
+                     File::makeDirectory($doc_path, 0777, true, true);
+                    }
+                    if(!File::isDirectory($img_path)){
+                        File::makeDirectory($img_path, 0777, true, true);
+                    }
                     $returnData = Docpathconfig::find($request->input('org_id'));
                     $data = array ("message" => 'Config detail Added successfully',"data" => $returnData );
                     $response = Response::json($data,200);
@@ -204,13 +214,19 @@ class ConfigController extends Controller
         {
             // new data
             $path->org_id = $request->input('org_id');
-            $path->doc_path = $request->input('doc_path');
-            $path->image_path = $request->input('image_path');
+            $path->doc_path = "/uploads/".$org_data['org_code'].'/'.$request->input('doc_path');
+            $path->image_path = "/uploads/".$org_data['org_code'].'/'.$request->input('image_path');
             $path->created_at = $created_at;
             $path->updated_at = $updated_at;
 
             if($path->save())
             {
+                if(!File::isDirectory($doc_path)){
+                 File::makeDirectory($doc_path, 0777, true, true);
+                }
+                if(!File::isDirectory($img_path)){
+                    File::makeDirectory($img_path, 0777, true, true);
+                }
                 $returnData = Docpathconfig::find($request->input('org_id'));
                 $data = array ("message" => 'Config detail Added successfully',"data" => $returnData );
                 $response = Response::json($data,200);
@@ -230,21 +246,29 @@ class ConfigController extends Controller
         if ($validator->fails()) { 
             return response()->json(['response'=>$validator->errors()], 401);            
         }
-        
+        $org_data = Organisations::find($request->input('org_id'));
+        $doc_path = public_path().'/uploads/'.$org_data['org_code'].'/'.$request->input('doc_path');
+        $img_path = public_path().'/uploads/'.$org_data['org_code'].'/'.$request->input('image_path');
         $docs = Docpathconfig::where('org_id',$request->input('org_id'))->where('isDeleted',0)->update(
             array(
-                "doc_path" => $request->input('doc_path'),
-                "image_path" => $request->input('image_path'),
+                "doc_path" => "/uploads/".$org_data['org_code'].'/'.$request->input('doc_path'),
+                "image_path" => "/uploads/".$org_data['org_code'].'/'.$request->input('image_path'),
                 "updated_at" => $updated_at
             )
         );
 
         if($docs>0)
         {
-                $returnData = Docpathconfig::find($request->input('org_id'));
-                $data = array ("message" => 'Config detail Updated successfully',"data" => $returnData );
-                $response = Response::json($data,200);
-                echo json_encode($response);
+            if(!File::isDirectory($doc_path)){
+                File::makeDirectory($doc_path, 0777, true, true);
+            }
+            if(!File::isDirectory($img_path)){
+                File::makeDirectory($img_path, 0777, true, true);
+            }
+            $returnData = Docpathconfig::find($request->input('org_id'));
+            $data = array ("message" => 'Config detail Updated successfully',"data" => $returnData );
+            $response = Response::json($data,200);
+            echo json_encode($response);
         }
 
     }

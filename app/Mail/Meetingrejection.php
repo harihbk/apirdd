@@ -7,7 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class Projectkickoffdocs extends Mailable
+class Meetingrejection extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -16,8 +16,6 @@ class Projectkickoffdocs extends Mailable
      *
      * @return void
      */
-
-    public $emails;
     public function __construct()
     {
         //
@@ -30,7 +28,6 @@ class Projectkickoffdocs extends Mailable
      */
     public function build()
     {
-        // return $this->from('tmmtest1@tamdeen.com')->subject('Kickoff message')->view('emails.projectkickoffdocs')->attach(public_path('documents/sample.pdf'));
-        return $this->from('tmmtest1@tamdeen.com')->subject('Kickoff message')->view('emails.projectkickoffdocs');
+        return $this->from('tmmtest1@tamdeen.com')->subject('Meeting Rejection Notification')->view('emails.projectmeetings');
     }
 }

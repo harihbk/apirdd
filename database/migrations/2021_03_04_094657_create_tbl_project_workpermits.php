@@ -24,7 +24,8 @@ class CreateTblProjectWorkpermits extends Migration
             $table->text('description')->nullable();
             $table->text('checklist_file_path')->nullable();
             $table->integer('request_status')->default(0);
-            $table->integer('investor_id');
+            $table->integer('investor_id')->default(0);
+            $table->integer('rdd_member_id')->default(0);
             $table->integer('action_by')->default(0);
             $table->integer('isDeleted')->default(0);
             $table->dateTime('created_at');

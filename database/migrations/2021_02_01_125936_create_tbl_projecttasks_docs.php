@@ -16,9 +16,18 @@ class CreateTblProjecttasksDocs extends Migration
         Schema::create('tbl_projecttasks_docs', function (Blueprint $table) {
             $table->increments('doc_id');
             $table->integer('project_id');
-            $table->integer('master_task_id');
-            $table->integer('task_type');
+            $table->integer('phase_id');
+            $table->text('doc_header');
+            $table->text('doc_title');
+            $table->text('reviewers');
+            $table->text('reviewers_designation');
+            $table->text('approvers_level1');
+            $table->text('approvers_level1_designation');
+            $table->text('approvers_level2');
+            $table->text('approvers_level2_designation');
             $table->text('file_path');
+            $table->text('comment');
+            $table->date('actual_date');
             $table->integer('doc_status');
             $table->dateTime('created_at');
             $table->dateTime('updated_at');

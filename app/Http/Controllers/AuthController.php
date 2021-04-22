@@ -25,7 +25,6 @@ class AuthController extends Controller
         if (Auth::attempt(['email' => request('email'), 'password' => request('password')])) { 
             $oClient = OClient::where('password_client', 1)->where('id',2)->first();
             $finalres = $this->getTokenAndRefreshToken($oClient, request('email'), request('password'),2);
-
             $members = Members::where("email",request('email'))->update( 
                 array( 
                  "access_token" => $finalres->getData()->access_token,
@@ -35,7 +34,7 @@ class AuthController extends Controller
 
             if($members>0)
             {
-                $returnData = Members::where("email",request('email'))->first();
+                $returnData = Members::join('tbl_docpath_config_master','users.mem_org_id','=','tbl_docpath_config_master.org_id')->where("users.email",request('email'))->where('tbl_docpath_config_master.isDeleted',0)->first();
                 $user_response = array('token_type' =>  $finalres->getData()->token_type,
                             'access_token' => $finalres->getData()->access_token,
                             'refresh_token' => $finalres->getData()->refresh_token,
@@ -44,6 +43,8 @@ class AuthController extends Controller
                             'last_name' => $returnData->mem_last_name,
                             'org_id'=> $returnData->mem_org_id,
                             'access_type' => $returnData->access_type,
+                            'doc_path' => $returnData->doc_path,
+                            'image_path' => $returnData->image_path
                             );
                             return response()->json(['user_info'=>$user_response], 200);
             }
@@ -87,7 +88,7 @@ class AuthController extends Controller
     public function getTokenAndRefreshToken(OClient $oClient, $email, $password,$usertype) { 
          $oClient = OClient::where('password_client', 1)->where('id',$usertype)->first();
         $http = new Client;
-        $response = $http->request('POST', 'http://192.168.221.30/rdd_server/public/oauth/token', [
+        $response = $http->request('POST', 'https://rdd.octasite.com/rdd_server/public/oauth/token', [
             'form_params' => [
                 'grant_type' => 'password',
                 'client_id' => $oClient->id,

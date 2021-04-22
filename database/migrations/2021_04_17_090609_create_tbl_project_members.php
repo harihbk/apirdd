@@ -4,7 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-class CreateTblAuthgrpOrganisationAccess extends Migration
+class CreateTblProjectMembers extends Migration
 {
     /**
      * Run the migrations.
@@ -13,16 +13,15 @@ class CreateTblAuthgrpOrganisationAccess extends Migration
      */
     public function up()
     {
-        Schema::create('tbl_authgrp_organisation_access', function (Blueprint $table) {
+        Schema::create('tbl_project_members', function (Blueprint $table) {
             $table->increments('id');
             $table->integer('org_id');
-            $table->integer('org_access')->default(0)->nullable();
-            $table->integer('group_id');
-            $table->integer('property_id');
-            $table->integer('property_access')->default(0)->nullable();
+            $table->integer('project_id');
+            $table->integer('designation');
+            $table->integer('members');
+            $table->integer('created_by');
             $table->dateTime('created_at');
             $table->dateTime('updated_at');
-            $table->integer('isDeleted')->default(0);
         });
     }
 
@@ -33,6 +32,6 @@ class CreateTblAuthgrpOrganisationAccess extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('tbl_authgrp_organisation_access');
+        Schema::dropIfExists('tbl_project_members');
     }
 }

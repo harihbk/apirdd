@@ -22,7 +22,6 @@ class InspectionrootController extends Controller
     {
         $validator = Validator::make($request->all(), [ 
             'org_id' => 'required', 
-            'template_id' => 'required',
             'root_name' => 'required', 
             'user_id' => 'required'
         ]);
@@ -34,7 +33,6 @@ class InspectionrootController extends Controller
         $types = new Inspectionroot();
 
         $types->org_id = $request->input('org_id');
-        $types->template_id = $request->input('template_id');
         $types->root_name = $request->input('root_name');
         $types->created_at = date('Y-m-d H:i:s');
         $types->updated_at = date('Y-m-d H:i:s');
@@ -52,7 +50,6 @@ class InspectionrootController extends Controller
         $validator = Validator::make($request->all(), [ 
             'org_id' => 'required',
             'root_id' => 'required', 
-            'template_id' => 'required',
             'root_name' => 'required',  
             'user_id' => 'required',
             'active_status' => 'required',
@@ -62,7 +59,7 @@ class InspectionrootController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $types = Inspectionroot::where("root_id",$request->input('root_id'))->where("template_id",$request->input('template_id'))->update( 
+        $types = Inspectionroot::where("root_id",$request->input('root_id'))->update( 
             array(
              "root_name" => $request->input('root_name'), 
              "updated_at" => date('Y-m-d H:i:s'),
@@ -77,12 +74,12 @@ class InspectionrootController extends Controller
                  echo json_encode($response); 
              }
     }
-    function retrieveByOrg(Request $request,$id,$tempid)
+    function retrieveByOrg(Request $request,$id)
     {
         $limit = 100;
         $offset = 0;
-        $types = Inspectionroot::where("org_id",$id)->where("template_id",$tempid)->where("isDeleted",0)->offset($offset)->limit($limit)->get();
-        echo json_encode($types); 
+        $types = Inspectionroot::where("org_id",$id)->where("isDeleted",0)->offset($offset)->limit($limit)->get();
+        return $types;
     }
     function updateDeletion(Request $request,$id)
     {

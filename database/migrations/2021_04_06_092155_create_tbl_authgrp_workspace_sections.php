@@ -19,6 +19,7 @@ class CreateTblAuthgrpWorkspaceSections extends Migration
             $table->integer('group_id');
             $table->integer('content_id');
             $table->integer('display')->default(0)->nullable();
+            $table->integer('change')->default(0)->nullable();
             $table->integer('edit')->default(0)->nullable();
             $table->dateTime('created_at');
             $table->dateTime('updated_at');

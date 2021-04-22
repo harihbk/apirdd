@@ -51,9 +51,9 @@ class PhaseController extends Controller
             echo json_encode($response);
         }
     }
-    function retrieveByorg($org_id)
+    function retrieveByorg()
     {
-        $phase = Phase::select("phase_id","phase_name","org_id")->where("org_id",$org_id)->where("isDeleted",0)->get();
+        $phase = Phase::select("phase_id","phase_name","org_id")->where("isDeleted",0)->get();
         echo json_encode($phase);
     }
 }

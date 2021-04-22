@@ -31,7 +31,6 @@ class AuthorizationgrpController extends Controller
         $datas = $request->get('datas');
 
         $validator = Validator::make($request->all(), [
-            'datas.org_id' => 'required', 
             'datas.group_name' => 'required',
             'datas.user_id' => 'required',
         ]);
@@ -42,7 +41,6 @@ class AuthorizationgrpController extends Controller
 
         //create authorisation group
         $group = new Authorizationgrp();
-        $group->org_id = $datas['org_id'];
         $group->group_name = $datas['group_name'];
         $group->project_creation = $datas['project_creation'];
         $group->created_at = $created_at;
@@ -58,7 +56,6 @@ class AuthorizationgrpController extends Controller
             for($i=0;$i<count($datas['content']);$i++)
             {
               $data[] = [
-                'org_id' => $datas['org_id'],
                 "group_id" => $groupDetails->id,
                 "phase_id" => $datas['content'][$i]['phase_id'],
                 "content_id" => $datas['content'][$i]['content_id'],
@@ -74,7 +71,6 @@ class AuthorizationgrpController extends Controller
             for($k=0;$k<count($datas['milestone']);$k++)
             {
                 $milestoneData[] = [
-                    'org_id' => $datas['org_id'],
                     "group_id" => $groupDetails->id,
                     "config_id" => $datas['milestone'][$k]['config_id'],
                     "edit" => $datas['milestone'][$k]['edit'],
@@ -85,7 +81,6 @@ class AuthorizationgrpController extends Controller
             for($a=0;$a<count($datas['workspace_fields']);$a++)
             {
                 $workspacefieldsData[] = [
-                    'org_id' => $datas['org_id'],
                     "group_id" => $groupDetails->id,
                     "content_id" => $datas['workspace_fields'][$a]['content_id'],
                     "display" => $datas['workspace_fields'][$a]['display'],
@@ -98,25 +93,30 @@ class AuthorizationgrpController extends Controller
             for($b=0;$b<count($datas['workspace_sections']);$b++)
             {
                 $workspacesectionsData[] = [
-                    'org_id' => $datas['org_id'],
                     "group_id" => $groupDetails->id,
-                    "content_id" => $datas['workspace_fields'][$b]['content_id'],
-                    "display" => $datas['workspace_fields'][$b]['display'],
-                    "edit" => $datas['workspace_fields'][$b]['edit'],
+                    "content_id" => $datas['workspace_sections'][$b]['content_id'],
+                    "display" => $datas['workspace_sections'][$b]['display'],
+                    "change" => $datas['workspace_sections'][$b]['change'],
+                    "edit" => $datas['workspace_sections'][$b]['edit'],
                     "created_at" => $created_at,
                     "updated_at" => $updated_at
                 ];
             }
             for($c=0;$c<count($datas['org_access']);$c++)
             {
-                $orgData[] = [
-                    'org_id' => $datas['org_id'],
-                    "group_id" => $groupDetails->id,
-                    "property_id" => $datas['org_access'][$c]['property_id'],
-                    "access" => $datas['org_access'][$c]['access'],
-                    "created_at" => $created_at,
-                    "updated_at" => $updated_at
-                ];
+                for($d=0;$d<count($datas['org_access'][$c]['property']);$d++)
+                {
+                    $orgData[] = [
+                        'org_id' => $datas['org_access'][$c]['org_id'],
+                        "org_access" => $datas['org_access'][$c]['org_access'],
+                        "group_id" => $groupDetails->id,
+                        "property_id" => $datas['org_access'][$c]['property'][$d]['property_id'],
+                        "property_access" => $datas['org_access'][$c]['property'][$d]['property_access'],
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at
+                    ];
+                }
+                
             }
 
             if(Authorizationgrpcontent::insert($data) && Authorizationgrpmilestone::insert($milestoneData) && Authgrpworkspacefields::insert($workspacefieldsData) && Authgrpworkspacesections::insert($workspacesectionsData) && Authgrporgaccess::insert($orgData))
@@ -147,6 +147,11 @@ class AuthorizationgrpController extends Controller
     {
         $details = Projectworkspacesections::where('isDeleted',0)->select('id','content')->get();
         return Response::json(["response"=>$details],200);
+    }
+    function getAuthgrpData($id)
+    {
+        $name = Authorizationgrp::where('id',$id)->where('isDeleted',0)->get();
+        echo json_encode($name);
     }
     
 }

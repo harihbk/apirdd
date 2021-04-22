@@ -7,6 +7,7 @@ use App\Models\Templatemaster;
 use App\Models\Templatenamemaster;
 use App\Models\Templatedocs;
 use App\Models\Projecttype;
+use App\Models\Templatedesignations;
 use Response;
 use Validator;
 use DB;
@@ -15,7 +16,6 @@ class TemplateController extends Controller
 {
     function store(Request $request)
     {
-
         $templatename = new Templatenamemaster();
         $doc_data = [];
         $datas = $request->get('datas');
@@ -33,7 +33,6 @@ class TemplateController extends Controller
             'datas.*.tasks.*.person' => 'required',
             'datas.*.tasks.*.activity_desc' => 'required',
             'datas.*.tasks.*.approvers' => 'required',
-            'datas.*.tasks.*.attendees' => 'required',
             'datas.*.tasks.*.fre_id' => 'required',
             'datas.*.tasks.*.start_date' => 'required',
             'datas.*.tasks.*.end_date' => 'required',
@@ -96,7 +95,7 @@ class TemplateController extends Controller
                 $doc_data[] = [
                     'template_id' => $template->template_id,
                     'org_id' => $datas[0]['org_id'],
-                    'phase_id' => $datas[$i]['docs'][$j]['phase_id'],
+                    'phase_id' => $datas[$i]['phase_id'],
                     'doc_header' => $datas[$i]['docs'][$j]['doc_header'],
                     'doc_title' => $datas[$i]['docs'][$j]['doc_title'],
                     'reviewers' => $datas[$i]['docs'][$j]['reviewers'],
@@ -105,9 +104,10 @@ class TemplateController extends Controller
                    ];
             }
         }
-
           if(Templatemaster::insert($data) && Templatedocs::insert($doc_data))
           {
+            //get template tasks designations
+            $this->storeDesignations($template->template_id,$datas[0]['org_id'],$datas[0]['user_id']);
             $data = array ("message" => 'Template added successfully');
             $response = Response::json($data,200);
             echo json_encode($response);
@@ -280,7 +280,6 @@ class TemplateController extends Controller
     {
         $types = Templatemaster::join('tbl_designation_master as a',\DB::raw("FIND_IN_SET(a.designation_id,tbl_template_master.person)"),">",\DB::raw("'0'"))->join('tbl_designation_master as b',\DB::raw("FIND_IN_SET(b.designation_id,tbl_template_master.approvers)"),">",\DB::raw("'0'"))->join('tbl_designation_master as c',\DB::raw("FIND_IN_SET(c.designation_id,tbl_template_master.attendees)"),">",\DB::raw("'0'"))->select(DB::raw("GROUP_CONCAT(c.designation_name) as attendees_designation"),DB::raw("GROUP_CONCAT(b.designation_name) as approvers_designtion"),DB::raw("GROUP_CONCAT(a.designation_name) as person_designation"),'tbl_template_master.master_id','tbl_template_master.template_id','tbl_template_master.org_id','tbl_template_master.task_type','tbl_template_master.phase_id','tbl_template_master.activity_desc','tbl_template_master.approvers','tbl_template_master.attendees','tbl_template_master.fre_id','tbl_template_master.seq_status','tbl_template_master.seq_no','tbl_template_master.duration','tbl_template_master.start_date','tbl_template_master.end_date','tbl_template_master.file_upload_path','tbl_template_master.person')->where("tbl_template_master.template_id",$template_id)->where("tbl_template_master.isDeleted",0)->groupBy('tbl_template_master.master_id')->get();
 
-
         $docs = Templatedocs::where("template_id",$template_id)->where("isDeleted",0)->get()->groupBy('doc_title');
         
         return Response::json(['template' => $types,'docs' => $docs],'200');    
@@ -289,6 +288,91 @@ class TemplateController extends Controller
     {
         $lists = Templatenamemaster::select('template_id','org_id','template_name')->where('org_id',$org_id)->where('active_status',1)->get();
         return Response::json(["response"=>$lists],'200');
+    }
+    //for storing designations on template creation
+    function storeDesignations($template_id,$org_id,$user_id)
+    {
+        $datas = [];
+        $designations = [];
+        $created_at =  date('Y-m-d H:i:s');
+        $updated_at =  date('Y-m-d H:i:s');
+        $tasks = Templatemaster::where('template_id',$template_id)->where('isDeleted',0)->select('person','approvers','attendees')->get();
+        $docs = Templatedocs::where('template_id',$template_id)->where('isDeleted',0)->select('reviewers','approvers_level1','approvers_level2')->get();
+        for($i=0;$i<count($tasks);$i++)
+        {
+            $a = explode(',',$tasks[$i]['person']);
+            $b = explode(',',$tasks[$i]['approvers']);
+            $c = explode(',',$tasks[$i]['attendees']);
+            
+            for($j=0;$j<count($a);$j++)
+            {
+                if(!in_array($a[$j],$datas))
+                {
+                    array_push($datas,$a[$j]);
+                }
+            }
+            for($k=0;$k<count($b);$k++)
+            {
+                if(!in_array($b[$k],$datas))
+                {
+                    array_push($datas,$b[$k]);
+                }
+            }
+            for($l=0;$l<count($c);$l++)
+            {
+                if(!in_array($c[$l],$datas))
+                {
+                    array_push($datas,$c[$l]);
+                }
+            }
+        }
+        for($m=0;$m<count($docs);$m++)
+        {
+            $p = explode(',',$docs[$m]['reviewers']);
+            $q = explode(',',$docs[$m]['approvers_level1']);
+            $r = explode(',',$docs[$m]['approvers_level2']);
+            for($x=0;$x<count($p);$x++)
+            {
+                if(!in_array($p[$x],$datas))
+                {
+                    array_push($datas,$p[$x]);
+                }
+            }
+            for($y=0;$y<count($q);$y++)
+            {
+                if(!in_array($q[$y],$datas))
+                {
+                    array_push($datas,$q[$y]);
+                }
+            }
+            for($z=0;$z<count($r);$z++)
+            {
+                if(!in_array($r[$z],$datas))
+                {
+                    array_push($datas,$r[$z]);
+                }
+            }
+        }
+        //store designations
+        for($r=0;$r<count($datas);$r++)
+        {
+            $designations[] = [
+                'org_id' => $org_id,
+                'template_id' => $template_id,
+                'designation' => $datas[$r],
+                'created_by' => $user_id,
+                "created_at" => $created_at,
+                "updated_at" => $updated_at
+            ];
+        }
+        if(Templatedesignations::insert($designations))
+        {
+            return 1;
+        }
+        else
+        {
+            return 0;
+        }
     }
 
 }

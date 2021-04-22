@@ -54,7 +54,7 @@ class TenantController extends Controller
     public function getTokenAndRefreshToken(OClient $oClient, $email, $password) { 
         $oClient = OClient::where('password_client', 1)->where('id',5)->first();
        $http = new Client;
-       $response = $http->request('POST', 'http://192.168.221.30/rdd_server/public/oauth/token', [
+       $response = $http->request('POST', 'http://rdd.octasite.com/rdd_server/public/oauth/token', [
            'form_params' => [
                'grant_type' => 'password',
                'client_id' => $oClient->id,

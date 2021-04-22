@@ -27,6 +27,27 @@ use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\AuthorizationgrpController;
 
 
+Route::get('/clear-cache', function() {
+     if(Artisan::call('cache:clear'))
+     {
+          return "Cache is cleared";
+     }   
+ });
+
+ Route::get('/config-cache', function() {
+     if(Artisan::call('config:cache'))
+     {
+          return "Cache is cleared";
+     }
+ });
+
+
+ Route::get('/router-cache', function() {
+     $exitCode = Artisan::call('route:cache');
+     return "Cache is cleared";
+ });
+ 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -49,18 +70,20 @@ Route::post('/passwordreset', [AuthController::class, 'passwordReset']);
 
 /*Super User routes */
 Route::group(['prefix' => '/superuser','middleware' => 'superuserauth:api'], function() {
-     //organisations
-     Route::get('/org', [OrganisationsController::class, 'index']);
-     Route::get('/org/{id}',[OrganisationsController::class, 'getOrgbyid']);
-     Route::post('/org', [OrganisationsController::class, 'store']);
-     Route::patch('/org/update',[OrganisationsController::class, 'update']);
-     Route::delete('/org/{id}',[OrganisationsController::class, 'deleteOrg']);
+    
 
 });
 
 Route::group(['middleware' => 'userauth:api'], function() {
     //Refresh Token
     Route::post('/refresh', [AuthController::class, 'getnewToken']);
+    
+     //organisations
+     Route::get('/org', [OrganisationsController::class, 'index']);
+     Route::get('/org/{id}',[OrganisationsController::class, 'getOrgbyid']);
+     Route::post('/org', [OrganisationsController::class, 'store']);
+     Route::patch('/org/update',[OrganisationsController::class, 'update']);
+     Route::delete('/org/{id}',[OrganisationsController::class, 'deleteOrg']);
 
     //properties
     Route::get('/properties', [PropertiesController::class, 'index']);
@@ -83,6 +106,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/members/org/{id}',[MembersController::class, 'retrieveByOrg']);
     Route::post('/members/org/{id}/type/{tid}',[MembersController::class, 'getMemberByType']);
     Route::get('/members/bydesignation/{org_id}/{designation_id}',[MembersController::class, 'getMemberByDesignation']);
+    Route::post('/members/getMembers',[MembersController::class, 'retreiveMembersforProject']);
+    
 
 
     //designation
@@ -154,7 +179,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/permit', [WorkpermitController::class, 'store']);
     Route::post('/permit/update',[WorkpermitController::class, 'update']);
     Route::post('/permit/del/{id}',[WorkpermitController::class, 'updateDeletion']);
-    Route::post('/permit/org/{id}',[WorkpermitController::class, 'retrieveByOrg']);
+    Route::get('/permit/org/{id}',[WorkpermitController::class, 'retrieveByOrg']);
 
     //Default Doc list
     Route::get('/doc', [DefaultdoclistController::class, 'index']);
@@ -168,7 +193,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/inroot', [InspectionrootController::class, 'store']);
     Route::post('/inroot/update',[InspectionrootController::class, 'update']);
     Route::post('/inroot/del/{id}',[InspectionrootController::class, 'updateDeletion']);
-    Route::post('/inroot/org/{id}/{tempid}',[InspectionrootController::class, 'retrieveByOrg']);
+    Route::post('/inroot/org/{id}',[InspectionrootController::class, 'retrieveByOrg']);
     Route::post('/inroot/updatemember',[InspectionrootController::class, 'updateMember']);
 
     //Inspection Checklist
@@ -195,7 +220,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
 
 
     //phase master
-    Route::get('/phase/{org_id}', [PhaseController::class, 'retrieveByorg']);
+    Route::get('/phase', [PhaseController::class, 'retrieveByorg']);
     Route::post('/phase', [PhaseController::class, 'store']);
     Route::delete('/phase/{phase_id}', [PhaseController::class, 'deletePhase']);
     
@@ -214,15 +239,37 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /* update fitout details,project workspace details */
     Route::patch('/project/{project_id}', [ProjectController::class, 'updateFitoutdetails']);
     /* Scheduling meeting*/
-    Route::patch('/project/{project_id}/schedulemeeting', [ProjectController::class, 'rddscheduleMeeting']);
+    Route::patch('/project/schedulemeeting/{project_id}', [ProjectController::class, 'rddscheduleMeeting']);
     /* approvers action on scheduled meeting tasks*/
-    Route::patch('/project/{project_id}/meetingapprovalaction', [ProjectController::class, 'rddmeetingApprovalaction']);
+    Route::patch('/project/meetingapprovalaction/{project_id}', [ProjectController::class, 'rddmeetingApprovalaction']);
+    /* attendees action on scheduled meeting tasks*/
+    Route::patch('/project/attendeesmeetingaction/{project_id}', [ProjectController::class, 'rddattendeeMeetingsaction']);
     /*retrieve assigned project lists for orgaanisation */
     Route::post('/project/lists', [ProjectController::class, 'getMemberProjects']);
     //get active meeting tasks for the assigned projects -- For dashboard
     Route::get('/getActivetasks/{memid}/{tasktype}', [ProjectController::class, 'getActivetasks']);
     /* update Phase details,project phase details */
     Route::patch('/project/phase/{project_id}/{phase_id}', [ProjectController::class, 'updatePhasedetails']);
+    /* update Comment,actaul date for docs type tasks */
+    Route::patch('/docdetails', [ProjectController::class, 'updatedocDetails']);
+    /*retrieve template designations */
+    Route::get('/project/templatedesignations/{templateid}',[ProjectController::class, 'retrieveTemplateDesignations']);
+    /* Send Mail [project workspace & on creation] - project contact details */
+    Route::get('/project/sendmail/{project_id}', [ProjectController::class, 'sendMail']);
+    /* Send Mail [project Meeting task - Mom detail] */
+    Route::patch('/project/sendmommail/{project_id}/{task_id}', [ProjectController::class, 'sendMommail']);
+    /* Send Mail [project Meeting task - Reminder detail] */
+    Route::patch('/project/sendremindermail/{project_id}/{task_id}', [ProjectController::class, 'sendRemindermail']);
+    /*Create Work Permit for project */
+    Route::post('/project/workpermit/{projectid}', [ProjectController::class, 'rddcreateWorkpermit']);
+    /*retrieve tasks list - meeting,todo,documents*/
+    Route::get('/project/tasklist/{projectid}/{tasktype}/{memid}/{memname}',[ProjectController::class, 'retrieveMembertasklists']);
+    /*retrieve tasks approval status - meeting,todo,documents*/
+    Route::get('/project/approvalstatus/{projectid}/{taskid}',[ProjectController::class, 'retrievetaskApprovalstatus']);
+
+    
+
+
 
 
 
@@ -258,17 +305,20 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /*Get all config  master*/
     Route::get('/config/milestone/master', [ConfigController::class, 'getMilestonemaster']);
 
+    
     //authorization Group
+    /*Get auth group workspace sections master */
+    Route::get('/authgrp/workspacesections', [AuthorizationgrpController::class, 'getWorkspacesections']);
+    /*Get auth group workspace fields master */
+    Route::get('/authgrp/workspacemaster', [AuthorizationgrpController::class, 'getWorkspacemaster']);
+    /*Get auth group lists */
+    Route::get('/authgrp', [AuthorizationgrpController::class, 'getAuthgrplists']);
+    /*Get created auth group data */
+    Route::get('/authgrp/{id}', [AuthorizationgrpController::class, 'getAuthgrpData']);
     /*Get content for creating authorization group */
     Route::get('/authgrpcontent', [AuthorizationgrpController::class, 'getMastercontent']);
     /*Creating authorization group */
     Route::post('/authgrp', [AuthorizationgrpController::class, 'createAuthorizationgrp']);
-    /*Get auth group lists */
-    Route::get('/authgrp', [AuthorizationgrpController::class, 'getAuthgrplists']);
-    /*Get auth group workspace fields master */
-    Route::get('/authgrp/workspacemaster', [AuthorizationgrpController::class, 'getWorkspacemaster']);
-    /*Get auth group workspace sections master */
-    Route::get('/authgrp/workspacesections', [AuthorizationgrpController::class, 'getWorkspacesections']);
 });
 
 
@@ -284,12 +334,19 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
 
      //project controller
 
+     //work permit
      /* request work permit */
-     Route::post('investor/project/{projectid}/workpermit', [ProjectController::class, 'investorrequestWorkpermit']);
+     Route::post('/investor/workpermit/{projectid}', [ProjectController::class, 'investorrequestWorkpermit']);
+     /* Get requested work permit */
+     Route::post('/investor/workpermitlist', [ProjectController::class, 'investorWorkpermitlist']);
+     /* Get work permit types master list */
+     Route::get('investor/permit/org/{id}',[WorkpermitController::class, 'retrieveByOrg']);
      /* request inspection */
-     Route::post('investor/project/{projectid}/inspection', [ProjectController::class, 'investorrequestInspection']);
+     Route::post('/investor/inspection/{projectid}', [ProjectController::class, 'investorrequestInspection']);
      /* attendees action on scheduled meeting tasks*/
-     Route::patch('investor/project/{project_id}/attendeesmeetingaction', [ProjectController::class, 'investormeetingAction']);
+     Route::patch('/investor/attendeesmeetingaction/{project_id}', [ProjectController::class, 'investormeetingAction']);
+     /* Get Attendee assigned project lists */
+     Route::get('/investor/projectlists/{memid}/{memname}',[ProjectController::class, 'retrievetenantProjectlists']);
 
 
 });

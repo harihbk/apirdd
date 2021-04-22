@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\Members;
 use App\Models\Tenant;
 use App\Models\Superuser;
+use App\Models\Designation;
 use Response;
 use Validator;
 
@@ -126,7 +127,8 @@ class MembersController extends Controller
         }
 
         $members = $query->get();
-        echo json_encode($members); 
+        // echo json_encode($members); 
+        return $members;
     }
     function getMember(Request $request,$id)
     {
@@ -142,13 +144,24 @@ class MembersController extends Controller
     function getMemberByDesignation(Request $request,$org_id,$designation_id)
     {
         $members='';
-        if($designation_id!=7 && $designation_id!=8 && $designation_id!=9)
+        $tenant_type=2;
+        $des_details  = Designation::where('designation_id',$designation_id)->get();
+        $user_type = $des_details[0]['designation_user_type'];
+        if($user_type==1)
         {
-            $members = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.mem_designation',$designation_id)->where('users.mem_org_id',$org_id)->select('users.mem_id','users.mem_name','users.mem_last_name','users.mem_designation','tbl_designation_master.designation_name','users.email','users.mobile_no')->get();
+            $members = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.active_status',1)->where('users.mem_designation',$designation_id)->where('users.mem_org_id',$org_id)->select('users.mem_id','users.mem_name','users.mem_last_name','users.mem_designation','tbl_designation_master.designation_name','users.email','users.mobile_no')->get();
         }
         else
         {
-            $members = Tenant::join('tbl_designation_master','tbl_designation_master.designation_id','=','tbl_tenant_master.tenant_designation')->where('tbl_tenant_master.tenant_designation',$designation_id)->select('tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_tenant_master.email','tbl_designation_master.designation_name','tbl_tenant_master.email','tbl_tenant_master.tenant_mobile')->get();
+            if($designation_id==7)
+            {
+                $tenant_type = 1;
+            }
+            if($designation_id==8)
+            {
+                $tenant_type = 2;
+            }
+            $members = Tenant::join('tbl_designation_master','tbl_designation_master.designation_id','=','tbl_tenant_master.tenant_designation')->where('tbl_tenant_master.active_status',1)->where('tenant_type',$tenant_type)->select('tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_tenant_master.email','tbl_designation_master.designation_name','tbl_tenant_master.email','tbl_tenant_master.tenant_mobile')->get();
         }
         // return response()->json(['response'=>$members], 200);
         echo json_encode($members);
@@ -168,6 +181,26 @@ class MembersController extends Controller
             $returnData = $members->find($members->id);
             echo json_encode($returnData); 
         } 
+    }
+    function retreiveMembersforProject(Request $request)
+    {
+        $designations = explode(',',$request->input('designations'));
+        for($i=0;$i<count($designations);$i++)
+        {
+            $des_details  = Designation::where('designation_id',$designations[$i])->get();
+            if($des_details[0]['designation_user_type']==1)
+            {
+                $members = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.active_status',1)->where('users.mem_designation',$des_details[0]['designation_id'])->where('users.mem_org_id',$request->input('org_id'))->select('users.mem_id','users.mem_name','users.mem_last_name','users.mem_designation','tbl_designation_master.designation_name','users.email','users.mobile_no')->get();
+            }
+            else
+            {
+
+                $members = Tenant::join('tbl_designation_master','tbl_designation_master.designation_id','=','tbl_tenant_master.tenant_designation')->where('tbl_tenant_master.active_status',1)->select('tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_tenant_master.email','tbl_designation_master.designation_name','tbl_tenant_master.email','tbl_tenant_master.tenant_mobile')->get();
+            }   
+            $datas[] = $members;
+        }
+        echo json_encode($datas);
+         
     }
     
 }

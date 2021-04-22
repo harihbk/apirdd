@@ -16,7 +16,6 @@ class CreateTblInspecctionRootCategories extends Migration
         Schema::create('tbl_inspection_root_categories', function (Blueprint $table) {
             $table->increments('root_id');
             $table->mediumInteger('org_id');
-            $table->integer('mem_designation');
             $table->text('members');
             $table->text('root_name');
             $table->dateTime('created_at');

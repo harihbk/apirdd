@@ -40,6 +40,6 @@ class ChecklisttemplateController extends Controller
     function retrievebyOrg(Request $request,$orgid)
     {
         $templates = Checklisttemplate::where("org_id",$orgid)->where("isDeleted",0)->get();
-        echo json_encode($templates); 
+        return $templates; 
     }
 }

@@ -13,8 +13,10 @@ class InspectionchecklistController extends Controller
 {
     function retrievebyOrg(Request $request,$id,$tempid)
     {
-        $types = Inspectionchecklistmaster::join('tbl_inspection_root_categories', 'tbl_checklist_master.root_id','=','tbl_inspection_root_categories.root_id')->leftjoin('users',\DB::raw("FIND_IN_SET(users.mem_id,tbl_inspection_root_categories.members)"),">",\DB::raw("'0'"))->get(['tbl_checklist_master.*', 'tbl_inspection_root_categories.root_name','tbl_inspection_root_categories.mem_designation','users.mem_name'])->where("org_id",$id)->where("template_id",$tempid)->where("isDeleted",0)->groupBy('root_name');
-        echo json_encode($types); 
+        $name = Checklisttemplate::where('id',$tempid)->where('isDeleted',0)->get();
+        $types = Inspectionchecklistmaster::join('tbl_inspection_root_categories', 'tbl_checklist_master.root_id','=','tbl_inspection_root_categories.root_id')->get(['tbl_checklist_master.*', 'tbl_inspection_root_categories.root_name'])->where("org_id",$id)->where("template_id",$tempid)->where("isDeleted",0)->groupBy('root_name');
+        // $types = Inspectionchecklistmaster::join('tbl_inspection_root_categories', 'tbl_checklist_master.root_id','=','tbl_inspection_root_categories.root_id')->get(['tbl_checklist_master.*', 'tbl_inspection_root_categories.root_name'])->where("org_id",$id)->where("template_id",$tempid)->where("isDeleted",0);
+        return Response::json(["data"=>$types,"template_name"=>$name[0]['template_name']],200);
     }
     function store(Request $request)
     {
@@ -60,7 +62,9 @@ class InspectionchecklistController extends Controller
 
         if(Inspectionchecklistmaster::insert($data))
         {
-            $data = array ("message" => 'Template added successfully');
+            $types = Inspectionchecklistmaster::join('tbl_inspection_root_categories', 'tbl_checklist_master.root_id','=','tbl_inspection_root_categories.root_id')->get(['tbl_checklist_master.*', 'tbl_inspection_root_categories.root_name'])->where("template_id",$template_id->id)->where("isDeleted",0)->groupBy('root_name');
+
+            $data = array ("message" => 'Template added successfully',"data"=>$types);
             $response = Response::json($data,200);
             echo json_encode($response);
         }
@@ -90,7 +94,7 @@ class InspectionchecklistController extends Controller
         
              if($types>0)
              {
-                 $returnData = Inspectionchecklistmaster::find($request->input('org_id'));
+                 $returnData = Inspectionchecklistmaster::join('tbl_inspection_root_categories', 'tbl_checklist_master.root_id','=','tbl_inspection_root_categories.root_id')->get(['tbl_checklist_master.*', 'tbl_inspection_root_categories.root_name'])->where("template_id",$request->input('template_id'))->where("isDeleted",0)->groupBy('root_name');
                  $data = array ("message" => 'Inspection Checklist Updated successfully',"data" => $returnData );
                  $response = Response::json($data,200);
                  echo json_encode($response); 

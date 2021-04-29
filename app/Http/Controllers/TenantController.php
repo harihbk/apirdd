@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\Tenant;
 use App\Models\Projecttemplate;
 use App\Models\Projectdocs;
+use App\Models\Designation;
 use Response;
 use Validator;
 use GuzzleHttp\Client;
@@ -30,7 +31,7 @@ class TenantController extends Controller
 
             if($members>0)
             {
-                $returnData = Tenant::where("email",request('email'))->first();
+                $returnData = Tenant::leftjoin('tbl_docpath_config_master','tbl_tenant_master.org_id','=','tbl_docpath_config_master.org_id')->leftjoin('tbl_organisations_master','tbl_organisations_master.org_id','=','tbl_tenant_master.org_id')->where("email",request('email'))->first();
                 $user_response = array('token_type' =>  $finalres->getData()->token_type,
                             'access_token' => $finalres->getData()->access_token,
                             'refresh_token' => $finalres->getData()->refresh_token,
@@ -38,7 +39,10 @@ class TenantController extends Controller
                             'first_name' => $returnData->tenant_name,
                             'last_name' => $returnData->tenant_last_name,
                             'org_id' => $returnData->org_id,
+                            'org_code' => $returnData->org_code,
                             'mem_type' => $returnData->tenant_type,
+                            'doc_path' => $returnData->doc_path,
+                            'image_path' => $returnData->image_path
                             );
                             return response()->json(['user_info'=>$user_response], 200);
             }
@@ -129,7 +133,7 @@ class TenantController extends Controller
             'tenant_name' => 'required',
             'email' => 'required',
             'tenant_mobile' => 'required',
-            'tenant_designation' => 'required',
+            // 'tenant_designation' => 'required',
             'tenant_type' => 'required',
             //'password' => 'required',
             'tenant_gender' => 'required',
@@ -143,30 +147,31 @@ class TenantController extends Controller
 
         $tenants = new Tenant();
 
-        $tenants->org_id = $request->input('org_id');
-        $tenants->company_id = $request->input('company_id');
-        $tenants->brand_name = $request->input('brand_name');
-        $tenants->tenant_name = $request->input('tenant_name');
-        $tenants->tenant_last_name = $request->input('tenant_last_name');
-        $tenants->email = $request->input('email');
-        $tenants->tenant_mobile = $request->input('tenant_mobile');
-        $tenants->tenant_designation = $request->input('tenant_designation');
-        $tenants->tenant_type = $request->input('tenant_type');
-        $tenants->tenant_address = $request->input('tenant_address');
-        $tenants->start_date = date('Y-m-d H:i:s');
-        $tenants->end_date = date('Y-m-d H:i:s');
-        $tenants->password = Hash::make($temp_pass);
-        $tenants->tenant_gender = $request->input('tenant_gender');
-        $tenants->created_at = date('Y-m-d H:i:s');
-        $tenants->updated_at = date('Y-m-d H:i:s');
-        $tenants->created_by = $request->input('user_id');
-        
-        if($tenants->save()) {
-            $returnData = $tenants->find($tenants->tenant_id);
-            $data = array ("message" => 'Tenant added successfully',"data" => $returnData );
-            $response = Response::json($data,200);
-            echo json_encode($response); 
-        }  
+
+            $tenants->org_id = $request->input('org_id');
+            $tenants->company_id = $request->input('company_id');
+            $tenants->brand_name = $request->input('brand_name');
+            $tenants->tenant_name = $request->input('tenant_name');
+            $tenants->tenant_last_name = $request->input('tenant_last_name');
+            $tenants->email = $request->input('email');
+            $tenants->tenant_mobile = $request->input('tenant_mobile');
+            $tenants->tenant_designation = $request->input('tenant_designation');
+            $tenants->tenant_type = $request->input('tenant_type');
+            $tenants->tenant_address = $request->input('tenant_address');
+            $tenants->start_date = date('Y-m-d H:i:s');
+            $tenants->end_date = date('Y-m-d H:i:s');
+            $tenants->password = Hash::make($temp_pass);
+            $tenants->tenant_gender = $request->input('tenant_gender');
+            $tenants->created_at = date('Y-m-d H:i:s');
+            $tenants->updated_at = date('Y-m-d H:i:s');
+            $tenants->created_by = $request->input('user_id');
+            
+            if($tenants->save()) {
+                $returnData = $tenants->find($tenants->tenant_id);
+                $data = array ("message" => 'Tenant added successfully',"data" => $returnData );
+                $response = Response::json($data,200);
+                echo json_encode($response); 
+            }  
     }
     function update(Request $request)
     {
@@ -221,7 +226,9 @@ class TenantController extends Controller
         $offset = 0;
         $searchTerm = $request->input('searchkey');
 
-        $query = Tenant::join('tbl_company_master','tbl_tenant_master.company_id','=','tbl_company_master.company_id')->where("tbl_tenant_master.org_id",$id)->where("tbl_tenant_master.active_status",1)->join('tbl_designation_master','tbl_tenant_master.tenant_designation','=','tbl_designation_master.designation_id')->join('users','users.mem_id','=','tbl_tenant_master.created_by')->select('tbl_tenant_master.tenant_id','tbl_tenant_master.company_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_tenant_master.email','tbl_tenant_master.tenant_mobile','tbl_tenant_master.tenant_address','tbl_tenant_master.tenant_gender','tbl_tenant_master.tenant_type','tbl_tenant_master.active_status','tbl_company_master.company_name','tbl_tenant_master.brand_name','tbl_designation_master.designation_name','tbl_tenant_master.start_date','tbl_tenant_master.end_date','users.mem_name','tbl_tenant_master.tenant_designation');
+        // $query = Tenant::join('tbl_company_master','tbl_tenant_master.company_id','=','tbl_company_master.company_id')->where("tbl_tenant_master.org_id",$id)->where("tbl_tenant_master.active_status",1)->join('tbl_designation_master','tbl_tenant_master.tenant_designation','=','tbl_designation_master.designation_id')->join('users','users.mem_id','=','tbl_tenant_master.created_by')->select('tbl_tenant_master.tenant_id','tbl_tenant_master.company_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_tenant_master.email','tbl_tenant_master.tenant_mobile','tbl_tenant_master.tenant_address','tbl_tenant_master.tenant_gender','tbl_tenant_master.tenant_type','tbl_tenant_master.active_status','tbl_company_master.company_name','tbl_tenant_master.brand_name','tbl_designation_master.designation_name','tbl_tenant_master.start_date','tbl_tenant_master.end_date','users.mem_name','tbl_tenant_master.tenant_designation');
+
+        $query = Tenant::join('tbl_company_master','tbl_tenant_master.company_id','=','tbl_company_master.company_id')->where("tbl_tenant_master.org_id",$id)->where("tbl_tenant_master.active_status",1)->join('users','users.mem_id','=','tbl_tenant_master.created_by')->select('tbl_tenant_master.tenant_id','tbl_tenant_master.company_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_tenant_master.email','tbl_tenant_master.tenant_mobile','tbl_tenant_master.tenant_address','tbl_tenant_master.tenant_gender','tbl_tenant_master.tenant_type','tbl_tenant_master.active_status','tbl_company_master.company_name','tbl_tenant_master.brand_name','tbl_tenant_master.start_date','tbl_tenant_master.end_date','users.mem_name','tbl_tenant_master.tenant_designation');
 
         if(!empty($request->input('tenant_role')))
         {
@@ -238,7 +245,7 @@ class TenantController extends Controller
         }
 
         $tenants = $query->get();
-        echo json_encode($tenants); 
+        return $tenants; 
     }
     function getTenant(Request $request,$id)
     {
@@ -314,6 +321,11 @@ class TenantController extends Controller
     {
         $investors = Tenant::join('tbl_designation_master','tbl_designation_master.designation_id','=','tbl_tenant_master.tenant_designation')->where('tbl_tenant_master.tenant_designation',$designation_id)->where('tbl_tenant_master.org_id',$org_id)->select('tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_designation','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name')->get();
         echo json_encode($investors); 
+    }
+    function retrieveTenantforprojectcontact($id,$tenanttype)
+    {
+        $query = Tenant::select('tenant_id','company_id','tenant_name','tenant_last_name','tbl_tenant_master.email','tenant_mobile','tenant_address','tenant_gender','tenant_type','active_status','brand_name','tenant_designation')->where('tenant_type',$tenanttype)->where('active_status',1)->get();
+        return $query;
     }
 
 }

@@ -276,13 +276,17 @@ class TemplateController extends Controller
 
         echo json_encode($types->groupBy('phase_name')->get()); 
     }
-    function getTemplateData($template_id)
+    function getTemplateData($template_id,$phaseid)
     {
-        $types = Templatemaster::join('tbl_designation_master as a',\DB::raw("FIND_IN_SET(a.designation_id,tbl_template_master.person)"),">",\DB::raw("'0'"))->join('tbl_designation_master as b',\DB::raw("FIND_IN_SET(b.designation_id,tbl_template_master.approvers)"),">",\DB::raw("'0'"))->join('tbl_designation_master as c',\DB::raw("FIND_IN_SET(c.designation_id,tbl_template_master.attendees)"),">",\DB::raw("'0'"))->select(DB::raw("GROUP_CONCAT(c.designation_name) as attendees_designation"),DB::raw("GROUP_CONCAT(b.designation_name) as approvers_designtion"),DB::raw("GROUP_CONCAT(a.designation_name) as person_designation"),'tbl_template_master.master_id','tbl_template_master.template_id','tbl_template_master.org_id','tbl_template_master.task_type','tbl_template_master.phase_id','tbl_template_master.activity_desc','tbl_template_master.approvers','tbl_template_master.attendees','tbl_template_master.fre_id','tbl_template_master.seq_status','tbl_template_master.seq_no','tbl_template_master.duration','tbl_template_master.start_date','tbl_template_master.end_date','tbl_template_master.file_upload_path','tbl_template_master.person')->where("tbl_template_master.template_id",$template_id)->where("tbl_template_master.isDeleted",0)->groupBy('tbl_template_master.master_id')->get();
+        if($phaseid=='' || $phaseid==null)
+        {
+            return response()->json(['response'=>"Phase Id Missing"], 411);
+        }
+        $types = Templatemaster::join('tbl_designation_master as a',\DB::raw("FIND_IN_SET(a.designation_id,tbl_template_master.person)"),">",\DB::raw("'0'"))->join('tbl_designation_master as b',\DB::raw("FIND_IN_SET(b.designation_id,tbl_template_master.approvers)"),">",\DB::raw("'0'"))->join('tbl_designation_master as c',\DB::raw("FIND_IN_SET(c.designation_id,tbl_template_master.attendees)"),">",\DB::raw("'0'"))->select(DB::raw("GROUP_CONCAT(DISTINCT c.designation_name) as attendees_designation"),DB::raw("GROUP_CONCAT(DISTINCT  b.designation_name) as approvers_designtion"),DB::raw("GROUP_CONCAT(DISTINCT a.designation_name) as person_designation"),'tbl_template_master.master_id','tbl_template_master.template_id','tbl_template_master.org_id','tbl_template_master.task_type','tbl_template_master.phase_id','tbl_template_master.activity_desc','tbl_template_master.approvers','tbl_template_master.attendees','tbl_template_master.fre_id','tbl_template_master.seq_status','tbl_template_master.seq_no','tbl_template_master.duration','tbl_template_master.start_date','tbl_template_master.end_date','tbl_template_master.file_upload_path','tbl_template_master.person')->where("tbl_template_master.template_id",$template_id)->where("tbl_template_master.phase_id",$phaseid)->where("tbl_template_master.isDeleted",0)->groupBy('tbl_template_master.master_id')->get();
 
-        $docs = Templatedocs::where("template_id",$template_id)->where("isDeleted",0)->get()->groupBy('doc_title');
+        $docs = Templatedocs::select('tbl_template_docs_master.*',DB::raw("GROUP_CONCAT(DISTINCT d.designation_name) as reviewers_designation"),DB::raw("GROUP_CONCAT(DISTINCT e.designation_name) as approvers_level1_designation"),DB::raw("GROUP_CONCAT(DISTINCT e.designation_name) as approvers_level1_designation"),DB::raw("GROUP_CONCAT(DISTINCT f.designation_name) as approvers_level2_designation"))->leftjoin('tbl_designation_master as d',\DB::raw("FIND_IN_SET(d.designation_id,tbl_template_docs_master.reviewers)"),">",\DB::raw("'0'"))->leftjoin('tbl_designation_master as e',\DB::raw("FIND_IN_SET(e.designation_id,tbl_template_docs_master.approvers_level1)"),">",\DB::raw("'0'"))->leftjoin('tbl_designation_master as f',\DB::raw("FIND_IN_SET(f.designation_id,tbl_template_docs_master.approvers_level2)"),">",\DB::raw("'0'"))->where("template_id",$template_id)->where("phase_id",$phaseid)->where("isDeleted",0)->groupBy('doc_id')->get()->groupBy('doc_header');
         
-        return Response::json(['template' => $types,'docs' => $docs],'200');    
+        return Response::json(['tasks' => $types,'docs' => $docs],'200');    
     }
     function getTemplatelist($org_id)
     {
@@ -359,7 +363,7 @@ class TemplateController extends Controller
             $designations[] = [
                 'org_id' => $org_id,
                 'template_id' => $template_id,
-                'designation' => $datas[$r],
+                'designation_id' => $datas[$r],
                 'created_by' => $user_id,
                 "created_at" => $created_at,
                 "updated_at" => $updated_at

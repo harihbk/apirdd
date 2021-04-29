@@ -97,7 +97,7 @@ class PropertiesController extends Controller
     }
     function retrieve(Request $request,$id)
     {
-        $limit = 10;
+        $limit = 1000;
         $offset = 0;
 
         $searchTerm = $request->input('searchkey');

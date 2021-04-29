@@ -11,7 +11,7 @@ class DesignationController extends Controller
 {
     function index()
     {
-        $designations = Designation::all();
+        $designations = Designation::where('designation_user_type',1)->where('active_status',1)->get();
         if($designations!=null) {
             $data = array ("message" => 'designations data',"data" => $designations );
             $response = Response::json($data,200);
@@ -92,7 +92,7 @@ class DesignationController extends Controller
     }
     function retrieveByOrg(Request $request,$id)
     {
-        $designation = Designation::where("org_id",$id)->get();
+        $designation = Designation::where("org_id",$id)->where('designation_user_type',1)->where('active_status',1)->get();
         return Response::json(["response"=>$designation],'200');
     }
     function getDesignation(Request $request,$id)

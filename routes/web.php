@@ -25,6 +25,9 @@ use App\Http\Controllers\ChecklisttemplateController;
 use App\Http\Controllers\PhaseController;
 use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\AuthorizationgrpController;
+use App\Http\Controllers\FileuploadController;
+use App\Http\Controllers\InspectionrequestController;
+
 
 
 Route::get('/clear-cache', function() {
@@ -151,6 +154,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/tenant/bydesignation/{org_id}/{designation_id}',[TenantController::class, 'getInvestorByDesignation']);
     Route::post('/tenant/update',[TenantController::class, 'update']);
     Route::post('/tenant/org/{id}',[TenantController::class, 'retrieveByOrg']);
+    Route::get('/tenantlist/org/{id}/{tenanttype}',[TenantController::class, 'retrieveTenantforprojectcontact']);
 
     //Floor
     Route::get('/floor', [FloorController::class, 'index']);
@@ -207,8 +211,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     //Template Controller
 
     /* For master template data edit and adding phase details*/
-    Route::get('/template/{template_id}', [TemplateController::class, 'getTemplateData']);
-    Route::get('/template/list/{org_id}', [TemplateController::class, 'getTemplatelist']);
+    Route::get('/template/{template_id}/{phaseid}', [TemplateController::class, 'getTemplateData']);
+    Route::get('/templatelist/{org_id}', [TemplateController::class, 'getTemplatelist']);
     Route::post('/template', [TemplateController::class, 'store']);
     Route::patch('/template/{template_id}', [TemplateController::class, 'update']);
     Route::post('/template/org/{id}/{pid}', [TemplateController::class, 'retrievebyTemplate']);
@@ -255,19 +259,33 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /*retrieve template designations */
     Route::get('/project/templatedesignations/{templateid}',[ProjectController::class, 'retrieveTemplateDesignations']);
     /* Send Mail [project workspace & on creation] - project contact details */
-    Route::get('/project/sendmail/{project_id}', [ProjectController::class, 'sendMail']);
+    Route::patch('/project/sendmail/{project_id}/{type}', [ProjectController::class, 'sendMail']);
     /* Send Mail [project Meeting task - Mom detail] */
-    Route::patch('/project/sendmommail/{project_id}/{task_id}', [ProjectController::class, 'sendMommail']);
+    Route::patch('/project/sendmommail/{project_id}/{taskid}', [ProjectController::class, 'sendMommail']);
     /* Send Mail [project Meeting task - Reminder detail] */
     Route::patch('/project/sendremindermail/{project_id}/{task_id}', [ProjectController::class, 'sendRemindermail']);
     /*Create Work Permit for project */
     Route::post('/project/workpermit/{projectid}', [ProjectController::class, 'rddcreateWorkpermit']);
     /*retrieve tasks list - meeting,todo,documents*/
-    Route::get('/project/tasklist/{projectid}/{tasktype}/{memid}/{memname}',[ProjectController::class, 'retrieveMembertasklists']);
+    Route::get('/project/tasklist/{tasktype}/{memid}/{memname}',[ProjectController::class, 'retrieveMembertasklists']);
     /*retrieve tasks approval status - meeting,todo,documents*/
     Route::get('/project/approvalstatus/{projectid}/{taskid}',[ProjectController::class, 'retrievetaskApprovalstatus']);
+    /*get document history - drawer*/
+    Route::get('/project/dochistory/{docid}',[ProjectController::class, 'getDochistory']);
+    /*Approval action on uploaded documents */
+    Route::patch('/docapproval', [ProjectController::class, 'rddperformApprovaldocaction']);
 
-    
+
+    //fileupload controller
+    /* Upload documents */
+    Route::post('/uploadfile', [FileuploadController::class, 'fileUploadPost']);
+
+
+    //Inspection checklist controller
+     /*create inspection request */
+     Route::post('/project/inspectionrequest',[InspectionrequestController::class, 'createInspectionRequest']);
+
+
 
 
 
@@ -276,8 +294,6 @@ Route::group(['middleware' => 'userauth:api'], function() {
     
     //project status - chart section
     Route::get('/getprojectstatus/{pid}', [ProjectController::class, 'getProjectstatus']);
-    
-    
     //performing action on uploaded documents
     Route::post('/memdocAction', [ProjectController::class, 'performDocaction']);
     //forwarding tasks
@@ -333,7 +349,6 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
 
 
      //project controller
-
      //work permit
      /* request work permit */
      Route::post('/investor/workpermit/{projectid}', [ProjectController::class, 'investorrequestWorkpermit']);
@@ -345,8 +360,22 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
      Route::post('/investor/inspection/{projectid}', [ProjectController::class, 'investorrequestInspection']);
      /* attendees action on scheduled meeting tasks*/
      Route::patch('/investor/attendeesmeetingaction/{project_id}', [ProjectController::class, 'investormeetingAction']);
+     /* Get project workspace data */
+     Route::get('/investor/projectworkspace/{projectid}/{propertyid}',[ProjectController::class, 'retrieveInvestorProjectworkspace']);
+     /* Get Attendee assigned project doc task lists */
+     Route::post('/investor/projectdoctasks',[ProjectController::class, 'retrieveInvestorDoctasks']);
+     /* Uploading docs and updating status */
+     Route::patch('/investor/updatedocstatus', [ProjectController::class, 'investordocActions']);
+     /* Get Attendee assigned property lists */
+     Route::get('/investor/propertylists/{memid}/{memname}',[ProjectController::class, 'retrievetenantPropertylists']);
      /* Get Attendee assigned project lists */
-     Route::get('/investor/projectlists/{memid}/{memname}',[ProjectController::class, 'retrievetenantProjectlists']);
+     Route::get('/investor/projectlists/{memid}/{memname}/{propertyid}',[ProjectController::class, 'retrievetenantProjectlists']);
+     
 
+     //Inspection Request controller
+     /* Get requested Inspection */
+     Route::post('/investor/inspectionrequestlist', [InspectionrequestController::class, 'investorinspectionList']);
+     /* Get selected Inspection data  */
+     Route::post('/investor/inspectionrequest', [InspectionrequestController::class, 'investorretrieveInspectiondata']);
 
 });

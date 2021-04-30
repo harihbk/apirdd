@@ -1887,7 +1887,6 @@ class ProjectController extends Controller
         $datas = $request->get('datas');
         $data = array();
         $validator = Validator::make($request->all(), [ 
-            'datas.*.org_id' => 'required',
             'datas.*.project_id' => 'required', 
             'datas.*.phase_id' => 'required',
             'datas.*.user_id' => 'required',
@@ -1913,7 +1912,6 @@ class ProjectController extends Controller
                      ));
                 
                      $docsHistory[] = [
-                        'org_id' => $datas[$i]['org_id'],
                         'project_id' => $datas[$i]['project_id'],
                         'doc_id' => $datas[$i]['docs'][$k]['doc_id'],
                         'file_name' => $datas[$i]['docs'][$k]['file_name'],
@@ -1931,7 +1929,7 @@ class ProjectController extends Controller
     {
         $history = Projectdocshistory::where('doc_id',$docid)->where('isDeleted',0)->get();
         $member_details = Projectdocs::where('doc_id',$docid)->select('reviewers','approvers_level1','approvers_level2')->get();
-        return response()->json(['approvers'=>$member_details,'document_history'=>$history], 401);
+        return response()->json(['approvers'=>$member_details,'document_history'=>$history], 200);
     }
     function rddperformApprovaldocaction(Request $request)
     {

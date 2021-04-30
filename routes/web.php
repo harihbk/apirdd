@@ -377,5 +377,10 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
      Route::post('/investor/inspectionrequestlist', [InspectionrequestController::class, 'investorinspectionList']);
      /* Get selected Inspection data  */
      Route::post('/investor/inspectionrequest', [InspectionrequestController::class, 'investorretrieveInspectiondata']);
+     /* update Inspection file upload details data  */
+     Route::patch('/investor/inspectionfiledetails', [InspectionrequestController::class, 'updateInspectionfiledetails']);
+     /* update selected Inspection data  */
+     Route::patch('/investor/inspectionRequestdetails', [InspectionrequestController::class, 'updateInspectionrequestdetails']);
+
 
 });

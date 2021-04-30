@@ -7,6 +7,7 @@ use App\Models\Projectinspections;
 use App\Models\Checklisttemplate;
 use App\Models\Inspectionchecklistmaster;
 use App\Models\Projectinspectionitems;
+use App\Models\Projectinspectionattachments;
 use App\Models\Project;
 use App\Models\Inspectionroot;
 use Response;
@@ -125,12 +126,13 @@ class InspectionrequestController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $query = Projectinspectionitems::leftjoin('tbl_project_inspections','tbl_project_inspections.inspection_id','=','tbl_project_inspection_items.inspection_id')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_inspections.project_id')->join('tbl_inspection_root_categories','tbl_inspection_root_categories.root_id','=','tbl_project_inspection_items.root_id')->select('tbl_inspection_root_categories.root_name','tbl_project_inspection_items.checklist_desc','tbl_project_inspection_items.rdd_actuals','tbl_project_inspection_items.remarks')->where('tbl_project_inspection_items.project_id',$request->input('project_id'))->where('tbl_project_inspection_items.inspection_id',$request->input('inspection_id'))->groupBy('tbl_project_inspection_items.id')->get()->groupBy('root_name');
+        $query = Projectinspectionitems::leftjoin('tbl_project_inspections','tbl_project_inspections.inspection_id','=','tbl_project_inspection_items.inspection_id')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_inspections.project_id')->join('tbl_inspection_root_categories','tbl_inspection_root_categories.root_id','=','tbl_project_inspection_items.root_id')->select('tbl_inspection_root_categories.root_name','tbl_project_inspection_items.id','tbl_project_inspection_items.checklist_desc','tbl_project_inspection_items.rdd_actuals','tbl_project_inspection_items.remarks')->where('tbl_project_inspection_items.project_id',$request->input('project_id'))->where('tbl_project_inspection_items.inspection_id',$request->input('inspection_id'))->groupBy('tbl_project_inspection_items.id')->get()->groupBy('root_name');
         
-        $path_details = ProjectInspections::leftjoin('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_project_inspections.phase_id')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_inspections.project_id')->select('tbl_project_inspections.inspection_type','tbl_phase_master.phase_name','tbl_projects.project_name')->where('tbl_project_inspections.project_id',$request->input('project_id'))->get();
+        $path_details = ProjectInspections::leftjoin('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_project_inspections.phase_id')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_inspections.project_id')->select('tbl_project_inspections.inspection_type','tbl_phase_master.phase_name','tbl_phase_master.phase_id','tbl_projects.project_name')->where('tbl_project_inspections.project_id',$request->input('project_id'))->get();
 
         $phase_name = $path_details[0]['phase_name'];
         $project_name = $path_details[0]['project_name'];
+        $phase_id = $path_details[0]['phase_id'];
         $inspection_type = $path_details[0]['inspection_type'];
        
         $doc_path = public_path()."".$request->input('doc_path')."".$request->input('project_id')."_".$project_name."/".$phase_name;
@@ -142,6 +144,94 @@ class InspectionrequestController extends Controller
                File::makeDirectory($img_path, 0777, true, true);
            }
         
-        return Response::json(array('doc_path' => $doc_path, 'image_path' => $img_path,'inspection_type'=>$inspection_type,'inspection_items' => $query));
+        return Response::json(array('doc_path' => $doc_path, 'image_path' => $img_path,'inspection_type'=>$inspection_type,'inspection_items' => $query,'phase_id'=>$phase_id));
+    }
+    /*Investor Update inspection details for submission */
+    function updateInspectionrequestdetails(Request $request)
+    {
+        $datas = $request->get('datas');
+        $validator = Validator::make($request->all(), [ 
+            'datas.*.project_id' => 'required',
+            'datas.*.inspection_id' => 'required',
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+        $uploaded_status=1;
+        $fileData = array();
+        //check if inspection is completed
+        $statusCount = Projectinspections::where('inspection_id',$datas[0]['inspection_id'])->where('inspection_status',$uploaded_status)->count();
+        if($statusCount>0)
+        {
+            return response()->json(['response'=>"Inspection details already submitted"], 410); 
+        }
+        else
+        {
+            for($j=0;$j<count($datas);$j++)
+            {
+                for($i=0;$i<count($datas[$j]['entries']);$i++)
+                {
+                    Projectinspectionitems::where("inspection_id",$datas[$j]['inspection_id'])->where("project_id",$datas[$j]['project_id'])->where("root_id",$datas[$j]['entries'][$i]['root_id'])->update( 
+                        array( 
+                        "rdd_actuals" => $datas[$j]['entries'][$i]['rdd_actuals'],
+                        "remarks" => $datas[$j]['entries'][$i]['remarks'],
+                        ));
+                }   
+            }
+            Projectinspections::where('inspection_id',$datas[0]['inspection_id'])->where('project_id',$datas[0]['project_id'])->update(array(
+                "inspection_status" => $uploaded_status
+            ));
+            return response()->json(['response'=>"Inspection details Updated"], 200); 
+        } 
+    }
+    /*Investor Update uploaded file details for inspection */
+    function updateInspectionfiledetails(Request $request)
+    {
+        $datas = $request->get('datas');
+        $validator = Validator::make($request->all(), [ 
+            'datas.*.project_id' => 'required',
+            'datas.*.inspection_id' => 'required',
+            'datas.*.id' => 'required',
+            'datas.*.files.*.file_name' => 'required',
+            'datas.*.files.*.file_path' => 'required',
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+        $uploaded_status=1;
+        $fileData = array();
+        $created_at = date('Y-m-d H:i:s');
+        $updated_at = date('Y-m-d H:i:s');
+
+        $statusCount = Projectinspections::where('inspection_id',$datas[0]['inspection_id'])->where('inspection_status',$uploaded_status)->count();
+        if($statusCount>0)
+        {
+            return response()->json(['response'=>"Inspection details already submitted"], 410); 
+        }
+        else
+        {
+            for($j=0;$j<count($datas);$j++)
+            {
+                for($i=0;$i<count($datas[$j]['files']);$i++)
+                {
+                    $fileData[] = [
+                        'project_id' => $datas[$j]['project_id'],
+                        'inspection_id' => $datas[$j]['inspection_id'],
+                        'inspection_item_id' => $datas[$j]['id'],
+                        "file_name" => $datas[$j]['files'][$i]['file_name'],
+                        "file_path" => $datas[$j]['files'][$i]['file_path'],
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at,
+                        "uploaded_by"=> $datas[$j]['user_id']
+                    ];
+                }
+            }
+            if(Projectinspectionattachments::insert($fileData))
+            {
+                return response()->json(['response'=>"File updated for inspection"], 200);
+            }
+        }
     }
 }

@@ -25,30 +25,9 @@ use App\Http\Controllers\ChecklisttemplateController;
 use App\Http\Controllers\PhaseController;
 use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\AuthorizationgrpController;
-use App\Http\Controllers\FileuploadController;
+use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\InspectionrequestController;
 
-
-
-Route::get('/clear-cache', function() {
-     if(Artisan::call('cache:clear'))
-     {
-          return "Cache is cleared";
-     }   
- });
-
- Route::get('/config-cache', function() {
-     if(Artisan::call('config:cache'))
-     {
-          return "Cache is cleared";
-     }
- });
-
-
- Route::get('/router-cache', function() {
-     $exitCode = Artisan::call('route:cache');
-     return "Cache is cleared";
- });
  
 
 /*
@@ -80,6 +59,10 @@ Route::group(['prefix' => '/superuser','middleware' => 'superuserauth:api'], fun
 Route::group(['middleware' => 'userauth:api'], function() {
     //Refresh Token
     Route::post('/refresh', [AuthController::class, 'getnewToken']);
+
+    //fileupload controller
+    /* Upload documents */
+    Route::post('/uploadfile',[DocumentController::class, 'docUpload']);
     
      //organisations
      Route::get('/org', [OrganisationsController::class, 'index']);
@@ -274,16 +257,25 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/project/dochistory/{docid}',[ProjectController::class, 'getDochistory']);
     /*Approval action on uploaded documents */
     Route::patch('/docapproval', [ProjectController::class, 'rddperformApprovaldocaction']);
-
-
-    //fileupload controller
-    /* Upload documents */
-    Route::post('/uploadfile', [FileuploadController::class, 'fileUploadPost']);
+    
 
 
     //Inspection checklist controller
      /*create inspection request */
      Route::post('/project/inspectionrequest',[InspectionrequestController::class, 'createInspectionRequest']);
+     /* Get selected Inspection data  */
+     Route::post('/inspectionrequestdata', [InspectionrequestController::class, 'rddretrieveInspectiondata']);
+     /* Reschedule Inspection request */
+     Route::patch('/inspectionreschedule', [InspectionrequestController::class, 'rddperforminspectionreschedule']);
+     /* update Inspection file upload details data  */
+     Route::patch('/inspectionfiledetails', [InspectionrequestController::class, 'rddupdateInspectionfiledetails']);
+     /* Generate Inspection report  */
+     Route::patch('/inspectionReport', [InspectionrequestController::class, 'rddGenerateinspectionReport']); 
+     /* Create Site Inspection report  */
+     Route::post('/siteinspectionrequest',[InspectionrequestController::class, 'createSiteinspectionRequest']);
+     /*Approval action on requested Insepection */
+    Route::patch('/inspectionapproval', [InspectionrequestController::class, 'rddperformApprovalinspections']);
+
 
 
 
@@ -370,6 +362,8 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
      Route::get('/investor/propertylists/{memid}/{memname}',[ProjectController::class, 'retrievetenantPropertylists']);
      /* Get Attendee assigned project lists */
      Route::get('/investor/projectlists/{memid}/{memname}/{propertyid}',[ProjectController::class, 'retrievetenantProjectlists']);
+     /*retrieve tasks list - meeting,todo,documents*/
+    Route::get('/investor/tasklist/{projectid}/{tasktype}/{memid}/{memname}',[ProjectController::class, 'retrieveinvestortasklists']);
      
 
      //Inspection Request controller
@@ -383,4 +377,31 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
      Route::patch('/investor/inspectionRequestdetails', [InspectionrequestController::class, 'updateInspectionrequestdetails']);
 
 
+});
+
+
+Route::get('/clear-cache', function() {
+    if(Artisan::call('cache:clear'))
+    {
+         return "Cache is cleared";
+    }   
+});
+
+Route::get('/config-cache', function() {
+    if(Artisan::call('config:cache'))
+    {
+         return "Cache is cleared";
+    }
+});
+
+
+Route::get('/router-cache', function() {
+    $exitCode = Artisan::call('route:cache');
+    return "Cache is cleared";
+});
+
+
+Route::get('/router-clear', function() {
+   $exitCode = Artisan::call('route:clear');
+   return $exitCode;
 });

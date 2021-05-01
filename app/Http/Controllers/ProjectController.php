@@ -1310,7 +1310,9 @@ class ProjectController extends Controller
 
         $inspection_details = Projectinspections::select('inspection_id','project_id','inspection_type','requested_time','checklist_id','comments','inspection_status','investor_id')->where('project_id',$projectid)->get();
 
-        $actual_inspection_reports = Inspectionreports::where('project_id',$projectid)->where('isDeleted',0)->get();
+        // $actual_inspection_reports = Inspectionreports::where('project_id',$projectid)->where('isDeleted',0)->get();
+
+        $actual_inspection_reports = Projectinspections::select('inspection_id','project_id','inspection_type','requested_time','checklist_id','comments','inspection_status','investor_id')->where('project_id',$projectid)->where('inspection_status',2)->get();
 
         $milestone_dates = Projectmilestonedates::where('project_id',$projectid)->where('active_status',1)->select('date_id','org_id','project_id','concept_submission','detailed_design_submission','unit_handover','fitout_start','fitout_completion','store_opening')->get();
 
@@ -1601,6 +1603,40 @@ class ProjectController extends Controller
             );
         }
 
+        //for work permit updates
+        $permit = $request->get('permits');
+        for($q=0;$q<count($permit);$q++)
+        {
+            Projectworkpermit::where("project_id",$projectid)->where("permit_id",$permit[$q]['permit_id'])->update(
+                array(
+                    "request_status" => $permit[$q]['request_status']
+                )
+            );
+        }
+
+        //for requested inspections
+        $inspection = $request->get('inspections');        
+        for($s=0;$s<count($inspection);$s++)
+        {
+            Projectinspections::where("project_id",$projectid)->where("inspection_id",$inspection[$s]['inspection_id'])->update(
+                array(
+                    "inspection_status" => $inspection[$s]['inspection_status']
+                )
+            );
+        }
+
+        //for requested inspections
+        $actual_inspection = $request->get('actual_inspections');        
+        for($r=0;$r<count($actual_inspection);$r++)
+        {
+            Projectinspections::where("project_id",$projectid)->where("inspection_id",$actual_inspection[$r]['inspection_id'])->update(
+                array(
+                    "report_status" => $actual_inspection[$r]['report_status']
+                )
+            );
+        }
+
+
         $returnData = Projecttemplate::select('id','org_id','project_id','task_type','activity_desc','meeting_date','meeting_start_time','meeting_end_time','approvers','attendees','mem_responsible','phase_id','fre_id','duration','seq_status','seq_no','planned_date','actual_date','fif_upload_path','task_status','isDeleted')->find($projectid);
         $data = array ("message" => 'Project Edited successfully');
         $response = Response::json($data,200);
@@ -1812,8 +1848,14 @@ class ProjectController extends Controller
         $task_lists = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.property_id','=','tbl_projects.property_id')->where('tbl_project_template.task_type',$tasktype)->whereNotIn('tbl_project_template.task_status', [$task_not_initiated_status])->where('tbl_project_template.isDeleted',0)->whereRaw("find_in_set($memid,tbl_project_template.mem_responsible)")->orWhereRaw("find_in_set($memid,tbl_project_template.approvers)")->orWhereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)")->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name')->get();
 
         return $task_lists;
+    }
+    function retrieveinvestortasklists($projectid,$tasktype,$memid,$memname)
+    {
+        $attendee = "'".$memid."-".$memname."'";
+        $task_not_initiated_status = 0;
+        $task_lists = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.property_id','=','tbl_projects.property_id')->where('tbl_project_template.task_type',$tasktype)->where('tbl_projects.project_id',$projectid)->whereNotIn('tbl_project_template.task_status', [$task_not_initiated_status])->where('tbl_project_template.isDeleted',0)->whereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)")->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name')->get();
 
-        
+        return $task_lists;
     }
     function retrievetaskApprovalstatus($projectid,$taskid)
     {

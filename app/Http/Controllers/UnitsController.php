@@ -68,7 +68,6 @@ class UnitsController extends Controller
             'unit_area' => 'required', 
             'floor_id' => 'required',
             'user_id' => 'required',
-            'active_status' => "required"
         ]);
 
         if ($validator->fails()) { 

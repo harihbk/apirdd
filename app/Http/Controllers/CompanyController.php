@@ -26,7 +26,6 @@ class CompanyController extends Controller
         $validator = Validator::make($request->all(), [ 
             'org_id' => 'required', 
             'company_name' => 'required',
-            'brand_name' => 'required',  
             'contact_person' => 'required', 
             'contact_email' => 'required', 
             'mobile_no' => 'required',
@@ -41,7 +40,6 @@ class CompanyController extends Controller
 
         $companies->org_id = $request->input('org_id');
         $companies->company_name = $request->input('company_name');
-        $companies->brand_name = $request->input('brand_name');
         $companies->contact_person = $request->input('contact_person');
         $companies->contact_email = $request->input('contact_email');
         $companies->mobile_no = $request->input('mobile_no');
@@ -62,13 +60,10 @@ class CompanyController extends Controller
             'org_id' => 'required',
             'company_id' => 'required', 
             'company_name' => 'required',
-            'brand_name' => 'required',
             'contact_person' => 'required', 
             'contact_email' => 'required', 
             'mobile_no' => 'required',
-            'user_id' => 'required',
-            'active_status' => 'required',
-
+            'user_id' => 'required'
         ]);
 
         if ($validator->fails()) { 
@@ -78,7 +73,6 @@ class CompanyController extends Controller
         $companies = Company::where("company_id",$request->input('company_id'))->update( 
             array( 
              "company_name" => $request->input('company_name'),
-             "brand_name" => $request->input('brand_name'),
              "contact_person" => $request->input('contact_person'),
              "contact_email" => $request->input('contact_email'),
              "mobile_no" => $request->input('mobile_no'),
@@ -96,9 +90,7 @@ class CompanyController extends Controller
     }
     function retrieveByOrg(Request $request,$id)
     {
-        $limit = 10;
-        $offset = 0;
-        $query = Company::where("org_id",$id)->where("active_status",1);
+        $query = Company::where("org_id",$id);
         if (!empty($request->input('searchkey')))
         {
             $query->whereLike(['company_name'], $request->input('searchkey'));
@@ -108,8 +100,8 @@ class CompanyController extends Controller
             $query->where('active_status',$request->input('active_status'));
         }
 
-        $companies = $query->offset($offset)->limit($limit)->get();
-        echo json_encode($companies); 
+        $companies = $query->get();
+        return $companies; 
     }
     function getCompany(Request $request,$id)
     {

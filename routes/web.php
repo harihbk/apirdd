@@ -257,6 +257,13 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/project/dochistory/{docid}',[ProjectController::class, 'getDochistory']);
     /*Approval action on uploaded documents */
     Route::patch('/docapproval', [ProjectController::class, 'rddperformApprovaldocaction']);
+    /* workpermit checklist status */
+    Route::get('/workpermitstatus/{projectid}', [ProjectController::class, 'rddRetrieveworkpermitstatus']);
+    /* Completion Phase - Generating FCC checklist status */
+    Route::get('/fcccheckliststatus/{projectid}', [ProjectController::class, 'rddRetrievefcccheckliststatus']);
+
+
+
     
 
 
@@ -267,14 +274,17 @@ Route::group(['middleware' => 'userauth:api'], function() {
      Route::post('/inspectionrequestdata', [InspectionrequestController::class, 'rddretrieveInspectiondata']);
      /* Reschedule Inspection request */
      Route::patch('/inspectionreschedule', [InspectionrequestController::class, 'rddperforminspectionreschedule']);
-     /* update Inspection file upload details data  */
-     Route::patch('/inspectionfiledetails', [InspectionrequestController::class, 'rddupdateInspectionfiledetails']);
+     /* Save and Send Inspection report  */
+     Route::patch('/sendinspectiondata', [InspectionrequestController::class, 'rddSendinspectiondata']); 
      /* Generate Inspection report  */
      Route::patch('/inspectionReport', [InspectionrequestController::class, 'rddGenerateinspectionReport']); 
      /* Create Site Inspection report  */
      Route::post('/siteinspectionrequest',[InspectionrequestController::class, 'createSiteinspectionRequest']);
-     /*Approval action on requested Insepection */
-    Route::patch('/inspectionapproval', [InspectionrequestController::class, 'rddperformApprovalinspections']);
+     /*Get selected Site Inspection data */
+     Route::post('/siteinspectiondata', [InspectionrequestController::class, 'rddretrievesiteInspectiondata']);
+     /* Update site Inspection report data with attachments  */
+     Route::patch('/updatesiteinspectiondetails', [InspectionrequestController::class, 'rddUpdatesiteIspectiondata']); 
+
 
 
 
@@ -348,8 +358,6 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
      Route::post('/investor/workpermitlist', [ProjectController::class, 'investorWorkpermitlist']);
      /* Get work permit types master list */
      Route::get('investor/permit/org/{id}',[WorkpermitController::class, 'retrieveByOrg']);
-     /* request inspection */
-     Route::post('/investor/inspection/{projectid}', [ProjectController::class, 'investorrequestInspection']);
      /* attendees action on scheduled meeting tasks*/
      Route::patch('/investor/attendeesmeetingaction/{project_id}', [ProjectController::class, 'investormeetingAction']);
      /* Get project workspace data */
@@ -364,6 +372,9 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
      Route::get('/investor/projectlists/{memid}/{memname}/{propertyid}',[ProjectController::class, 'retrievetenantProjectlists']);
      /*retrieve tasks list - meeting,todo,documents*/
     Route::get('/investor/tasklist/{projectid}/{tasktype}/{memid}/{memname}',[ProjectController::class, 'retrieveinvestortasklists']);
+    /* retrieve project phase wise details */
+    Route::get('investor/project/phase/{projectid}/{phase_id}', [ProjectController::class, 'investorretrieveProjectPhase']);
+
      
 
      //Inspection Request controller
@@ -373,13 +384,23 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
      Route::post('/investor/inspectionrequest', [InspectionrequestController::class, 'investorretrieveInspectiondata']);
      /* update Inspection file upload details data  */
      Route::patch('/investor/inspectionfiledetails', [InspectionrequestController::class, 'updateInspectionfiledetails']);
-     /* update selected Inspection data  */
-     Route::patch('/investor/inspectionRequestdetails', [InspectionrequestController::class, 'updateInspectionrequestdetails']);
+     /* Investor Creating Inspection request */
+     Route::post('/investor/createInspectionrequest', [InspectionrequestController::class, 'investorCreateinspectionrequest']);
+
+
+     //Checklist template master
+    Route::get('/investor/checklisttemplate/{orgid}', [ChecklisttemplateController::class, 'retrievebyOrg']);
+
+
+
+    //fileupload controller
+    /* Upload documents */
+    Route::post('/investor/uploadfile',[DocumentController::class, 'docUpload']);
 
 
 });
 
-
+//cache cleaning routes
 Route::get('/clear-cache', function() {
     if(Artisan::call('cache:clear'))
     {
@@ -388,7 +409,7 @@ Route::get('/clear-cache', function() {
 });
 
 Route::get('/config-cache', function() {
-    if(Artisan::call('config:cache'))
+    if(Artisan::call('config:clear'))
     {
          return "Cache is cleared";
     }

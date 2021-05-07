@@ -110,12 +110,9 @@ class MembersController extends Controller
     }
     function retrieveByOrg(Request $request,$id)
     {
-        $limit = 40;
-        $offset = 0;
-
         $searchTerm = $request->input('searchkey');
 
-        $query = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.active_status',1)->where('users.mem_org_id',$id)->select('users.mem_id','users.mem_org_id','users.mem_name','users.mem_signature_path','users.created_at','users.mem_last_name','users.email','users.mobile_no','users.mem_designation','tbl_designation_master.designation_name','users.gender','users.access_type','users.active_status');
+        $query = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.mem_org_id',$id)->select('users.mem_id','users.mem_org_id','users.mem_name','users.mem_signature_path','users.created_at','users.mem_last_name','users.email','users.mobile_no','users.mem_designation','tbl_designation_master.designation_name','users.gender','users.access_type','users.active_status');
 
         if (!empty($request->input('searchkey')))
         {

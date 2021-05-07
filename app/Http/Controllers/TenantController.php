@@ -129,7 +129,6 @@ class TenantController extends Controller
         $validator = Validator::make($request->all(), [ 
             'org_id' => 'required', 
             'company_id' => 'required', 
-            'brand_name' => 'required', 
             'tenant_name' => 'required',
             'email' => 'required',
             'tenant_mobile' => 'required',
@@ -150,7 +149,6 @@ class TenantController extends Controller
 
             $tenants->org_id = $request->input('org_id');
             $tenants->company_id = $request->input('company_id');
-            $tenants->brand_name = $request->input('brand_name');
             $tenants->tenant_name = $request->input('tenant_name');
             $tenants->tenant_last_name = $request->input('tenant_last_name');
             $tenants->email = $request->input('email');
@@ -158,8 +156,8 @@ class TenantController extends Controller
             $tenants->tenant_designation = $request->input('tenant_designation');
             $tenants->tenant_type = $request->input('tenant_type');
             $tenants->tenant_address = $request->input('tenant_address');
-            $tenants->start_date = date('Y-m-d H:i:s');
-            $tenants->end_date = date('Y-m-d H:i:s');
+            $tenants->start_date = $request->input('start_date');
+            $tenants->end_date = $request->input('end_date');
             $tenants->password = Hash::make($temp_pass);
             $tenants->tenant_gender = $request->input('tenant_gender');
             $tenants->created_at = date('Y-m-d H:i:s');
@@ -177,7 +175,6 @@ class TenantController extends Controller
     {
         $validator = Validator::make($request->all(), [ 
             'company_id' => 'required', 
-            'brand_name' => 'required', 
             'tenant_name' => 'required',
             'email' => 'required',
             'tenant_mobile' => 'required',
@@ -186,7 +183,6 @@ class TenantController extends Controller
             //'password' => 'required',
             'tenant_gender' => 'required',
             'tenant_address' => 'required',
-            'active_status' => 'required',
 
         ]);
 
@@ -197,7 +193,6 @@ class TenantController extends Controller
         $tenants = Tenant::where("tenant_id",$request->input('tenant_id'))->update( 
             array(
              "company_id" => $request->input('company_id'),
-             "brand_name" => $request->input('brand_name'),
              "tenant_name" => $request->input('tenant_name'),
              "tenant_last_name" => $request->input('tenant_last_name'),
              "email" => $request->input('email'),
@@ -228,7 +223,14 @@ class TenantController extends Controller
 
         // $query = Tenant::join('tbl_company_master','tbl_tenant_master.company_id','=','tbl_company_master.company_id')->where("tbl_tenant_master.org_id",$id)->where("tbl_tenant_master.active_status",1)->join('tbl_designation_master','tbl_tenant_master.tenant_designation','=','tbl_designation_master.designation_id')->join('users','users.mem_id','=','tbl_tenant_master.created_by')->select('tbl_tenant_master.tenant_id','tbl_tenant_master.company_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_tenant_master.email','tbl_tenant_master.tenant_mobile','tbl_tenant_master.tenant_address','tbl_tenant_master.tenant_gender','tbl_tenant_master.tenant_type','tbl_tenant_master.active_status','tbl_company_master.company_name','tbl_tenant_master.brand_name','tbl_designation_master.designation_name','tbl_tenant_master.start_date','tbl_tenant_master.end_date','users.mem_name','tbl_tenant_master.tenant_designation');
 
-        $query = Tenant::join('tbl_company_master','tbl_tenant_master.company_id','=','tbl_company_master.company_id')->where("tbl_tenant_master.org_id",$id)->where("tbl_tenant_master.active_status",1)->join('users','users.mem_id','=','tbl_tenant_master.created_by')->select('tbl_tenant_master.tenant_id','tbl_tenant_master.company_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_tenant_master.email','tbl_tenant_master.tenant_mobile','tbl_tenant_master.tenant_address','tbl_tenant_master.tenant_gender','tbl_tenant_master.tenant_type','tbl_tenant_master.active_status','tbl_company_master.company_name','tbl_tenant_master.brand_name','tbl_tenant_master.start_date','tbl_tenant_master.end_date','users.mem_name','tbl_tenant_master.tenant_designation');
+        $present_date = date('Y-m-d');
+        Tenant::where('org_id',$id)->where('end_date','<',$present_date)->update(
+            array(
+                "active_status" => 2
+            )
+        );
+
+        $query = Tenant::leftjoin('tbl_company_master','tbl_tenant_master.company_id','=','tbl_company_master.company_id')->where("tbl_tenant_master.org_id",$id)->leftjoin('users','users.mem_id','=','tbl_tenant_master.created_by')->select('tbl_tenant_master.tenant_id','tbl_tenant_master.company_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_tenant_master.email','tbl_tenant_master.tenant_mobile','tbl_tenant_master.tenant_address','tbl_tenant_master.tenant_gender','tbl_tenant_master.tenant_type','tbl_tenant_master.active_status','tbl_company_master.company_name','tbl_tenant_master.brand_name','tbl_tenant_master.start_date','tbl_tenant_master.end_date','users.mem_name','tbl_tenant_master.tenant_designation');
 
         if(!empty($request->input('tenant_role')))
         {

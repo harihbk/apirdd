@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use File;
 use Response;
 use Validator;
+use File;
 
 class DocumentController extends Controller
 {
@@ -20,10 +20,13 @@ class DocumentController extends Controller
            return response()->json(['error'=>$validator->errors()], 401);            
        }
 
+
        $orignalName = $request->file->getClientOriginalName();
 
 
-       $fileName = $orignalName.'.'.$request->file->extension();  
+    //    $fileName = $orignalName.'.'.$request->file->extension();  
+
+       $fileName = $orignalName;  
   
        $request->file->move($request->input('docpath'), $fileName);
 

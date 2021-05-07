@@ -179,7 +179,7 @@ class TemplateController extends Controller
                 if($datas[$i]['docs'][$j]['doc_id']!=0)
                 {
                     //update existing doc data
-                    $templates_doc = Templatedocs::where("doc_id",$datas[$i]['docs'][$j]['doc_id'])->where("org_id",$datas[$j]['org_id'])->where("template_id",$datas[$i]['template_id'])->update( 
+                    $templates_doc = Templatedocs::where("doc_id",$datas[$i]['docs'][$j]['doc_id'])->where("org_id",$datas[$i]['org_id'])->where("template_id",$datas[$i]['template_id'])->update( 
                         array( 
                          "doc_header" => $datas[$i]['docs'][$j]['doc_header'],
                          "doc_title" => $datas[$i]['docs'][$j]['doc_title'],

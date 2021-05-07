@@ -42,6 +42,8 @@ class FloorController extends Controller
         $floors->property_id = $request->input('property_id');
         $floors->floor_no = $request->input('floor_no');
         $floors->floor_code = $request->input('floor_code');
+        $floors->floor_details = $request->input('floor_details');
+        $floors->pod_image_path = $request->input('pod_image_path');
         $floors->created_at = date('Y-m-d H:i:s');
         $floors->updated_at = date('Y-m-d H:i:s');
         $floors->created_by = $request->input('user_id');        
@@ -81,6 +83,8 @@ class FloorController extends Controller
              "property_id" => $request->input('property_id'), 
              "floor_no" => $request->input('floor_no'),
              "floor_code" => $request->input('floor_code'),
+             "floor_details" => $request->input('floor_details'),
+             "pod_image_path" => $request->input('pod_image_path'),
              "updated_at" => date('Y-m-d H:i:s'),
              "active_status" => $request->input('active_status')
              ));

@@ -234,7 +234,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /*retrieve assigned project lists for orgaanisation */
     Route::post('/project/lists', [ProjectController::class, 'getMemberProjects']);
     //get active meeting tasks for the assigned projects -- For dashboard
-    Route::get('/getActivetasks/{memid}/{tasktype}', [ProjectController::class, 'getActivetasks']);
+    Route::post('/getactivetaskscount', [ProjectController::class, 'getActivetasks']);
     /* update Phase details,project phase details */
     Route::patch('/project/phase/{project_id}/{phase_id}', [ProjectController::class, 'updatePhasedetails']);
     /* update Comment,actaul date for docs type tasks */
@@ -250,7 +250,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /*Create Work Permit for project */
     Route::post('/project/workpermit/{projectid}', [ProjectController::class, 'rddcreateWorkpermit']);
     /*retrieve tasks list - meeting,todo,documents*/
-    Route::get('/project/tasklist/{tasktype}/{memid}/{memname}',[ProjectController::class, 'retrieveMembertasklists']);
+    Route::post('/project/tasklist',[ProjectController::class, 'retrieveMembertasklists']);
     /*retrieve tasks approval status - meeting,todo,documents*/
     Route::get('/project/approvalstatus/{projectid}/{taskid}',[ProjectController::class, 'retrievetaskApprovalstatus']);
     /*get document history - drawer*/
@@ -261,6 +261,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/workpermitstatus/{projectid}', [ProjectController::class, 'rddRetrieveworkpermitstatus']);
     /* Completion Phase - Generating FCC checklist status */
     Route::get('/fcccheckliststatus/{projectid}', [ProjectController::class, 'rddRetrievefcccheckliststatus']);
+    /* Completion Phase - Generating Fitout deposit refund status */
+    Route::get('/fitoutdepositcheckliststatus/{projectid}', [ProjectController::class, 'rddRetrievefitoutdepositcheckliststatus']);
 
 
 
@@ -374,6 +376,8 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
     Route::get('/investor/tasklist/{projectid}/{tasktype}/{memid}/{memname}',[ProjectController::class, 'retrieveinvestortasklists']);
     /* retrieve project phase wise details */
     Route::get('investor/project/phase/{projectid}/{phase_id}', [ProjectController::class, 'investorretrieveProjectPhase']);
+    //get active request count -- For dashboard
+    Route::post('/investor/getactivetaskscount', [ProjectController::class, 'investorgetActivetasks']);
 
      
 

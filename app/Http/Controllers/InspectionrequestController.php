@@ -245,6 +245,7 @@ class InspectionrequestController extends Controller
         $phase_name = "";
         $inspection_type = "";
         $requested_time = "";
+        $comments="";
         $query = Projectinspectionitems::leftjoin('tbl_project_inspections','tbl_project_inspections.inspection_id','=','tbl_project_inspection_items.inspection_id')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_inspections.project_id')->leftjoin('tbl_project_inspection_attachments','tbl_project_inspection_attachments.inspection_item_id','=','tbl_project_inspection_items.id')->join('tbl_inspection_root_categories','tbl_inspection_root_categories.root_id','=','tbl_project_inspection_items.root_id')->select('tbl_inspection_root_categories.root_name','tbl_project_inspection_items.id','tbl_project_inspection_items.checklist_desc','tbl_project_inspection_items.rdd_actuals','tbl_project_inspection_items.remarks',DB::raw("GROUP_CONCAT(tbl_project_inspection_attachments.investor_file_name) as investor_file_name"),DB::raw("GROUP_CONCAT(tbl_project_inspection_attachments.investor_file_path) as investor_file_path"),DB::raw("GROUP_CONCAT(tbl_project_inspection_attachments.investor_file_path) as rdd_file_path"),DB::raw("GROUP_CONCAT(tbl_project_inspection_attachments.investor_file_path) as rdd_file_name"),'tbl_project_inspection_items.investor_declarations','tbl_project_inspection_items.rdd_snags','tbl_project_inspection_items.snag_type')->where('tbl_project_inspection_items.project_id',$request->input('project_id'))->where('tbl_project_inspection_items.inspection_id',$request->input('inspection_id'))->where('tbl_project_inspection_items.isDeleted',0)->where('tbl_project_inspection_items.isRescheduled',0)->groupBy('tbl_project_inspection_items.id')->get()->groupBy('root_name');
         
         $path_details = ProjectInspections::leftjoin('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_project_inspections.phase_id')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_inspections.project_id')->select('tbl_project_inspections.inspection_type','tbl_phase_master.phase_name','tbl_phase_master.phase_id','tbl_projects.project_name','tbl_project_inspections.requested_time','tbl_project_inspections.comments')->where('tbl_project_inspections.project_id',$request->input('project_id'))->where('tbl_project_inspections.inspection_id',$request->input('inspection_id'))->get();
@@ -508,7 +509,9 @@ class InspectionrequestController extends Controller
     {
         $validator = Validator::make($request->all(), [ 
             'project_id' => 'required',
-            'inspection_id' => 'required'
+            'inspection_id' => 'required',
+            'doc_path' => 'required',
+            'img_path' => 'required',
         ]);
 
         if ($validator->fails()) { 
@@ -517,18 +520,34 @@ class InspectionrequestController extends Controller
 
         $inspection_type="";
         $phase_id="";
+        $phase_name="";
+        $project_name="";
+        $inspection_date="";
+        $comments="";
         $query = Siteinspectionitems::leftjoin('tbl_site_inspection_report','tbl_site_inspection_report.id','=','tbl_site_inspection_items.inspection_id')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_site_inspection_report.project_id')->leftjoin('tbl_site_inspection_attachments','tbl_site_inspection_attachments.inspection_item_id','=','tbl_site_inspection_items.id')->join('tbl_inspection_root_categories','tbl_inspection_root_categories.root_id','=','tbl_site_inspection_items.root_id')->select('tbl_inspection_root_categories.root_name','tbl_site_inspection_items.id','tbl_site_inspection_items.checklist_desc','tbl_site_inspection_items.rdd_actuals','tbl_site_inspection_items.remarks',DB::raw("GROUP_CONCAT(tbl_site_inspection_attachments.rdd_file_path) as rdd_file_path"),DB::raw("GROUP_CONCAT(tbl_site_inspection_attachments.rdd_file_name) as rdd_file_name"))->where('tbl_site_inspection_items.project_id',$request->input('project_id'))->where('tbl_site_inspection_items.inspection_id',$request->input('inspection_id'))->where('tbl_site_inspection_items.isDeleted',0)->groupBy('tbl_site_inspection_items.id')->get()->groupBy('root_name');
         
-        $path_details = SiteInspectionReport::leftjoin('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_site_inspection_report.phase_id')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_site_inspection_report.project_id')->select('tbl_site_inspection_report.inspection_type','tbl_phase_master.phase_name','tbl_phase_master.phase_id','tbl_projects.project_name')->where('tbl_site_inspection_report.project_id',$request->input('project_id'))->where('tbl_site_inspection_report.id',$request->input('inspection_id'))->get();
+        $path_details = SiteInspectionReport::leftjoin('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_site_inspection_report.phase_id')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_site_inspection_report.project_id')->select('tbl_site_inspection_report.inspection_type','tbl_phase_master.phase_name','tbl_phase_master.phase_id','tbl_projects.project_name','tbl_site_inspection_report.inspection_date','tbl_site_inspection_report.comments')->where('tbl_site_inspection_report.project_id',$request->input('project_id'))->where('tbl_site_inspection_report.id',$request->input('inspection_id'))->get();
 
         if(count($path_details)>0)
         {
             $phase_id = $path_details[0]['phase_id'];
             $inspection_type = $path_details[0]['inspection_type'];
+            $phase_name = $path_details[0]['phase_name'];
+            $project_name = $path_details[0]['project_name'];
+            $inspection_date = $path_details[0]['inspection_date'];
+            $comments = $path_details[0]['comments'];
         }
 
+        $doc_path = public_path()."".$request->input('doc_path')."".$request->input('project_id')."_".$project_name."/".$phase_name."/site_inspections/".$request->input('inspection_id')."_".$path_details[0]['inspection_type'];
+            $img_path = public_path()."".$request->input('img_path')."".$request->input('project_id')."_".$project_name."/".$phase_name."/site_inspections/".$request->input('inspection_id')."_".$path_details[0]['inspection_type'];
+            if(!File::isDirectory($doc_path)){
+                File::makeDirectory($doc_path, 0777, true, true);
+            }
+            if(!File::isDirectory($img_path)){
+                File::makeDirectory($img_path, 0777, true, true);
+            }
 
-        return Response::json(array('inspection_type'=>$inspection_type,'inspection_items' => $query,'phase_id'=>$phase_id));
+        return Response::json(array('doc_path'=>$doc_path,'image_path'=>$img_path,'inspection_type'=>$inspection_type,'inspection_items' => $query,'phase_id'=>$phase_id,'inspection_date'=>$inspection_date,'comments'=>$comments));
     }
     /* Investor - Get creating Inspection request */
     function investorcreateInspectionRequest(Request $request)

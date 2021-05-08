@@ -150,8 +150,83 @@ class AuthorizationgrpController extends Controller
     }
     function getAuthgrpData($id)
     {
-        $name = Authorizationgrp::where('id',$id)->where('isDeleted',0)->get();
-        echo json_encode($name);
+        $auth_grp_content = Authorizationgrp::leftjoin('tbl_authorization_group_content','tbl_authorization_group_content.group_id','=','tbl_authorization_groups.id')->leftjoin('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_authorization_group_content.phase_id')->where('tbl_authorization_groups.id',$id)->where('tbl_authorization_groups.isDeleted',0)->get()->groupBy('phase_name');
+
+        $auth_milestone = Authorizationgrp::leftjoin('tbl_authorization_group_milestones','tbl_authorization_group_milestones.group_id','=','tbl_authorization_groups.id')->leftjoin('tbl_milestone_config_master','tbl_milestone_config_master.config_id','=','tbl_authorization_group_milestones.config_id')->select('tbl_milestone_config_master.type_name','tbl_milestone_config_master.date_type','tbl_authorization_group_milestones.*')->where('tbl_authorization_groups.id',$id)->where('tbl_authorization_groups.isDeleted',0)->get()->groupBy('date_type');
+
+        $workspace_fields = Authorizationgrp::leftjoin('tbl_authgrp_workspace_fields','tbl_authgrp_workspace_fields.group_id','=','tbl_authorization_groups.id')->leftjoin('tbl_project_workspace_master','tbl_project_workspace_master.id','=','tbl_authgrp_workspace_fields.content_id')->where('tbl_authorization_groups.id',$id)->where('tbl_authorization_groups.isDeleted',0)->get()->groupBy('content');
+
+        $workspace_sections = Authorizationgrp::leftjoin('tbl_authgrp_workspace_sections','tbl_authgrp_workspace_sections.group_id','=','tbl_authorization_groups.id')->leftjoin('tbl_project_workspace_sections','tbl_project_workspace_sections.id','=','tbl_authgrp_workspace_sections.content_id')->where('tbl_authorization_groups.id',$id)->where('tbl_authorization_groups.isDeleted',0)->get()->groupBy('content');
+
+        return Response::json(array('auth_grp_content' => $auth_grp_content,'auth_milestone' => $auth_milestone,"workspace_fields"=>$workspace_fields,"workspace_sections"=>$workspace_sections));
     }
-    
+    function editAuthorizationgrp(Request $request)
+    {
+        $created_at = date('Y-m-d H:i:s');
+        $updated_at = date('Y-m-d H:i:s');
+
+        $datas = $request->get('datas');
+
+        $validator = Validator::make($request->all(), [
+            'datas.group_name' => 'required',
+            'datas.user_id' => 'required',
+            'datas.id' => 'required',
+            'datas.project_creation' => 'required',
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['response'=>$validator->errors()], 401);            
+        }
+
+
+        for($i=0;$i<count($datas['content']);$i++)
+        {
+            Authorizationgrpcontent::where('group_id',$datas['id'])->where('id',$datas['content'][$i]['id'])->update(
+                array(
+                    "content_description"=> $datas['content'][$i]['content_description'],
+                    "project_display"=> $datas['content'][$i]['project_display'],
+                    "project_edit"=> $datas['content'][$i]['project_edit'],
+                    "template_display"=> $datas['content'][$i]['template_display'],
+                    "template_edit"=> $datas['content'][$i]['template_edit'],
+                    "updated_at" => $updated_at
+                )
+            );
+        }
+
+        for($j=0;$j<count($datas['auth_milestone']);$j++)
+        {
+            Authorizationgrpmilestone::where('group_id',$datas['id'])->where('id',$datas['auth_milestone'][$j]['id'])->update(
+                array(
+                    "edit"=> $datas['auth_milestone'][$j]['edit'],
+                    "updated_at"=> $updated_at
+                )
+            );
+        }
+        for($k=0;$k<count($datas['workspace_fields']);$k++)
+        {
+            Authgrpworkspacefields::where('group_id',$datas['id'])->where('id',$datas['workspace_fields'][$k]['id'])->update(
+                array(
+                    "display"=> $datas['workspace_fields'][$k]['display'],
+                    "edit"=> $datas['workspace_fields'][$k]['edit'],
+                    "updated_at"=> $updated_at
+                )
+            );
+        }
+        for($l=0;$l<count($datas['workspace_sections']);$l++)
+        {
+            Authgrpworkspacesections::where('group_id',$datas['id'])->where('id',$datas['workspace_sections'][$l]['id'])->update(
+                array(
+                    "display"=> $datas['workspace_sections'][$l]['display'],
+                    "edit"=> $datas['workspace_sections'][$l]['edit'],
+                    "change"=> $datas['workspace_sections'][$l]['change'],
+                    "updated_at"=> $updated_at
+                )
+            );
+        }
+    $returnData = Authorizationgrp::where('id',$datas['id'])->get();
+    $data = array ("message" => 'Auth group Edited successfully',"data" => $returnData );
+    return Response::json($data,200);
+}
+
+
 }

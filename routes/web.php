@@ -27,6 +27,7 @@ use App\Http\Controllers\ConfigController;
 use App\Http\Controllers\AuthorizationgrpController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\InspectionrequestController;
+use App\Http\Controllers\NotificationController;
 
  
 
@@ -263,6 +264,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/fcccheckliststatus/{projectid}', [ProjectController::class, 'rddRetrievefcccheckliststatus']);
     /* Completion Phase - Generating Fitout deposit refund status */
     Route::get('/fitoutdepositcheckliststatus/{projectid}', [ProjectController::class, 'rddRetrievefitoutdepositcheckliststatus']);
+    Route::get('/checking/{projectid}/{phaseid}/{taskid}', [ProjectController::class, 'checking']);
 
 
 
@@ -339,6 +341,14 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/authgrpcontent', [AuthorizationgrpController::class, 'getMastercontent']);
     /*Creating authorization group */
     Route::post('/authgrp', [AuthorizationgrpController::class, 'createAuthorizationgrp']);
+    Route::patch('/updateauthgrp', [AuthorizationgrpController::class, 'editAuthorizationgrp']);
+
+
+    //notification controller
+    /*Get Active notifications for logged in user */
+    Route::get('/notifications/{memid}/{usertype}', [NotificationController::class, 'getNotifications']);
+    /*Update Active notifications for logged in user as visited*/
+    Route::patch('/updatenotifications', [NotificationController::class, 'updateNotifications']);
 });
 
 
@@ -400,6 +410,12 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
     //fileupload controller
     /* Upload documents */
     Route::post('/investor/uploadfile',[DocumentController::class, 'docUpload']);
+
+    //notification controller
+    /*Get Active notifications for logged in user */
+    Route::get('/investor/notifications/{memid}/{usertype}', [NotificationController::class, 'getNotifications']);
+    /*Update Active notifications for logged in user as visited*/
+    Route::patch('/investor/updatenotifications', [NotificationController::class, 'updateNotifications']);
 
 
 });

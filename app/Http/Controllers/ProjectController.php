@@ -34,6 +34,7 @@ use App\Models\ProjectdocsApproval;
 use App\Models\Checklisttemplate;
 use App\Models\Inspectionchecklistmaster;
 use App\Models\Projectinspectionitems;
+use App\Models\Notifications;
 use Response;
 use Validator;
 use Illuminate\Support\Facades\Mail;
@@ -81,6 +82,10 @@ class ProjectController extends Controller
 
         }
     }
+    function checking($projectid,$phaseid,$taskid)
+    {
+       
+    }   
     function store(Request $request)
     {
         $project = new Project();
@@ -222,6 +227,7 @@ class ProjectController extends Controller
         $contact = $request->get('contact_details');
         $mobile_num = null;
         $contact_people = array();
+        $contactNotifications = array();
 
         for($i=0;$i<count($contact);$i++) 
         {
@@ -236,6 +242,15 @@ class ProjectController extends Controller
                 'created_by' => $projectdata[0]['user_id'],
             ];
             $contact_people[] = $contact[$i]['email'];
+
+            $contactNotifications[]=[
+                "project_id" => $project_id,
+                "content" => "Project ".$projectdata[0]['project_name']." has been created",
+                "user" => $contact[$i]['member_id'],
+                "user_type" => ($contact[$i]['member_designation']==13?2:$contact[$i]['member_designation']==14)?2:1,
+                "created_at" => $created_at,
+                "updated_at" => $updated_at
+            ];
         }
 
         $validator3 = Validator::make($request->all(), [ 
@@ -351,7 +366,7 @@ class ProjectController extends Controller
                 if(!File::isDirectory($img_path)){
                     File::makeDirectory($img_path, 0777, true, true);
                 }
-
+            Notifications::insert($contactNotifications);
             $returnData = Project::select('project_id','project_name','created_at')->find($project->project_id);
             $data = array ("message" => 'Project Created successfully',"data" => $returnData );
             $response = Response::json($data,200);
@@ -601,6 +616,7 @@ class ProjectController extends Controller
         $project_meeting_approvers_approved_status=3;
         $project_meeting_attendees_approved_status=4;
         $updated_at = date('Y-m-d H:i:s');
+        $created_at = date('Y-m-d H:i:s');
         $memid = $request->input('user_id');
 
         //check if this user is responsible person for this task
@@ -620,6 +636,10 @@ class ProjectController extends Controller
         $approvers_list = explode(',',$request->input('approvers'));
         $attendees_list = explode(',',$request->input('attendees'));
         $approvers_array = [];
+        $approverNotifications = array();
+
+        $taskDetails = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.phase_id',$request->input('phase_id'))->where('tbl_project_template.id',$request->input('id'))->select('tbl_project_template.*','tbl_projects.project_name')->get();
+
 
        for($k=0;$k<count($approvers_list);$k++)
        {
@@ -632,6 +652,16 @@ class ProjectController extends Controller
            ];
            $approvers = Members::where('mem_id',$approvers_list[$k])->first();
            $approvers_array[]= $approvers->email;
+
+           $approverNotifications[]=[
+            "project_id" => $project_id,
+            "content" =>  $request->input('meeting_topic')." for Project ".$taskDetails[0]['project_name']." has been created.Kindly make Approval action",
+            "user" => $approvers_list[$k],
+            "user_type" => 1,
+            "created_at" => $created_at,
+            "updated_at" => $updated_at
+        ];
+
        }
        for($j=0;$j<count($attendees_list);$j++)
        {
@@ -659,9 +689,10 @@ class ProjectController extends Controller
                 "updated_at" => $updated_at
                 )
             );
-            // Mail::to($approvers_array)->send(new projectmeeting());
+            Mail::to($approvers_array)->send(new projectmeeting());
             if($tasks>0)
             {
+                Notifications::insert($approverNotifications);
                 $returnData = Projecttemplate::find($request->input('id'));
                 $data = array ("message" => 'Meeting has been Schdeuled successfully',"data" => $returnData );
                 $response = Response::json($data,200);
@@ -691,6 +722,7 @@ class ProjectController extends Controller
         $project_task_approval_status=3;
         $task_rescheduled_status=2;
         $updated_at = date('Y-m-d H:i:s');
+        $created_at = date('Y-m-d H:i:s');
         $attendees_list = explode(',',$request->input('attendees'));
         $persons_list = explode(',',$request->input('responsible_person'));
         $attendees_array = [];
@@ -699,6 +731,8 @@ class ProjectController extends Controller
             return response()->json(['errors'=>$validator->errors()], 401);            
         }
         $memid = $request->input('approver');
+        $taskDetails = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.phase_id',$request->input('phase_id'))->where('tbl_project_template.id',$request->input('id'))->select('tbl_project_template.*','tbl_projects.project_name')->get();
+
         //check if user belongs to approver of this task
         $userCheck = Projecttemplate::where('project_id',$project_id)->where('phase_id',$request->input('phase_id'))->where('id',$request->input('id'))->whereRaw("find_in_set($memid,tbl_project_template.approvers)")->get();
         if(count($userCheck)==0)
@@ -726,17 +760,32 @@ class ProjectController extends Controller
             }
             else
             {
+                $attendeeNotifications = array();
                 /* Mail to attendees about meeting notifications */
                 for($j=0;$j<count($attendees_list);$j++)
                 {
+                    $user_type=1;
+                    $mem_id=0;
                     $exp  = explode("-",$attendees_list[$j]);
                     $attendees = Members::where('mem_id',explode("-",$exp[0]))->where('mem_name',explode("-",$exp[1]))->first();
+                    $mem_id = $attendees!=null?$attendees->mem_id:0;
                     if($attendees==null)
                     {
                         $attendees = Tenant::where('tenant_id',explode("-",$exp[0]))->where('tenant_name',explode("-",$exp[1]))->first();
+                        $mem_id = $attendees->tenant_id;
+                        $user_type=2;
                     }    
                     $attendees_array[]= $attendees->email;  
+                    $attendeeNotifications[]=[
+                        "project_id" => $project_id,
+                        "content" =>  $taskDetails[0]['meeting_topic']." for Project ".$taskDetails[0]['project_name']." has been created.Kindly make Approval action",
+                        "user" => $mem_id,
+                        "user_type" => $user_type,
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at
+                    ];
                 }
+                Notifications::insert($attendeeNotifications);
                 Mail::to($attendees_array)->send(new projectmeeting());
                 Projecttemplate::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("id",$request->input('id'))->update(
                  array(
@@ -761,12 +810,22 @@ class ProjectController extends Controller
 
             if($reject>0)
             {
+                $responsibleNotifications = array();
                 /* Mail to responsible person about meeting cancelled notifications */
                 for($k=0;$k<count($persons_list);$k++)
                 {
                     $responsible_person = Members::where('mem_id',$persons_list[$k])->first();
                     $persons_array[]= $responsible_person->email;  
+                    $responsibleNotifications[]=[
+                        "project_id" => $project_id,
+                        "content" =>  $taskDetails[0]['meeting_topic']." for Project ".$taskDetails[0]['project_name']." has been rejected by Approvers.",
+                        "user" => $responsible_person->mem_id,
+                        "user_type" => 1,
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at
+                    ];
                 }
+                Notifications::insert($responsibleNotifications);
                 Mail::to($persons_array)->send(new Meetingrejection());
                 Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->update(
                     array(
@@ -803,6 +862,7 @@ class ProjectController extends Controller
             return response()->json(['errors'=>$validator->errors()], 401);            
         }
         $updated_at = date('Y-m-d H:i:s');
+        $created_at = date('Y-m-d H:i:s');
         $yet_to_approve=0;
         $inprogress_task=0;
         $project_task_approval_status=4;
@@ -813,7 +873,7 @@ class ProjectController extends Controller
         $memid = $request->input('attendee');
         $persons_array = [];
         $persons_list = explode(',',$request->input('responsible_person'));
-        $taskdata = Projecttemplate::where('project_id',$project_id)->where('phase_id',$request->input('phase_id'))->where('id',$request->input('id'))->first();
+        $taskdata = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.phase_id',$request->input('phase_id'))->where('tbl_project_template.id',$request->input('id'))->select('tbl_project_template.*','tbl_projects.project_name')->first();
         $a = explode(',',$taskdata['attendees']);
         for($z=0;$z<count($a);$z++)
         {
@@ -845,12 +905,23 @@ class ProjectController extends Controller
             }
             else
             {
+                $approverNotifications = array();
                 /* Mail to responsible person about meeting Confirmed notifications */
                 for($k=0;$k<count($persons_list);$k++)
                 {
                     $responsible_person = Members::where('mem_id',$persons_list[$k])->first();
-                    $persons_array[]= $responsible_person->email;  
+                    $persons_array[]= $responsible_person->email; 
+                    
+                    $approverNotifications[]=[
+                        "project_id" => $project_id,
+                        "content" =>  $taskdata['meeting_topic']." for Project ".$taskdata['project_name']." has been Approved",
+                        "user" => $persons_list[$k],
+                        "user_type" => 1,
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at
+                    ];
                 }
+                Notifications::insert($approverNotifications);
                 Mail::to($persons_array)->send(new Projectmeeting());
                 Projecttemplate::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("id",$request->input('id'))->update(
                     array(
@@ -893,12 +964,22 @@ class ProjectController extends Controller
                     "updated_at"=>$updated_at
                 ));
 
+                $approverNotifications = array();
                 /* Mail to responsible person about meeting Confirmed notifications */
                 for($l=0;$l<count($persons_list);$l++)
                 {
                     $responsible_person = Members::where('mem_id',$persons_list[$l])->first();
                     $persons_array[]= $responsible_person->email;  
+                    $approverNotifications[]=[
+                        "project_id" => $project_id,
+                        "content" =>  $taskdata['meeting_topic']." for Project ".$taskdata['project_name']." has been Approved",
+                        "user" => $persons_list[$l],
+                        "user_type" => 1,
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at
+                    ];
                 }
+                Notifications::insert($approverNotifications);
                 Mail::to($persons_array)->send(new Meetingrejection());
 
                 $returnData = Projecttemplate::find($request->input('id'));
@@ -922,6 +1003,7 @@ class ProjectController extends Controller
             return response()->json(['errors'=>$validator->errors()], 401);            
         }
         $updated_at = date('Y-m-d H:i:s');
+        $created_at = date('Y-m-d H:i:s');
         $yet_to_approve=0;
         $inprogress_task=0;
         $project_task_approval_status=4;
@@ -932,7 +1014,7 @@ class ProjectController extends Controller
         $memid = $request->input('attendee');
         $persons_array = [];
         $persons_list = explode(',',$request->input('responsible_person'));
-        $taskdata = Projecttemplate::where('project_id',$project_id)->where('phase_id',$request->input('phase_id'))->where('id',$request->input('id'))->first();
+        $taskdata = Projecttemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.phase_id',$request->input('phase_id'))->where('tbl_project_template.id',$request->input('id'))->select('tbl_project_template.*','tbl_projects.project_name')->first();
         $a = explode(',',$taskdata['attendees']);
         for($z=0;$z<count($a);$z++)
         {
@@ -964,12 +1046,24 @@ class ProjectController extends Controller
             }
             else
             {
+                $responsibleNotifications = array();
                 /* Mail to responsible person about meeting Confirmed notifications */
                 for($k=0;$k<count($persons_list);$k++)
                 {
                     $responsible_person = Members::where('mem_id',$persons_list[$k])->first();
                     $persons_array[]= $responsible_person->email;  
+
+                    $responsibleNotifications[]=[
+                        "project_id" => $project_id,
+                        "content" =>  $taskdata['meeting_topic']." for Project ".$taskdata['project_name']." has been Approved",
+                        "user" => $persons_list[$k],
+                        "user_type" => 1,
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at
+                    ];
+
                 }
+                Notifications::insert($responsibleNotifications);
                 Mail::to($persons_array)->send(new Projectmeeting());
                 Projecttemplate::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("id",$request->input('id'))->update(
                     array(
@@ -1011,13 +1105,23 @@ class ProjectController extends Controller
                     "task_status"=>$project_task_rejection_status,
                     "updated_at"=>$updated_at
                 ));
-
+                $responsibleNotifications = array();
                 /* Mail to responsible person about meeting Confirmed notifications */
                 for($l=0;$l<count($persons_list);$l++)
                 {
                     $responsible_person = Members::where('mem_id',$persons_list[$l])->first();
                     $persons_array[]= $responsible_person->email;  
+
+                    $responsibleNotifications[]=[
+                        "project_id" => $project_id,
+                        "content" =>  $taskdata['meeting_topic']." for Project ".$taskdata['project_name']." has been Rejected",
+                        "user" => $persons_list[$l],
+                        "user_type" => 1,
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at
+                    ];
                 }
+                Notifications::insert($responsibleNotifications);
                 Mail::to($persons_array)->send(new Meetingrejection());
 
                 $returnData = Projecttemplate::find($request->input('id'));
@@ -1780,45 +1884,82 @@ class ProjectController extends Controller
         }
 
         $data = array();
+        $created_at = date('Y-m-d H:i:s');
+        $updated_at = date('Y-m-d H:i:s');
         $attachment_files = array();
         $data['subject'] = $request->input('subject');
         $data['content'] = $request->input('content');
         $project_meeting_completed_status = 1;
-        $task_data = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->select('tbl_project_template.id','tbl_project_template.project_id','tbl_project_template.template_id','tbl_project_template.task_type','activity_desc','meeting_date','meeting_start_time','meeting_end_time','attendees','attendees_designation','approvers','approvers_designation','tbl_project_template.phase_id','mem_responsible','mem_responsible_designation','fre_id','duration','seq_status','seq_no','planned_date','actual_date','tbl_project_template.fif_upload_path','task_status',DB::raw("GROUP_CONCAT(DISTINCT a.email) as member_responsible_person"),DB::raw("GROUP_CONCAT(DISTINCT b.email) as approvers_person"),'tbl_project_template.org_id','tbl_projects.project_name')->leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,TRIM(tbl_project_template.mem_responsible))"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_project_template.approvers)"),">",\DB::raw("'0'"))->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.id',$task_id)->where('tbl_project_template.task_status',$project_meeting_completed_status)->where('tbl_project_template.isDeleted',0)->groupBy('tbl_project_template.id')->get();
+        $task_data = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->select('tbl_project_template.id','tbl_project_template.project_id','tbl_project_template.template_id','tbl_project_template.task_type','activity_desc','meeting_date','meeting_start_time','meeting_end_time','attendees','attendees_designation','approvers','approvers_designation','tbl_project_template.phase_id','mem_responsible','mem_responsible_designation','fre_id','duration','seq_status','seq_no','planned_date','actual_date','tbl_project_template.fif_upload_path','task_status',DB::raw("GROUP_CONCAT(DISTINCT a.email) as member_responsible_person"),DB::raw("GROUP_CONCAT(DISTINCT b.email) as approvers_person"),'tbl_project_template.org_id','tbl_projects.project_name','tbl_project_template.meeting_topic')->leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,TRIM(tbl_project_template.mem_responsible))"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_project_template.approvers)"),">",\DB::raw("'0'"))->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.id',$task_id)->where('tbl_project_template.task_status',$project_meeting_completed_status)->where('tbl_project_template.isDeleted',0)->groupBy('tbl_project_template.id')->get();
         if(count($task_data)>0)
         {
             $responsible_person = array();
             $attendees_person = array();
+            $momNotifications = array();
             $person_list  = explode(',',$task_data[0]['member_responsible_person']);
             $approvers_list  = explode(',',$task_data[0]['approvers_person']);
             $attendees = explode(',',$task_data[0]['attendees']);
             for($c=0;$c<count($person_list);$c++)
             {
                 $responsible_person[] = $person_list[$c];
+                $memCheck = Members::where('email',$person_list[$c])->first();
+                $momNotifications[] = [
+                    "project_id" => $project_id,
+                    "content" =>  "You have received MOM details of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
+                    "user" => $memCheck['mem_id'],
+                    "user_type" => 1,
+                    "created_at" => $created_at,
+                    "updated_at" => $updated_at
+                ];
             }
             for($b=0;$b<count($approvers_list);$b++)
             {
                 $responsible_person[] = $approvers_list[$b];
+                $memCheck = Members::where('email',$approvers_list[$b])->first();
+                $momNotifications[] = [
+                    "project_id" => $project_id,
+                    "content" =>  "You have received MOM details of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
+                    "user" => $memCheck['mem_id'],
+                    "user_type" => 1,
+                    "created_at" => $created_at,
+                    "updated_at" => $updated_at
+                ];
             }
             for($a=0;$a<count($attendees);$a++)
             {
                 $res1 = explode('-',$attendees[$a]);
-                $memCheck = Members::where('mem_id',$res1[0])->where('mem_name',$res1[1])->where('active_status',1)->first();
-                $tenantCheck = Tenant::where('tenant_id',$res1[0])->where('tenant_name',$res1[1])->where('active_status',1)->first();
+                $memCheck = Members::where('mem_id',$res1[0])->where('mem_name',$res1[1])->first();
+                $tenantCheck = Tenant::where('tenant_id',$res1[0])->where('tenant_name',$res1[1])->first();
                 if($memCheck!=null)
                 {
                     $attendees_person[] = $memCheck['email'];
+                    $momNotifications[] = [
+                        "project_id" => $project_id,
+                        "content" =>  "You have received MOM details of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
+                        "user" => $res1[0],
+                        "user_type" => 1,
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at
+                    ];
                 }
                 if($tenantCheck!=null)
                 {
                     $attendees_person[] = $tenantCheck['email'];
+                    $momNotifications[] = [
+                        "project_id" => $project_id,
+                        "content" =>  "You have received MOM details of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
+                        "user" => $res1[0],
+                        "user_type" => 2,
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at
+                    ];
                 }
             }
+
             $data['attendees'] = $attendees_person;
             $data['responsible_person'] = $responsible_person;
-
             $attachment_files[] = $request->files;
-            
+            Notifications::insert($momNotifications);
             Mail::send('emails.projectmom', $data, function($message)use($data,$attachment_files) {
                 $message->to($data['attendees'])
                          ->cc($data['responsible_person'])
@@ -1853,36 +1994,75 @@ class ProjectController extends Controller
         $project_meeting_approver_rejected_status = 5;
         $project_meeting_attendee_rejected_status = 6;
 
-        $task_data = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->select('tbl_project_template.id','tbl_project_template.project_id','tbl_project_template.template_id','tbl_project_template.task_type','activity_desc','meeting_date','meeting_start_time','meeting_end_time','attendees','attendees_designation','approvers','approvers_designation','tbl_project_template.phase_id','mem_responsible','mem_responsible_designation','fre_id','duration','seq_status','seq_no','planned_date','actual_date','tbl_project_template.fif_upload_path','task_status',DB::raw("GROUP_CONCAT(DISTINCT a.email) as member_responsible_person"),DB::raw("GROUP_CONCAT(DISTINCT b.email) as approvers_person"),'tbl_project_template.org_id','tbl_projects.project_name')->leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,TRIM(tbl_project_template.mem_responsible))"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_project_template.approvers)"),">",\DB::raw("'0'"))->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.id',$task_id)->whereNotIn('tbl_project_template.task_status',[$project_meeting_not_scheduled_status,$project_meeting_completed_status,$project_meeting_approver_rejected_status,$project_meeting_attendee_rejected_status])->where('tbl_project_template.isDeleted',0)->groupBy('tbl_project_template.id')->get();
+        $created_at = date('Y-m-d H:i:s');
+        $updated_at = date('Y-m-d H:i:s');
+
+        $task_data = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->select('tbl_project_template.id','tbl_project_template.project_id','tbl_project_template.template_id','tbl_project_template.task_type','activity_desc','meeting_date','meeting_start_time','meeting_end_time','attendees','attendees_designation','approvers','approvers_designation','tbl_project_template.phase_id','mem_responsible','mem_responsible_designation','fre_id','duration','seq_status','seq_no','planned_date','actual_date','tbl_project_template.fif_upload_path','task_status',DB::raw("GROUP_CONCAT(DISTINCT a.email) as member_responsible_person"),DB::raw("GROUP_CONCAT(DISTINCT b.email) as approvers_person"),'tbl_project_template.org_id','tbl_projects.project_name','tbl_project_template.meeting_topic')->leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,TRIM(tbl_project_template.mem_responsible))"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_project_template.approvers)"),">",\DB::raw("'0'"))->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.id',$task_id)->whereNotIn('tbl_project_template.task_status',[$project_meeting_not_scheduled_status,$project_meeting_completed_status,$project_meeting_approver_rejected_status,$project_meeting_attendee_rejected_status])->where('tbl_project_template.isDeleted',0)->groupBy('tbl_project_template.id')->get();
         if(count($task_data)>0)
         {
             $responsible_person = array();
             $attendees_person = array();
+            $momNotifications = array();
             $person_list  = explode(',',$task_data[0]['member_responsible_person']);
             $approvers_list  = explode(',',$task_data[0]['approvers_person']);
             $attendees = explode(',',$task_data[0]['attendees']);
             for($c=0;$c<count($person_list);$c++)
             {
                 $responsible_person[] = $person_list[$c];
+                $memCheck = Members::where('email',$person_list[$c])->first();
+                $momNotifications[] = [
+                    "project_id" => $project_id,
+                    "content" =>  "You have received Reminder of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
+                    "user" => $memCheck['mem_id'],
+                    "user_type" => 1,
+                    "created_at" => $created_at,
+                    "updated_at" => $updated_at
+                ];
             }
             for($b=0;$b<count($approvers_list);$b++)
             {
                 $responsible_person[] = $approvers_list[$b];
+                $memCheck = Members::where('email',$approvers_list[$b])->first();
+                $momNotifications[] = [
+                    "project_id" => $project_id,
+                    "content" => "You have received Reminder of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
+                    "user" => $memCheck['mem_id'],
+                    "user_type" => 1,
+                    "created_at" => $created_at,
+                    "updated_at" => $updated_at
+                ];
             }
             for($a=0;$a<count($attendees);$a++)
             {
                 $res1 = explode('-',$attendees[$a]);
-                $memCheck = Members::where('mem_id',$res1[0])->where('mem_name',$res1[1])->where('active_status',1)->first();
-                $tenantCheck = Tenant::where('tenant_id',$res1[0])->where('tenant_name',$res1[1])->where('active_status',1)->first();
+                $memCheck = Members::where('mem_id',$res1[0])->where('mem_name',$res1[1])->first();
+                $tenantCheck = Tenant::where('tenant_id',$res1[0])->where('tenant_name',$res1[1])->first();
                 if($memCheck!=null)
                 {
                     $attendees_person[] = $memCheck['email'];
+                    $momNotifications[] = [
+                        "project_id" => $project_id,
+                        "content" =>  "You have received Reminder of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
+                        "user" => $res1[0],
+                        "user_type" => 1,
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at
+                    ];
                 }
                 if($tenantCheck!=null)
                 {
                     $attendees_person[] = $tenantCheck['email'];
+                    $momNotifications[] = [
+                        "project_id" => $project_id,
+                        "content" =>  "You have received Reminder of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
+                        "user" => $res1[0],
+                        "user_type" => 2,
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at
+                    ];
                 }
             }
+            Notifications::insert($momNotifications);
             Mail::to($attendees_person)->cc($responsible_person)->send(new Meetingreminder());
             if(Mail::failures())
             {
@@ -2130,6 +2310,21 @@ class ProjectController extends Controller
             }
         }
         $approverAssigningStatus = $this->assignApprovers($datas[0]['project_id'],$datas[0]['docs'][0]['doc_id']);
+        $taskdata = Projectdocs::join('tbl_projects','tbl_projects.project_id','=','tbl_projecttasks_docs.project_id')->where('tbl_projecttasks_docs.project_id',$datas[0]['project_id'])->where('tbl_projecttasks_docs.phase_id',$datas[0]['phase_id'])->where('tbl_projecttasks_docs.doc_id',$datas[0]['docs'][0]['doc_id'])->select('tbl_projecttasks_docs.*','tbl_projects.project_name')->first();
+        $reviewers = explode(',',$taskdata['reviewers']);
+        $reviewerNotifications = array();
+        for($f=0;$f<count($reviewers);$f++)
+        {
+            $reviewerNotifications[] = [
+                "project_id" => $datas[0]['project_id'],
+                "content" =>  $taskdata['doc_title']." file for Project ".$taskdata['project_name']." has been Uploaded",
+                "user" => $reviewers[$f],
+                "user_type" => 1,
+                "created_at" => $created_at,
+                "updated_at" => $updated_at
+            ];
+        }
+        Notifications::insert($reviewerNotifications);
         Projectdocshistory::insert($docsHistory);
         return response()->json(['response'=>"Document Upload action has been registered"], 200);
     }
@@ -2165,6 +2360,9 @@ class ProjectController extends Controller
         $app1_approved_status=4;
         $app1_resubmit_status=5;
         $app2_resubmit_status=7;
+        $updated_at = date('Y-m-d H:i:s');
+
+        $taskdata = Projectdocs::join('tbl_projects','tbl_projects.project_id','=','tbl_projecttasks_docs.project_id')->where('tbl_projecttasks_docs.project_id',$request->input('project_id'))->where('tbl_projecttasks_docs.doc_id',$request->input('doc_id'))->select('tbl_projecttasks_docs.*','tbl_projects.project_name')->first();
         //check if user is authorised for approval action
         if($request->input('approver_type')==1)
         {
@@ -2177,7 +2375,8 @@ class ProjectController extends Controller
             {
                 Projectdocs::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->WhereRaw("find_in_set($memid,reviewers)")->update(
                     array(
-                        "comment" => $request->input('comment')
+                        "comment" => $request->input('comment'),
+                        "updated_at" => $updated_at
                     )
                 );
                 $docuploadcountQuery = Projectdocs::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->WhereRaw("find_in_set($memid,reviewers)")->where('doc_status',$doc_uploaded_status)->count();
@@ -2204,6 +2403,21 @@ class ProjectController extends Controller
                             $rev_count = ProjectdocsApproval::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->where('approver_type',$request->input('approver_type'))->where('approval_status',$yet_to_start)->count();
                             if($rev_count==0)
                             {
+                                //notification part
+                                $approvers1Notifications = array();
+                                $approvers1 = explode(',',$taskdata['approvers_level1']);
+                                for($f=0;$f<count($approvers1);$f++)
+                                {
+                                    $approverNotifications[]=[
+                                        "project_id" => $request->input('project_id'),
+                                        "content" =>  $taskdata['doc_title']." file for Project ".$taskdata['project_name']." has been Uploaded.Kindly make approval action",
+                                        "user" => $approvers1[$f],
+                                        "user_type" => 1,
+                                        "created_at" => $created_at,
+                                        "updated_at" => $updated_at
+                                    ];
+                                }
+                                Notifications::insert($approvers1Notifications);
                                 //update doc task status
                                 Projectdocs::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->update(
                                     array('doc_status'=>$reviewers_approved_status)
@@ -2226,7 +2440,8 @@ class ProjectController extends Controller
                             //update doc history to rejected state
                             Projectdocshistory::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->where('approval_status',$yet_to_start)->update(
                                 array(
-                                    "approval_status"=>$rejection_status
+                                    "approval_status"=>$rejection_status,
+                                    "updated_at" => $updated_at
                                 )
                             );
                             //update doc tasks status

@@ -15,6 +15,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth; 
 use Laravel\Passport\Client as OClient;
 use Hash;
+use Microsoft\Graph\Graph;
+use Microsoft\Graph\Model;
 
 class AuthController extends Controller
 {
@@ -251,6 +253,72 @@ class AuthController extends Controller
             $data = array ("message" => 'Password has been reset successfully');
             $response = Response::json($data,200);
             echo json_encode($response); 
+        }
+    }
+    /* Logging in through Outlook */
+    function outlooklogin()
+    {
+        $oauthClient = new \League\OAuth2\Client\Provider\GenericProvider([
+            'clientId'                => env('OAUTH_APP_ID'),
+            'clientSecret'            => env('OAUTH_APP_PASSWORD'),
+            'redirectUri'             => env('OAUTH_REDIRECT_URI'),
+            'urlAuthorize'            => env('OAUTH_AUTHORITY').env('OAUTH_AUTHORIZE_ENDPOINT'),
+            'urlAccessToken'          => env('OAUTH_AUTHORITY').env('OAUTH_TOKEN_ENDPOINT'),
+            'urlResourceOwnerDetails' => '',
+            'scopes'                  => env('OAUTH_SCOPES')
+          ]);
+          
+          $authUrl = $oauthClient->getAuthorizationUrl();
+          $oauthState = $oauthClient->getState();
+          // Redirect to AAD signin page
+          return redirect()->away($authUrl);
+    }
+    /*Outlook response */
+    function outlookresponse()
+    {
+        $myclient_id = env('OAUTH_APP_ID');
+        $client_secret = env('OAUTH_APP_PASSWORD');
+        $redirect_uri = env('OAUTH_REDIRECT_URI');
+
+        $authCode = $request->query('code');
+        if(isset($authCode))
+        {
+            $oauthClient = new \League\OAuth2\Client\Provider\GenericProvider([
+                'clientId'                => env('OAUTH_APP_ID'),
+                'clientSecret'            => env('OAUTH_APP_PASSWORD'),
+                'redirectUri'             => env('OAUTH_REDIRECT_URI'),
+                'urlAuthorize'            => env('OAUTH_AUTHORITY').env('OAUTH_AUTHORIZE_ENDPOINT'),
+                'urlAccessToken'          => env('OAUTH_AUTHORITY').env('OAUTH_TOKEN_ENDPOINT'),
+                'urlResourceOwnerDetails' => '',
+                'scopes'                  => env('OAUTH_SCOPES'),
+                'grant_type'              => 'authorization_code'
+              ]);
+        
+              try {
+              
+                       $accessToken = $oauthClient->getAccessToken('authorization_code', [
+                            'code' => $authCode
+                        ]);
+                      
+                        $newToken = $oauthClient->getAccessToken('refresh_token', [
+                            'refresh_token' => $accessToken->getRefreshToken()
+                          ]);
+                        
+                        $graph = new Graph();
+                        $graph->setAccessToken($accessToken->getToken());
+
+                         $user = $graph->createRequest('GET', '/me')->setReturnType(Model\User::class)->execute();
+                         echo json_encode($user->getMail());
+                }
+                catch (League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
+                    return redirect('/')
+                      ->with('error', 'Error requesting access token')
+                      ->with('errorDetail', $e->getMessage());
+                  }
+        }
+        else
+        {
+            echo "An error occured";
         }
     }
 }

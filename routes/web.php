@@ -43,6 +43,8 @@ use App\Http\Controllers\NotificationController;
 */
 
 Route::post('/login', [AuthController::class, 'login']);
+Route::get('/outlooklogin', [AuthController::class, 'outlooklogin']);
+Route::get('/outlookresponse',[LoginController::class, 'outlookresponse']);
 Route::post('/tenantlogin', [TenantController::class, 'login']);
 Route::post('/emailcheck', [AuthController::class, 'emailCheck']);
 Route::post('/otpcheck', [AuthController::class, 'otpVerification']);
@@ -85,6 +87,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/units/org/{id}/{propid}',[UnitsController::class, 'retrieveByOrg']);
     Route::post('/units/prop/{propid}/{floorid}',[UnitsController::class, 'retrieveByFloor']);
 
+
     //members
     Route::get('/members', [MembersController::class, 'index']);
     Route::post('/members', [MembersController::class, 'store']);
@@ -104,6 +107,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/designation/{id}',[DesignationController::class, 'getDesignation']);
     Route::post('/designation/update',[DesignationController::class, 'update']);
     Route::get('/designation/org/{id}',[DesignationController::class, 'retrieveByOrg']);
+    Route::get('/attendeedesignation/org/{id}',[DesignationController::class, 'retrieveAttendeedesignation']);
     
 
     //memberlevel
@@ -147,6 +151,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/floor/update',[FloorController::class, 'update']);
     Route::post('/floor/org/{id}',[FloorController::class, 'retrieveByOrg']);
     Route::post('/floor/property/{id}',[FloorController::class, 'retrieveByProperty']);
+    Route::delete('/removefloor/{propertyid}/{floorid}',[FloorController::class, 'removeFloor']);
 
     //Project Types
     Route::get('/prtypes', [ProjecttypeController::class, 'index']);
@@ -264,7 +269,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/fcccheckliststatus/{projectid}', [ProjectController::class, 'rddRetrievefcccheckliststatus']);
     /* Completion Phase - Generating Fitout deposit refund status */
     Route::get('/fitoutdepositcheckliststatus/{projectid}', [ProjectController::class, 'rddRetrievefitoutdepositcheckliststatus']);
-    Route::get('/checking/{projectid}/{phaseid}/{taskid}', [ProjectController::class, 'checking']);
+    Route::get('/checking/{project_id}', [ProjectController::class, 'checking']);
 
 
 
@@ -288,7 +293,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
      Route::post('/siteinspectiondata', [InspectionrequestController::class, 'rddretrievesiteInspectiondata']);
      /* Update site Inspection report data with attachments  */
      Route::patch('/updatesiteinspectiondetails', [InspectionrequestController::class, 'rddUpdatesiteIspectiondata']); 
-
+    //project Progress count - chart section
+    Route::get('/getprogresscount/{pid}', [ProjectController::class, 'getProjectstatus']);
 
 
 
@@ -298,8 +304,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
 
 
     
-    //project status - chart section
-    Route::get('/getprojectstatus/{pid}', [ProjectController::class, 'getProjectstatus']);
+    
     //performing action on uploaded documents
     Route::post('/memdocAction', [ProjectController::class, 'performDocaction']);
     //forwarding tasks
@@ -388,6 +393,15 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
     Route::get('investor/project/phase/{projectid}/{phase_id}', [ProjectController::class, 'investorretrieveProjectPhase']);
     //get active request count -- For dashboard
     Route::post('/investor/getactivetaskscount', [ProjectController::class, 'investorgetActivetasks']);
+    //project Progress count - chart section
+    Route::get('/investor/getprogresscount/{pid}', [ProjectController::class, 'getProjectstatus']);
+    //project pre docs path retrieval
+    Route::post('/investor/getPredocspath', [ProjectController::class, 'investorgetPredocspath']);
+    //project update predocs  
+    Route::post('/investor/updatepredoc', [ProjectController::class, 'investorcreatePredoc']);
+    //get uploaded pre opening docs list
+    Route::get('/investor/predocslist/{projectid}', [ProjectController::class, 'investorgetPredocslist']);
+
 
      
 

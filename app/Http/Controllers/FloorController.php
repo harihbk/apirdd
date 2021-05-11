@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Floor;
+use App\Models\Units;
 use App\Models\Properties;
 use Response;
 use Validator;
+use File;
 
 class FloorController extends Controller
 {
@@ -121,8 +123,51 @@ class FloorController extends Controller
     }
     function retrieveByProperty(Request $request,$id)
     {
+        $validator = Validator::make($request->all(), [ 
+            'image_path' => 'required'
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
         $floors = Floor::where("property_id",$id)->get();
-        echo json_encode($floors); 
+        $img_path = public_path()."".$request->input('image_path')."/settings/floors";
+        if(!File::isDirectory($img_path)){
+               File::makeDirectory($img_path, 0777, true, true);
+           }
+           return Response::json(array('image_path' => $img_path,'floors' => $floors));
     }
-    
+    /* Remove floor */
+    function removeFloor($propertyid,$floorid)
+    {
+        //check whether floor is assigned with unit
+        $unitCount = Units::where('property_id',$propertyid)->where('floor_id',$floorid)->count();
+        if($unitCount==0)
+        {
+            //check whether floor is last of the property
+            $floorDetails = Floor::select('floor_id')->where('property_id',$propertyid)->orderBy('floor_id','DESC')->limit(1)->get();
+            if(intval($floorDetails[0]['floor_id'])==intval($floorid))
+            {
+                //can delete floor
+                $deleteQuery = Floor::where('property_id',$propertyid)->where('floor_id',$floorid)->delete();
+                if($deleteQuery==1)
+                {
+                    return response()->json(['response'=>"Floor Removed Successfully"], 200);
+                }
+                else
+                {
+                    return response()->json(['response'=>"Floor Not Removed"], 200);
+                }
+            }   
+            else
+            {
+                return response()->json(['response'=>"Last floor Can Only be removed,cannot remove this floor"], 410);
+            }
+        }
+        else
+        {
+            return response()->json(['response'=>"Units already assigned,cannot remove this floor"], 410);
+        }
+    }
 }

@@ -52,7 +52,7 @@ class InspectionchecklistController extends Controller
         $validator = Validator::make($request->all(), [ 
             'template.org_id' => 'required', 
             'template.entries.*.root_id' => 'required',
-            'template.entries.*.checklist_desc' => 'required',
+            // 'template.entries.*.checklist_desc' => 'required',
             'template.user_id' => 'required'
         ]);
 

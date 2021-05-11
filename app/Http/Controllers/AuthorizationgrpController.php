@@ -158,7 +158,10 @@ class AuthorizationgrpController extends Controller
 
         $workspace_sections = Authorizationgrp::leftjoin('tbl_authgrp_workspace_sections','tbl_authgrp_workspace_sections.group_id','=','tbl_authorization_groups.id')->leftjoin('tbl_project_workspace_sections','tbl_project_workspace_sections.id','=','tbl_authgrp_workspace_sections.content_id')->where('tbl_authorization_groups.id',$id)->where('tbl_authorization_groups.isDeleted',0)->get()->groupBy('content');
 
-        return Response::json(array('auth_grp_content' => $auth_grp_content,'auth_milestone' => $auth_milestone,"workspace_fields"=>$workspace_fields,"workspace_sections"=>$workspace_sections));
+        $organisation_access = Authorizationgrp::leftjoin('tbl_authgrp_organisation_access','tbl_authgrp_organisation_access.group_id','=','tbl_authorization_groups.id')->leftjoin('tbl_organisations_master','tbl_organisations_master.org_id','=','tbl_authgrp_organisation_access.org_id')->select('tbl_authgrp_organisation_access.*','tbl_organisations_master.org_name')->where('tbl_authorization_groups.id',$id)->where('tbl_authorization_groups.isDeleted',0)->groupBy('tbl_authgrp_organisation_access.id')->get()->groupBy('org_name');
+
+        return Response::json(array('auth_grp_content' => $auth_grp_content,'auth_milestone' => $auth_milestone,"workspace_fields"=>$workspace_fields,"workspace_sections"=>$workspace_sections,"organisation_access"=>$organisation_access));
+        return $organisation_access;
     }
     function editAuthorizationgrp(Request $request)
     {
@@ -177,51 +180,58 @@ class AuthorizationgrpController extends Controller
         if ($validator->fails()) { 
             return response()->json(['response'=>$validator->errors()], 401);            
         }
-
-
-        for($i=0;$i<count($datas['content']);$i++)
+            for($i=0;$i<count($datas['content']);$i++)
+            {
+                Authorizationgrpcontent::where('group_id',$datas['id'])->where('id',$datas['content'][$i]['id'])->update(
+                    array(
+                        "content_description"=> $datas['content'][$i]['content_description'],
+                        "project_display"=> $datas['content'][$i]['project_display'],
+                        "project_edit"=> $datas['content'][$i]['project_edit'],
+                        "template_display"=> $datas['content'][$i]['template_display'],
+                        "template_edit"=> $datas['content'][$i]['template_edit'],
+                        "updated_at" => $updated_at
+                    )
+                );
+            }
+        
+            for($j=0;$j<count($datas['auth_milestone']);$j++)
+            {
+                Authorizationgrpmilestone::where('group_id',$datas['id'])->where('id',$datas['auth_milestone'][$j]['id'])->update(
+                    array(
+                        "edit"=> $datas['auth_milestone'][$j]['edit'],
+                        "updated_at"=> $updated_at
+                    )
+                );
+            }
+        
+            for($k=0;$k<count($datas['workspace_fields']);$k++)
+            {
+                Authgrpworkspacefields::where('group_id',$datas['id'])->where('id',$datas['workspace_fields'][$k]['id'])->update(
+                    array(
+                        "display"=> $datas['workspace_fields'][$k]['display'],
+                        "edit"=> $datas['workspace_fields'][$k]['edit'],
+                        "updated_at"=> $updated_at
+                    )
+                );
+            }
+        
+            for($l=0;$l<count($datas['workspace_sections']);$l++)
+            {
+                Authgrpworkspacesections::where('group_id',$datas['id'])->where('id',$datas['workspace_sections'][$l]['id'])->update(
+                    array(
+                        "display"=> $datas['workspace_sections'][$l]['display'],
+                        "edit"=> $datas['workspace_sections'][$l]['edit'],
+                        "change"=> $datas['workspace_sections'][$l]['change'],
+                        "updated_at"=> $updated_at
+                    )
+                );
+            }
+        for($m=0;$m<count($datas['org_access']);$m++)
         {
-            Authorizationgrpcontent::where('group_id',$datas['id'])->where('id',$datas['content'][$i]['id'])->update(
-                array(
-                    "content_description"=> $datas['content'][$i]['content_description'],
-                    "project_display"=> $datas['content'][$i]['project_display'],
-                    "project_edit"=> $datas['content'][$i]['project_edit'],
-                    "template_display"=> $datas['content'][$i]['template_display'],
-                    "template_edit"=> $datas['content'][$i]['template_edit'],
-                    "updated_at" => $updated_at
-                )
-            );
-        }
-
-        for($j=0;$j<count($datas['auth_milestone']);$j++)
-        {
-            Authorizationgrpmilestone::where('group_id',$datas['id'])->where('id',$datas['auth_milestone'][$j]['id'])->update(
-                array(
-                    "edit"=> $datas['auth_milestone'][$j]['edit'],
-                    "updated_at"=> $updated_at
-                )
-            );
-        }
-        for($k=0;$k<count($datas['workspace_fields']);$k++)
-        {
-            Authgrpworkspacefields::where('group_id',$datas['id'])->where('id',$datas['workspace_fields'][$k]['id'])->update(
-                array(
-                    "display"=> $datas['workspace_fields'][$k]['display'],
-                    "edit"=> $datas['workspace_fields'][$k]['edit'],
-                    "updated_at"=> $updated_at
-                )
-            );
-        }
-        for($l=0;$l<count($datas['workspace_sections']);$l++)
-        {
-            Authgrpworkspacesections::where('group_id',$datas['id'])->where('id',$datas['workspace_sections'][$l]['id'])->update(
-                array(
-                    "display"=> $datas['workspace_sections'][$l]['display'],
-                    "edit"=> $datas['workspace_sections'][$l]['edit'],
-                    "change"=> $datas['workspace_sections'][$l]['change'],
-                    "updated_at"=> $updated_at
-                )
-            );
+            Authgrporgaccess::where('group_id',$datas['id'])->where('id',$datas['org_access'][$m]['id'])->where('property_id',$datas['org_access'][$m]['property_id'])->update(array(
+                "org_access"=>$datas['org_access'][$m]['org_access'],
+                "property_access"=>$datas['org_access'][$m]['property_access']
+            ));
         }
     $returnData = Authorizationgrp::where('id',$datas['id'])->get();
     $data = array ("message" => 'Auth group Edited successfully',"data" => $returnData );

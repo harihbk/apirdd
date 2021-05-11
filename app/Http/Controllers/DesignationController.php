@@ -95,6 +95,11 @@ class DesignationController extends Controller
         $designation = Designation::where("org_id",$id)->where('designation_user_type',1)->where('active_status',1)->get();
         return Response::json(["response"=>$designation],'200');
     }
+    function retrieveAttendeedesignation(Request $request,$id)
+    {
+        $designation = Designation::where("org_id",$id)->where('active_status',1)->get();
+        return Response::json(["response"=>$designation],'200');
+    }
     function getDesignation(Request $request,$id)
     {
         $designation = Designation::where("designation_id",$id)->get();

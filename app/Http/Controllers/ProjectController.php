@@ -66,7 +66,28 @@ class ProjectController extends Controller
         }
         if($type==1)
         {
-            Mail::to($contact_people)->send(new Projectkickoffdocs());
+            $project_details = Project::leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->leftjoin('tbl_project_milestone_dates','tbl_project_milestone_dates.project_id','=','tbl_projects.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->select('tbl_projects.project_id','tbl_projects.project_name','tbl_projects.investor_brand','tbl_properties_master.property_name','tbl_project_milestone_dates.concept_submission','tbl_project_milestone_dates.detailed_design_submission','tbl_project_milestone_dates.unit_handover','tbl_project_milestone_dates.fitout_completion','tbl_project_milestone_dates.store_opening','users.mem_name','users.mem_last_name','users.email','tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name')->where('tbl_projects.project_id',$project_id)->where('tbl_project_contact_details.member_designation',13)->groupBy('tbl_projects.project_id')->get();
+
+            $data = array();
+            $data = [
+                "tenant_name" => $project_details[0]['tenant_name'],
+                "tenant_last_name" => $project_details[0]['tenant_last_name'],
+                "investor_brand" => $project_details[0]['investor_brand'],
+                "property_name" => $project_details[0]['property_name'],
+                "concept_submission" => date("d-m-Y", strtotime($project_details[0]['concept_submission'])),
+                "detailed_design_submission" => date("d-m-Y", strtotime($project_details[0]['detailed_design_submission'])),
+                "unit_handover" => date("d-m-Y", strtotime($project_details[0]['unit_handover'])),
+                "fitout_completion" => date("d-m-Y", strtotime($project_details[0]['fitout_completion'])),
+                "store_opening" => date("d-m-Y", strtotime($project_details[0]['store_opening'])),
+                "mem_name" => $project_details[0]['mem_name'],
+                "mem_last_name" => $project_details[0]['mem_last_name'],
+                "email" => $project_details[0]['email']
+            ];
+    
+            Mail::send('emails.projectcreation', $data, function($message)use($data,$contact_people) {
+            $message->to($contact_people)
+                    ->subject('RDD - Welcoming email');
+            });  
         }
         else
         {
@@ -82,10 +103,31 @@ class ProjectController extends Controller
 
         }
     }
-    function checking($projectid,$phaseid,$taskid)
+    function checking($project_id)
     {
-       
-    }   
+        $project_details = Project::leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->leftjoin('tbl_project_milestone_dates','tbl_project_milestone_dates.project_id','=','tbl_projects.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->select('tbl_projects.project_id','tbl_projects.project_name','tbl_projects.investor_brand','tbl_properties_master.property_name','tbl_project_milestone_dates.concept_submission','tbl_project_milestone_dates.detailed_design_submission','tbl_project_milestone_dates.unit_handover','tbl_project_milestone_dates.fitout_completion','tbl_project_milestone_dates.store_opening','users.mem_name','users.mem_last_name','users.email','tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name')->where('tbl_projects.project_id',$project_id)->where('tbl_project_contact_details.member_designation',13)->groupBy('tbl_projects.project_id')->get();
+
+        $data = array();
+        $data = [
+            "tenant_name" => $project_details[0]['tenant_name'],
+            "tenant_last_name" => $project_details[0]['tenant_last_name'],
+            "investor_brand" => $project_details[0]['investor_brand'],
+            "property_name" => $project_details[0]['property_name'],
+            "concept_submission" => date("d-m-Y", strtotime($project_details[0]['concept_submission'])),
+            "detailed_design_submission" => date("d-m-Y", strtotime($project_details[0]['detailed_design_submission'])),
+            "unit_handover" => date("d-m-Y", strtotime($project_details[0]['unit_handover'])),
+            "fitout_completion" => date("d-m-Y", strtotime($project_details[0]['fitout_completion'])),
+            "store_opening" => date("d-m-Y", strtotime($project_details[0]['store_opening'])),
+            "mem_name" => $project_details[0]['mem_name'],
+            "mem_last_name" => $project_details[0]['mem_last_name'],
+            "email" => $project_details[0]['email']
+        ];
+
+        Mail::send('emails.projectcreation', $data, function($message)use($data) {
+        $message->to('csedineshbit@gmail.com')
+                ->subject('RDD - Welcoming email');
+        });   
+}
     function store(Request $request)
     {
         $project = new Project();
@@ -248,6 +290,7 @@ class ProjectController extends Controller
                 "content" => "Project ".$projectdata[0]['project_name']." has been created",
                 "user" => $contact[$i]['member_id'],
                 "user_type" => ($contact[$i]['member_designation']==13?2:$contact[$i]['member_designation']==14)?2:1,
+                "notification_type"=>env('NOTIFY_PROJECT_CREATION'),
                 "created_at" => $created_at,
                 "updated_at" => $updated_at
             ];
@@ -327,6 +370,16 @@ class ProjectController extends Controller
 
             $certificate_generation = $fcc->save();
 
+            //make fitout deposit refund
+            $store_open_date = $milestone_dates[0]['store_opening'];
+            $fdeposit_refund = new FitoutDepositrefund();
+            $fdeposit_refund->project_id = $project_id;
+            $fdeposit_refund->doc_type = 'Deposit Refund Form';
+            $fdeposit_refund->planned_date = date('Y-m-d', strtotime($store_open_date. ' + 30 days'));
+            $fdeposit_refund->created_at = $created_at;
+            $fdeposit_refund->updated_at = $updated_at;
+
+            $deposit_refund = $fdeposit_refund->save();
 
             //map the template to project for tracking tasks
             for($r=0;$r<count($templatedetails);$r++)
@@ -580,16 +633,41 @@ class ProjectController extends Controller
 
         $design = Projecttemplate::where("project_id",$pid)->select(Projecttemplate::raw('count(*) as total_tasks'),Projecttemplate::raw('count(IF(task_status = 0, 1, NULL)) as pending_tasks'),Projecttemplate::raw('count(IF(task_status NOT IN (0,1), 1, NULL)) as inprogress_tasks'),Projecttemplate::raw('count(IF(task_status = 1, 1, NULL)) as Completed_tasks'))->where('phase_id',2)->get();
 
+        /* Design Phase */
         $design_docs = Projectdocs::where("project_id",$pid)->where("phase_id",2)->select(Projectdocs::raw('count(*) as total_tasks'),Projectdocs::raw('count(IF(doc_status = 0, 1, NULL)) as pending_tasks'),Projectdocs::raw('count(IF(doc_status NOT IN (0,8), 1, NULL)) as inprogress_tasks'),Projectdocs::raw('count(IF(doc_status = 8, 1, NULL)) as Completed_tasks'))->get();
-
-        $fitout = Projecttemplate::where("project_id",$pid)->select(Projecttemplate::raw('count(*) as total_tasks'),Projecttemplate::raw('count(IF(task_status = 0, 1, NULL)) as pending_tasks'),Projecttemplate::raw('count(IF(task_status NOT IN (0,1), 1, NULL)) as inprogress_tasks'),Projecttemplate::raw('count(IF(task_status = 1, 1, NULL)) as Completed_tasks'))->where('phase_id',3)->get();
 
         $design[0]['total_tasks'] = $design[0]['total_tasks']+$design_docs[0]['total_tasks'];
         $design[0]['pending_tasks'] = $design[0]['pending_tasks']+$design_docs[0]['pending_tasks'];
         $design[0]['inprogress_tasks'] = $design[0]['inprogress_tasks']+$design_docs[0]['inprogress_tasks'];
         $design[0]['Completed_tasks'] = $design[0]['Completed_tasks']+$design_docs[0]['Completed_tasks'];
+
+         /* Fitout Phase */
+        $fitout = Projecttemplate::where("project_id",$pid)->select(Projecttemplate::raw('count(*) as total_tasks'),Projecttemplate::raw('count(IF(task_status = 0, 1, NULL)) as pending_tasks'),Projecttemplate::raw('count(IF(task_status NOT IN (0,1), 1, NULL)) as inprogress_tasks'),Projecttemplate::raw('count(IF(task_status = 1, 1, NULL)) as Completed_tasks'))->where('phase_id',3)->get();
+
+        $work_permits = Projectworkpermit::where("project_id",$pid)->select(Projectworkpermit::raw('count(*) as total_tasks'),Projectworkpermit::raw('count(IF(request_status = 0, 1, NULL)) as pending_tasks'),Projectworkpermit::raw('count(IF(request_status IN (2), 1, NULL)) as inprogress_tasks'),Projectworkpermit::raw('count(IF(request_status = 1, 1, NULL)) as Completed_tasks'))->get();
         
-        return response()->json(['startup_phase'=>$startup,'design_phase'=>$design,'fitout' => $fitout], 200);
+        $project_inspections = Projectinspections::where("project_id",$pid)->select(Projectinspections::raw('count(*) as total_tasks'),Projectinspections::raw('count(IF(report_status = 0, 1, NULL)) as pending_tasks'),Projectinspections::raw('count(IF(report_status IN (1,3), 1, NULL)) as inprogress_tasks'),Projectworkpermit::raw('count(IF(report_status = 2, 1, NULL)) as Completed_tasks'))->get();
+        
+        $fitout[0]['total_tasks'] = $fitout[0]['total_tasks']+intval(($work_permits[0]['total_tasks']==0)?1:$work_permits[0]['total_tasks'])+intval(($project_inspections[0]['total_tasks']==0)?1:$project_inspections[0]['total_tasks']);
+        $fitout[0]['pending_tasks'] = $fitout[0]['pending_tasks']+intval(($work_permits[0]['total_tasks']==0)?1:$work_permits[0]['pending_tasks'])+intval(($project_inspections[0]['total_tasks']==0)?1:$project_inspections[0]['pending_tasks']);
+        $fitout[0]['inprogress_tasks'] = $fitout[0]['inprogress_tasks']+intval(($work_permits[0]['total_tasks']==0)?0:$work_permits[0]['inprogress_tasks'])+intval(($project_inspections[0]['total_tasks']==0)?0:$project_inspections[0]['inprogress_tasks']);
+        $fitout[0]['Completed_tasks'] = $fitout[0]['Completed_tasks']+intval(($work_permits[0]['total_tasks']==0)?0:$work_permits[0]['Completed_tasks'])+intval(($project_inspections[0]['total_tasks']==0)?0:$project_inspections[0]['Completed_tasks']);
+        
+        /*Completion Phase */
+        $completion = Projecttemplate::where("project_id",$pid)->select(Projecttemplate::raw('count(*) as total_tasks'),Projecttemplate::raw('count(IF(task_status = 0, 1, NULL)) as pending_tasks'),Projecttemplate::raw('count(IF(task_status NOT IN (0,1), 1, NULL)) as inprogress_tasks'),Projecttemplate::raw('count(IF(task_status = 1, 1, NULL)) as Completed_tasks'))->where('phase_id',4)->get();
+
+        $fitout_completion = FitoutCompletionCertificates::where('project_id',$pid)->select(FitoutCompletionCertificates::raw('count(*) as total_tasks'),FitoutCompletionCertificates::raw('count(IF(isGenerated = 0, 1, NULL)) as pending_tasks'),FitoutCompletionCertificates::raw('count(IF(isGenerated = 1, 1, NULL)) as Completed_tasks'))->get();
+
+        $pre_opening_completion = Preopeningdocs::where('project_id',$pid)->select(Preopeningdocs::raw('count(*) as total_tasks'),Preopeningdocs::raw('count(IF(doc_status = 0, 1, NULL)) as pending_tasks'),Preopeningdocs::raw('count(IF(doc_status IN (1,3), 1, NULL)) as inprogress_tasks'),Preopeningdocs::raw('count(IF(doc_status = 2, 1, NULL)) as Completed_tasks'))->get();
+
+        $fitout_deposit_refund = FitoutDepositrefund::where('project_id',$pid)->select(FitoutDepositrefund::raw('count(*) as total_tasks'),FitoutDepositrefund::raw('count(IF(isdrfGenerated = 0, 1, NULL)) as pending_tasks'),Preopeningdocs::raw('count(IF(isdrfGenerated = 1, 1, NULL)) as Completed_tasks'))->get();
+
+        $completion[0]['total_tasks'] = $completion[0]['total_tasks']+$fitout_completion[0]['total_tasks']+$pre_opening_completion[0]['total_tasks']+$fitout_deposit_refund[0]['total_tasks'];
+        $completion[0]['pending_tasks'] = $completion[0]['pending_tasks']+$fitout_completion[0]['pending_tasks']+$pre_opening_completion[0]['pending_tasks']+$fitout_deposit_refund[0]['pending_tasks'];
+        $completion[0]['inprogress_tasks'] = $completion[0]['inprogress_tasks']+$pre_opening_completion[0]['inprogress_tasks'];
+        $completion[0]['Completed_tasks'] = $completion[0]['Completed_tasks']+$fitout_completion[0]['Completed_tasks']+$pre_opening_completion[0]['Completed_tasks']+$fitout_deposit_refund[0]['Completed_tasks'];
+        
+        return response()->json(array("response"=> ['startup_phase'=>$startup,'design_phase'=>$design,'fitout_phase' => $fitout,'completion_phase'=>$completion]), 200);
     }
     function rddscheduleMeeting(Request $request,$project_id)
     {
@@ -658,6 +736,7 @@ class ProjectController extends Controller
             "content" =>  $request->input('meeting_topic')." for Project ".$taskDetails[0]['project_name']." has been created.Kindly make Approval action",
             "user" => $approvers_list[$k],
             "user_type" => 1,
+            "notification_type"=>env('NOTIFY_MEETING'),
             "created_at" => $created_at,
             "updated_at" => $updated_at
         ];
@@ -781,6 +860,7 @@ class ProjectController extends Controller
                         "content" =>  $taskDetails[0]['meeting_topic']." for Project ".$taskDetails[0]['project_name']." has been created.Kindly make Approval action",
                         "user" => $mem_id,
                         "user_type" => $user_type,
+                        "notification_type"=>env('NOTIFY_MEETING'),
                         "created_at" => $created_at,
                         "updated_at" => $updated_at
                     ];
@@ -821,6 +901,7 @@ class ProjectController extends Controller
                         "content" =>  $taskDetails[0]['meeting_topic']." for Project ".$taskDetails[0]['project_name']." has been rejected by Approvers.",
                         "user" => $responsible_person->mem_id,
                         "user_type" => 1,
+                        "notification_type"=>env('NOTIFY_MEETING'),
                         "created_at" => $created_at,
                         "updated_at" => $updated_at
                     ];
@@ -917,6 +998,7 @@ class ProjectController extends Controller
                         "content" =>  $taskdata['meeting_topic']." for Project ".$taskdata['project_name']." has been Approved",
                         "user" => $persons_list[$k],
                         "user_type" => 1,
+                        "notification_type"=>env('NOTIFY_MEETING'),
                         "created_at" => $created_at,
                         "updated_at" => $updated_at
                     ];
@@ -975,6 +1057,7 @@ class ProjectController extends Controller
                         "content" =>  $taskdata['meeting_topic']." for Project ".$taskdata['project_name']." has been Approved",
                         "user" => $persons_list[$l],
                         "user_type" => 1,
+                        "notification_type"=>env('NOTIFY_MEETING'),
                         "created_at" => $created_at,
                         "updated_at" => $updated_at
                     ];
@@ -1012,6 +1095,7 @@ class ProjectController extends Controller
         $approvers_task_rejection_status=4;
         $project_task_rejection_status=6;
         $memid = $request->input('attendee');
+        $attendee = $request->input('attendee')."-".$request->input('attendee_name');
         $persons_array = [];
         $persons_list = explode(',',$request->input('responsible_person'));
         $taskdata = Projecttemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.phase_id',$request->input('phase_id'))->where('tbl_project_template.id',$request->input('id'))->select('tbl_project_template.*','tbl_projects.project_name')->first();
@@ -1028,7 +1112,7 @@ class ProjectController extends Controller
         //if approved check for others approval and schedule meeting
         if($request->input('approval_status')==1)
         {
-            Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$request->input('attendee'))->update(
+            Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$attendee)->update(
                 array(
                     "approval_status"=>$request->input('approval_status'),
                     "updated_at"=>$updated_at
@@ -1058,6 +1142,7 @@ class ProjectController extends Controller
                         "content" =>  $taskdata['meeting_topic']." for Project ".$taskdata['project_name']." has been Approved",
                         "user" => $persons_list[$k],
                         "user_type" => 1,
+                        "notification_type"=>env('NOTIFY_MEETING'),
                         "created_at" => $created_at,
                         "updated_at" => $updated_at
                     ];
@@ -1079,7 +1164,7 @@ class ProjectController extends Controller
         }
         else
         {
-            $reject = Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$request->input('attendee'))->update(
+            $reject = Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$attendee)->update(
                 array(
                     "approval_status"=>$request->input('approval_status'),
                     "updated_at"=>$updated_at
@@ -1117,6 +1202,7 @@ class ProjectController extends Controller
                         "content" =>  $taskdata['meeting_topic']." for Project ".$taskdata['project_name']." has been Rejected",
                         "user" => $persons_list[$l],
                         "user_type" => 1,
+                        "notification_type"=>env('NOTIFY_MEETING'),
                         "created_at" => $created_at,
                         "updated_at" => $updated_at
                     ];
@@ -1470,9 +1556,9 @@ class ProjectController extends Controller
 
         $permit_details = Projectworkpermit::join('tbl_workpermit_master','tbl_workpermit_master.permit_id','=','tbl_project_workpermits.work_permit_type')->select('tbl_project_workpermits.permit_id','tbl_project_workpermits.project_id','tbl_project_workpermits.work_permit_type','tbl_project_workpermits.file_path','tbl_project_workpermits.drawing_path','tbl_project_workpermits.start_date','tbl_project_workpermits.end_date','tbl_project_workpermits.description','tbl_project_workpermits.checklist_file_path','tbl_project_workpermits.request_status','tbl_project_workpermits.investor_id','tbl_workpermit_master.permit_type')->where('project_id',$projectid)->get();
 
-        $inspection_details = Projectinspections::select('inspection_id','project_id','inspection_type','requested_time','checklist_id','comments','inspection_status','investor_id')->where('project_id',$projectid)->get();
+        $inspection_details = Projectinspections::select('inspection_id','project_id','inspection_type','requested_time','checklist_id','comments','inspection_status','report_status','investor_id')->where('project_id',$projectid)->get();
 
-        $actual_inspection_reports = Projectinspections::select('inspection_id','project_id','inspection_type','requested_time','checklist_id','comments','inspection_status','investor_id')->where('project_id',$projectid)->where('inspection_status',2)->get();
+        $actual_inspection_reports = Projectinspections::select('inspection_id','project_id','inspection_type','requested_time','checklist_id','comments','inspection_status','report_status','investor_id')->where('project_id',$projectid)->where('inspection_status',2)->get();
 
         $milestone_dates = Projectmilestonedates::where('project_id',$projectid)->where('active_status',1)->select('date_id','org_id','project_id','concept_submission','detailed_design_submission','unit_handover','fitout_start','fitout_completion','store_opening')->get();
 
@@ -1908,6 +1994,7 @@ class ProjectController extends Controller
                     "content" =>  "You have received MOM details of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
                     "user" => $memCheck['mem_id'],
                     "user_type" => 1,
+                    "notification_type"=>env('NOTIFY_MOM'),
                     "created_at" => $created_at,
                     "updated_at" => $updated_at
                 ];
@@ -1921,6 +2008,7 @@ class ProjectController extends Controller
                     "content" =>  "You have received MOM details of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
                     "user" => $memCheck['mem_id'],
                     "user_type" => 1,
+                    "notification_type"=>env('NOTIFY_MOM'),
                     "created_at" => $created_at,
                     "updated_at" => $updated_at
                 ];
@@ -1938,6 +2026,7 @@ class ProjectController extends Controller
                         "content" =>  "You have received MOM details of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
                         "user" => $res1[0],
                         "user_type" => 1,
+                        "notification_type"=>env('NOTIFY_MOM'),
                         "created_at" => $created_at,
                         "updated_at" => $updated_at
                     ];
@@ -1950,6 +2039,7 @@ class ProjectController extends Controller
                         "content" =>  "You have received MOM details of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
                         "user" => $res1[0],
                         "user_type" => 2,
+                        "notification_type"=>env('NOTIFY_MOM'),
                         "created_at" => $created_at,
                         "updated_at" => $updated_at
                     ];
@@ -1958,9 +2048,8 @@ class ProjectController extends Controller
 
             $data['attendees'] = $attendees_person;
             $data['responsible_person'] = $responsible_person;
-            $attachment_files[] = $request->files;
             Notifications::insert($momNotifications);
-            Mail::send('emails.projectmom', $data, function($message)use($data,$attachment_files) {
+            Mail::send('emails.projectmom', $data, function($message)use($data) {
                 $message->to($data['attendees'])
                          ->cc($data['responsible_person'])
                         ->subject($data["subject"])
@@ -2015,6 +2104,7 @@ class ProjectController extends Controller
                     "content" =>  "You have received Reminder of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
                     "user" => $memCheck['mem_id'],
                     "user_type" => 1,
+                    "notification_type"=>env('NOTIFY_MEETING_REMIINDER'),
                     "created_at" => $created_at,
                     "updated_at" => $updated_at
                 ];
@@ -2028,6 +2118,7 @@ class ProjectController extends Controller
                     "content" => "You have received Reminder of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
                     "user" => $memCheck['mem_id'],
                     "user_type" => 1,
+                    "notification_type"=>env('NOTIFY_MEETING_REMIINDER'),
                     "created_at" => $created_at,
                     "updated_at" => $updated_at
                 ];
@@ -2045,6 +2136,7 @@ class ProjectController extends Controller
                         "content" =>  "You have received Reminder of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
                         "user" => $res1[0],
                         "user_type" => 1,
+                        "notification_type"=>env('NOTIFY_MEETING_REMIINDER'),
                         "created_at" => $created_at,
                         "updated_at" => $updated_at
                     ];
@@ -2057,6 +2149,7 @@ class ProjectController extends Controller
                         "content" =>  "You have received Reminder of ".$task_data[0]['meeting_topic']." for Project ".$task_data[0]['project_name'],
                         "user" => $res1[0],
                         "user_type" => 2,
+                        "notification_type"=>env('NOTIFY_MEETING_REMIINDER'),
                         "created_at" => $created_at,
                         "updated_at" => $updated_at
                     ];
@@ -2185,7 +2278,7 @@ class ProjectController extends Controller
                     $task_lists->whereIn('tbl_project_tasks_approvals.approval_status', [0])->where('tbl_project_docs_approvals.approver_id',$memid);
                 }
             }
-            $task_lists = $task_lists->groupBy('tbl_projecttasks_docs.doc_id')->get()->groupBy('doc_header');
+            $task_lists = $task_lists->groupBy('doc_id')->get()->groupBy('doc_header');
         }
         return $task_lists;
     }
@@ -2320,6 +2413,7 @@ class ProjectController extends Controller
                 "content" =>  $taskdata['doc_title']." file for Project ".$taskdata['project_name']." has been Uploaded",
                 "user" => $reviewers[$f],
                 "user_type" => 1,
+                "notification_type"=>env('NOTIFY_DOCUMENT'),
                 "created_at" => $created_at,
                 "updated_at" => $updated_at
             ];
@@ -2361,6 +2455,7 @@ class ProjectController extends Controller
         $app1_resubmit_status=5;
         $app2_resubmit_status=7;
         $updated_at = date('Y-m-d H:i:s');
+        $created_at = date('Y-m-d H:i:s');
 
         $taskdata = Projectdocs::join('tbl_projects','tbl_projects.project_id','=','tbl_projecttasks_docs.project_id')->where('tbl_projecttasks_docs.project_id',$request->input('project_id'))->where('tbl_projecttasks_docs.doc_id',$request->input('doc_id'))->select('tbl_projecttasks_docs.*','tbl_projects.project_name')->first();
         //check if user is authorised for approval action
@@ -2413,6 +2508,7 @@ class ProjectController extends Controller
                                         "content" =>  $taskdata['doc_title']." file for Project ".$taskdata['project_name']." has been Uploaded.Kindly make approval action",
                                         "user" => $approvers1[$f],
                                         "user_type" => 1,
+                                        "notification_type"=>env('NOTIFY_DOCUMENT'),
                                         "created_at" => $created_at,
                                         "updated_at" => $updated_at
                                     ];
@@ -2798,7 +2894,7 @@ class ProjectController extends Controller
         $snag_status=0;
         $paid_status=16;
         $status = Project::leftjoin('tbl_fitout_completion_certificates','tbl_fitout_completion_certificates.project_id','=','tbl_projects.project_id')->where('tbl_projects.project_id',$projectid)->select('tbl_projects.project_id','tbl_projects.project_name','tbl_projects.insurance_validity_date','tbl_projects.fitout_deposit_status','tbl_projects.kfd_drawing_status','tbl_projects.owner_work')->get();
-        $snagCount = Projectinspectionitems::where('project_id',$projectid)->where('isRescheduled',0)->where('snag_type',2)->count();
+        $snagCount = Projectinspectionitems::where('project_id',$projectid)->where('isRescheduled',0)->where('snag_type',1)->count();
         if($snagCount==0)
         {
             $snag_status=1;
@@ -2815,7 +2911,7 @@ class ProjectController extends Controller
         {
             $owner_work_status=1;
         }
-        return Response::json(['kfd_drawing_status' => $kfd_drawing_status,'fitout_deposit_status' => $fitout_deposit_status,'snag_status' => $snag_status,'owner_work'=> $owner_work_status]);
+        return Response::json(array("response"=>['kfd_drawing_status' => $kfd_drawing_status,'fitout_deposit_status' => $fitout_deposit_status,'snag_status' => $snag_status,'owner_work'=> $owner_work_status]));
     }
     /*RDD member get checklist for fitout deposit refund */
     function rddRetrievefitoutdepositcheckliststatus($projectid)
@@ -2828,7 +2924,7 @@ class ProjectController extends Controller
         $snag_status=0;
         $paid_status=16;
         $status = Project::leftjoin('tbl_fitout_completion_certificates','tbl_fitout_completion_certificates.project_id','=','tbl_projects.project_id')->where('tbl_projects.project_id',$projectid)->select('tbl_projects.project_id','tbl_projects.project_name','tbl_projects.insurance_validity_date','tbl_projects.fitout_deposit_status','tbl_projects.kfd_drawing_status','tbl_projects.owner_work','tbl_fitout_completion_certificates.isGenerated')->get();
-        $snagCount = Projectinspectionitems::where('project_id',$projectid)->where('isRescheduled',0)->where('snag_type',2)->count();
+        $snagCount = Projectinspectionitems::where('project_id',$projectid)->where('isRescheduled',0)->where('snag_type',1)->count();
         if($snagCount==0)
         {
             $snag_status=1;
@@ -2849,7 +2945,7 @@ class ProjectController extends Controller
         {
             $owner_work_status=1;
         }
-        return Response::json(['kfd_drawing_status' => $kfd_drawing_status,'fitout_deposit_status' => $fitout_deposit_status,'fcc_generated_status'=>$fcc_generated_status,'snag_status' => $snag_status,'owner_work'=> $owner_work_status]);
+        return Response::json(array("response"=>['kfd_drawing_status' => $kfd_drawing_status,'fitout_deposit_status' => $fitout_deposit_status,'fcc_generated_status'=>$fcc_generated_status,'snag_status' => $snag_status,'owner_work'=> $owner_work_status]));
     }
     /*Investor Getting active task count - for dashboard */
     function investorgetActivetasks(Request $request)
@@ -2868,8 +2964,6 @@ class ProjectController extends Controller
         $memid = $request->input('user_id');
         $memname = $request->input('memname');
 
-        echo json_encode($request->input('project_id'));
-
 		$attendee = "'".$memid."-".$memname."'";
         $meeting_task_count = 0;
         $document_task_count = 0;
@@ -2882,7 +2976,68 @@ class ProjectController extends Controller
          $work_permit_count = Projectworkpermit::where('tbl_project_workpermits.project_id',$request->input('project_id'))->where('tbl_project_workpermits.isDeleted',0)->where('tbl_project_workpermits.rdd_member_id','!=',0)->count();
          $inspection_count = Projectinspections::where('tbl_project_inspections.project_id',$request->input('project_id'))->where('tbl_project_inspections.isDeleted',0)->where('tbl_project_inspections.rdd_member_id','!=',0)->count();
 
-         return Response::json(['meeting_task_count' => $meeting_task_count,'document_task_count' => $document_task_count,'work_permit_count'=>$work_permit_count,'inspection_count' => $inspection_count]);
+         return Response::json(array("response"=> ['meeting_task_count' => $meeting_task_count,'document_task_count' => $document_task_count,'work_permit_count'=>$work_permit_count,'inspection_count' => $inspection_count]));
+    }
+    /* Investor retrieving doc path for pre opening docs */
+    function investorgetPredocspath(Request $request)
+    {
+        $validator = Validator::make($request->all(), [ 
+            'doc_path' => 'required', 
+            'project_id' => 'required', 
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+        $phase_name = "Completion phase";
+        //get project details
+        $projectDetails = Project::where('project_id',$request->input('project_id'))->first();
+
+        $doc_path = public_path()."".$request->input('doc_path')."".$projectDetails['project_id']."_".$projectDetails['project_name']."/".$phase_name."/Preopening docs";
+           if(!File::isDirectory($doc_path)){
+               File::makeDirectory($doc_path, 0777, true, true);
+           }
+           
+        return Response::json(['doc_path' => $doc_path]);
+    }
+    /* Investor - Create Preopening docs */
+    function investorcreatePredoc(Request $request)
+    {
+        $created_at = date('Y-m-d H:i:s');
+        $updated_at = date('Y-m-d H:i:s');
+        $validator = Validator::make($request->all(), [ 
+            'submitted_file_path' => 'required', 
+            'project_id' => 'required',
+            'doc_title' => 'required', 
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
+        $projectDetails = Project::leftjoin('tbl_project_milestone_dates','tbl_project_milestone_dates.project_id','=','tbl_projects.project_id')->where('tbl_projects.project_id',$request->input('project_id'))->get();
+
+        $predoc = new Preopeningdocs();
+
+        $predoc->project_id = $request->input('project_id');
+        $predoc->doc_title = $request->input('doc_title');
+        $predoc->submitted_file_path = $request->input('submitted_file_path');
+        $predoc->due_date = $projectDetails[0]['store_opening'];
+        $predoc->created_at = $created_at;
+        $predoc->updated_at = $updated_at;
+
+        if($predoc->save())
+        {
+            $returnData = $predoc->find($predoc->id);
+            $data = array ("message" => 'Pre Opening doc added successfully',"data" => $returnData );
+            $response = Response::json($data,200);
+            return $response;
+        }
+    }
+    function investorgetPredocslist($projectid)
+    {
+        $predocs = Preopeningdocs::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_preopening_docs.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->where('tbl_preopening_docs.project_id',$projectid)->select('tbl_preopening_docs.*','tbl_projects.project_name','tbl_properties_master.property_name')->groupBy('tbl_preopening_docs.id')->get();
+        return response()->json(['pre_opening_docs'=>$predocs], 200); 
     }
 }
 

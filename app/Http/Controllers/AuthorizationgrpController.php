@@ -158,10 +158,9 @@ class AuthorizationgrpController extends Controller
 
         $workspace_sections = Authorizationgrp::leftjoin('tbl_authgrp_workspace_sections','tbl_authgrp_workspace_sections.group_id','=','tbl_authorization_groups.id')->leftjoin('tbl_project_workspace_sections','tbl_project_workspace_sections.id','=','tbl_authgrp_workspace_sections.content_id')->where('tbl_authorization_groups.id',$id)->where('tbl_authorization_groups.isDeleted',0)->get()->groupBy('content');
 
-        $organisation_access = Authorizationgrp::leftjoin('tbl_authgrp_organisation_access','tbl_authgrp_organisation_access.group_id','=','tbl_authorization_groups.id')->leftjoin('tbl_organisations_master','tbl_organisations_master.org_id','=','tbl_authgrp_organisation_access.org_id')->select('tbl_authgrp_organisation_access.*','tbl_organisations_master.org_name')->where('tbl_authorization_groups.id',$id)->where('tbl_authorization_groups.isDeleted',0)->groupBy('tbl_authgrp_organisation_access.id')->get()->groupBy('org_name');
+        // $organisation_access = Authorizationgrp::leftjoin('tbl_authgrp_organisation_access','tbl_authgrp_organisation_access.group_id','=','tbl_authorization_groups.id')->leftjoin('tbl_organisations_master','tbl_organisations_master.org_id','=','tbl_authgrp_organisation_access.org_id')->select('tbl_authgrp_organisation_access.*','tbl_organisations_master.org_name')->where('tbl_authorization_groups.id',$id)->where('tbl_authorization_groups.isDeleted',0)->groupBy('tbl_authgrp_organisation_access.id')->get()->groupBy('org_name');
 
-        return Response::json(array('auth_grp_content' => $auth_grp_content,'auth_milestone' => $auth_milestone,"workspace_fields"=>$workspace_fields,"workspace_sections"=>$workspace_sections,"organisation_access"=>$organisation_access));
-        return $organisation_access;
+        return Response::json(array('auth_grp_content' => $auth_grp_content,'auth_milestone' => $auth_milestone,"workspace_fields"=>$workspace_fields,"workspace_sections"=>$workspace_sections));
     }
     function editAuthorizationgrp(Request $request)
     {
@@ -226,13 +225,13 @@ class AuthorizationgrpController extends Controller
                     )
                 );
             }
-        for($m=0;$m<count($datas['org_access']);$m++)
-        {
-            Authgrporgaccess::where('group_id',$datas['id'])->where('id',$datas['org_access'][$m]['id'])->where('property_id',$datas['org_access'][$m]['property_id'])->update(array(
-                "org_access"=>$datas['org_access'][$m]['org_access'],
-                "property_access"=>$datas['org_access'][$m]['property_access']
-            ));
-        }
+        // for($m=0;$m<count($datas['org_access']);$m++)
+        // {
+        //     Authgrporgaccess::where('group_id',$datas['id'])->where('id',$datas['org_access'][$m]['id'])->where('property_id',$datas['org_access'][$m]['property_id'])->update(array(
+        //         "org_access"=>$datas['org_access'][$m]['org_access'],
+        //         "property_access"=>$datas['org_access'][$m]['property_access']
+        //     ));
+        // }
     $returnData = Authorizationgrp::where('id',$datas['id'])->get();
     $data = array ("message" => 'Auth group Edited successfully',"data" => $returnData );
     return Response::json($data,200);

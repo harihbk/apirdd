@@ -18,6 +18,7 @@ use Hash;
 use Microsoft\Graph\Graph;
 use Microsoft\Graph\Model;
 
+
 class AuthController extends Controller
 {
     public $successStatus = 200;

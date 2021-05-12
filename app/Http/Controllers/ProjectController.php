@@ -754,6 +754,7 @@ class ProjectController extends Controller
        }
        //update old approver entries for this task
        Projecttasksapproval::where('project_id',$project_id)->where('task_id',$request->input('id'))->where('phase_id',$request->input('phase_id'))->update(array("isDeleted"=>1));
+       Projectattendeeapproval::where('project_id',$project_id)->where('task_id',$request->input('id'))->where('phase_id',$request->input('phase_id'))->update(array("isDeleted"=>1));
         if(Projecttasksapproval::insert($approversData) && Projectattendeeapproval::insert($attendeesData))
         {
            //Mail to approvers about meeting notification
@@ -821,14 +822,14 @@ class ProjectController extends Controller
         //if approved check for others approval and schedule meeting
         if($request->input('approval_status')==1)
         {
-            Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("approver",$request->input('approver'))->update(
+            Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("approver",$request->input('approver'))->where("isDeleted",0)->update(
                 array(
                     "approval_status"=>$request->input('approval_status'),
                     "updated_at"=>$updated_at
                 )
               );
 
-            $approvalprogress = Projecttasksapproval::where('project_id',$project_id)->where('phase_id',$request->input('phase_id'))->where('task_id',$request->input('id'))->where('approval_status',$yet_to_approve)->where('task_status',$inprogress_task)->count();
+            $approvalprogress = Projecttasksapproval::where('project_id',$project_id)->where('phase_id',$request->input('phase_id'))->where('task_id',$request->input('id'))->where('approval_status',$yet_to_approve)->where('task_status',$inprogress_task)->where("isDeleted",0)->count();
 
             if($approvalprogress>0)
             {
@@ -881,7 +882,7 @@ class ProjectController extends Controller
         }
         else
         {
-            $reject = Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("approver",$request->input('approver'))->update(
+            $reject = Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("approver",$request->input('approver'))->where("isDeleted",0)->update(
                 array(
                     "approval_status"=>$request->input('approval_status'),
                     "updated_at"=>$updated_at
@@ -968,14 +969,14 @@ class ProjectController extends Controller
         //if approved check for others approval and schedule meeting
         if($request->input('approval_status')==1)
         {
-            Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$request->input('attendee'))->update(
+            Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$request->input('attendee'))->where("isDeleted",0)->update(
                 array(
                     "approval_status"=>$request->input('approval_status'),
                     "updated_at"=>$updated_at
                 )
               );
 
-            $approvalprogress = Projectattendeeapproval::where('project_id',$project_id)->where('phase_id',$request->input('phase_id'))->where('task_id',$request->input('id'))->where('approval_status',$yet_to_approve)->where('task_status',$inprogress_task)->count();
+            $approvalprogress = Projectattendeeapproval::where('project_id',$project_id)->where('phase_id',$request->input('phase_id'))->where('task_id',$request->input('id'))->where('approval_status',$yet_to_approve)->where('task_status',$inprogress_task)->where("isDeleted",0)->count();
 
             if($approvalprogress>0)
             {
@@ -1019,21 +1020,21 @@ class ProjectController extends Controller
         }
         else
         {
-            $reject = Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$request->input('attendee'))->update(
+            $reject = Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$request->input('attendee'))->where("isDeleted",0)->update(
                 array(
                     "approval_status"=>$request->input('approval_status'),
                     "updated_at"=>$updated_at
                 )
               );
             //attendee approvals update --attendee table
-            Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->update(
+            Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->where("isDeleted",0)->update(
             array(
                 "approval_status"=>$rejection_status,
                 "task_status" => $attendee_task_rejection_status,
                 "updated_at"=>$updated_at
             ));
             //attendee approvals update --approver table
-            Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->update(
+            Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->where("isDeleted",0)->update(
                 array(
                     "approval_status"=>$rejection_status,
                     "task_status" => $approvers_task_rejection_status,
@@ -1112,14 +1113,14 @@ class ProjectController extends Controller
         //if approved check for others approval and schedule meeting
         if($request->input('approval_status')==1)
         {
-            Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$attendee)->update(
+            Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$attendee)->where("isDeleted",0)->update(
                 array(
                     "approval_status"=>$request->input('approval_status'),
                     "updated_at"=>$updated_at
                 )
               );
 
-            $approvalprogress = Projectattendeeapproval::where('project_id',$project_id)->where('phase_id',$request->input('phase_id'))->where('task_id',$request->input('id'))->where('approval_status',$yet_to_approve)->where('task_status',$inprogress_task)->count();
+            $approvalprogress = Projectattendeeapproval::where('project_id',$project_id)->where('phase_id',$request->input('phase_id'))->where('task_id',$request->input('id'))->where('approval_status',$yet_to_approve)->where('task_status',$inprogress_task)->where("isDeleted",0)->count();
 
             if($approvalprogress>0)
             {
@@ -1164,21 +1165,21 @@ class ProjectController extends Controller
         }
         else
         {
-            $reject = Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$attendee)->update(
+            $reject = Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$attendee)->where("isDeleted",0)->update(
                 array(
                     "approval_status"=>$request->input('approval_status'),
                     "updated_at"=>$updated_at
                 )
               );
             //attendee approvals update --attendee table
-            Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->update(
+            Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->where("isDeleted",0)->update(
             array(
                 "approval_status"=>$rejection_status,
                 "task_status" => $attendee_task_rejection_status,
                 "updated_at"=>$updated_at
             ));
             //attendee approvals update --approver table
-            Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->update(
+            Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->where("isDeleted",0)->update(
                 array(
                     "approval_status"=>$rejection_status,
                     "task_status" => $approvers_task_rejection_status,
@@ -1229,74 +1230,143 @@ class ProjectController extends Controller
         $response = Response::json($data,200);
         echo json_encode($response);
     }
-    function forwardTasks(Request $request)
+    //meeting forward
+    function forwardMeeting(Request $request)
     {
+        $created_at = date('Y-m-d H:i:s');
+        $updated_at = date('Y-m-d H:i:s');
         $validator = Validator::make($request->all(), [ 
             'project_id' => 'required', 
-            'template_master_id' => 'required', 
+            'phase_id' => 'required', 
             'task_id' => 'required|numeric', 
             'task_type' => 'required',
+            'approver_type' => 'required',
             'forwarded_from' => 'required',
             'forwarded_to' => 'required',
-            'approvers' => 'required',
-            'attendees' => 'required',
-            'phase_name' => 'required',
-            'phase_date' => 'required',
-            'mem_responsible' => 'required',
-            'fre_id' => 'required',
-            'duration' => 'required',
-            'priority' => 'required',
-            'seq_status' => 'required',
-            'start_date' => 'required',
-            'end_date' => 'required',
-            'user_id' => 'required',
-            'isProjecttask' => 'required',
-            'task_status' => 'required',
+            'user_type' => 'required',
+            'mem_name' => 'required',
+            'forwarded_mem_name' => 'required'
         ]);
 
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
         }
-
-        $task = new Forwardtask();
-
-        $task->project_id = $request->input('project_id');
-        $task->template_master_id = $request->input('template_master_id');
-        $task->task_id = $request->input('task_id');
-        $task->task_type = $request->input('task_type');
-        $task->forwarded_from = $request->input('forwarded_from');
-        $task->forwarded_to = $request->input('forwarded_to');
-        $task->approvers = $request->input('approvers');
-        $task->attendees = $request->input('attendees');
-        $task->phase_name = $request->input('phase_name');
-        $task->phase_date = $request->input('phase_date');
-        $task->mem_responsible = $request->input('mem_responsible');
-        $task->fre_id = $request->input('fre_id');
-        $task->duration = $request->input('duration');
-        $task->priority = $request->input('priority');
-        $task->seq_status = $request->input('seq_status');
-        $task->seq_no = $request->input('seq_no');
-        $task->seq_char = $request->input('seq_char');
-        $task->start_date =  $request->input('start_date');
-        $task->end_date = $request->input('end_date');
-        $task->created_at = date('Y-m-d H:i:s');
-        $task->updated_at = date('Y-m-d H:i:s');
-        $task->created_by = $request->input('user_id');
-        $task->isProjecttask = $request->input('isProjecttask');
-        $task->task_status = $request->input('task_status'); 
-
-        if($task->save())
+        //approver type [1]
+        if($request->input('approver_type')==1)
         {
-            $tasks = Projecttemplate::where("project_id",$request->input('project_id'))->where("id",$request->input('template_master_id'))->where("task_id",$request->input('task_id'))->where("task_type",$request->input('task_type'))->update(
-                array(
-                    "isForwarded"=>1,
-                )
-            );
+            //check if task is completed or already approved by this user
+            $approver_approvalStatus = Projecttasksapproval::where('project_id',$request->input('project_id'))->where('task_type',$request->input('task_type'))->where('task_id',$request->input('task_id'))->where('approver',$request->input('forwarded_from'))->where('isDeleted',0)->whereIn('approval_status',[1,2])->count();
+            if($approver_approvalStatus>0)
+            {
+                return response()->json(['response'=>"Already Approval action done for this task"], 410); 
+            }
+            else
+            {
+                //update existing approver entry
+                $updateApprover = Projecttasksapproval::where('project_id',$request->input('project_id'))->where('task_type',$request->input('task_type'))->where('task_id',$request->input('task_id'))->where('approver',$request->input('forwarded_from'))->update(array("isDeleted"=>1));
+                if($updateApprover!=0)
+                {
+                    //make forwarded approver entry
+                    $forwarded_approver = new Projecttasksapproval();
+                    $forwarded_approver->project_id = $request->input('project_id');
+                    $forwarded_approver->phase_id = $request->input('phase_id');
+                    $forwarded_approver->task_type = $request->input('task_type');
+                    $forwarded_approver->task_id = $request->input('task_id');
+                    $forwarded_approver->approver = $request->input('forwarded_to');
+                    $forwarded_approver->created_at = $created_at;
+                    $forwarded_approver->updated_at = $updated_at;
+                    if($forwarded_approver->save())
+                    {
+                        $forwardentry = new Forwardtask();
+                        $forwardentry->project_id = $request->input('project_id');
+                        $forwardentry->phase_id = $request->input('phase_id');
+                        $forwardentry->task_id = $request->input('task_id');
+                        $forwardentry->task_type = $request->input('task_type');
+                        $forwardentry->forwarded_from = $request->input('forwarded_from');
+                        $forwardentry->forwarded_to = $request->input('forwarded_to');
+                        $forwardentry->user_type = $request->input('user_type');
+                        $forwardentry->created_at = $created_at;
+                        $forwardentry->updated_at = $updated_at;
+                        if($forwardentry->save())
+                        {
+                            return response()->json(['response'=>"Task forwarded Successfully"], 200);
+                        }
+                        else
+                        {
+                            Projecttasksapproval::where('project_id',$request->input('project_id'))->where('task_type',$request->input('task_type'))->where('task_id',$request->input('task_id'))->where('approver',$request->input('forwarded_to'))->update(array("isDeleted"=>0));
+                            return response()->json(['response'=>"Task not forwarded"], 410);
+                        }
+                    }
+                    else
+                    {
+                        Projecttasksapproval::where('project_id',$request->input('project_id'))->where('task_type',$request->input('task_type'))->where('task_id',$request->input('task_id'))->where('approver',$request->input('forwarded_from'))->update(array("isDeleted"=>0));
+                        return response()->json(['response'=>"Task not forwarded"], 410);
+                    }
+                }
+                else
+                {
+                    return response()->json(['response'=>"Task not forwarded"], 410);
+                }
+            }
+        }
+        //attendee type [2]
+        if($request->input('approver_type')==2)
+        {
+            $attendee = $request->input('forwarded_from')."-".$request->input('mem_name');
+            $approver_approvalStatus = Projectattendeeapproval::where('project_id',$request->input('project_id'))->where('task_type',$request->input('task_type'))->where('task_id',$request->input('task_id'))->where('attendee',$attendee)->where('isDeleted',0)->whereIn('approval_status',[1,2])->count();
+            if($approver_approvalStatus>0)
+            {
+                return response()->json(['response'=>"Already Approval action done for this task"], 410); 
+            }
+            else
+            {
+                //update existing approver entry
+                $updateApprover = Projectattendeeapproval::where('project_id',$request->input('project_id'))->where('task_type',$request->input('task_type'))->where('task_id',$request->input('task_id'))->where('attendee',$attendee)->update(array("isDeleted"=>1));
+                if($updateApprover!=0)
+                {
+                    //make forwarded approver entry
+                    $forwarded_approver = new Projectattendeeapproval();
+                    $forwarded_approver->project_id = $request->input('project_id');
+                    $forwarded_approver->phase_id = $request->input('phase_id');
+                    $forwarded_approver->task_type = $request->input('task_type');
+                    $forwarded_approver->task_id = $request->input('task_id');
+                    $forwarded_approver->attendee = $request->input('forwarded_to')."-".$request->input('forwarded_mem_name');
+                    $forwarded_approver->created_at = $created_at;
+                    $forwarded_approver->updated_at = $updated_at;
+                    if($forwarded_approver->save())
+                    {
+                        $forwardentry = new Forwardtask();
+                        $forwardentry->project_id = $request->input('project_id');
+                        $forwardentry->phase_id = $request->input('phase_id');
+                        $forwardentry->task_id = $request->input('task_id');
+                        $forwardentry->task_type = $request->input('task_type');
+                        $forwardentry->forwarded_from = $request->input('forwarded_from');
+                        $forwardentry->forwarded_to = $request->input('forwarded_to');
+                        $forwardentry->user_type = $request->input('user_type');
+                        $forwardentry->created_at = $created_at;
+                        $forwardentry->updated_at = $updated_at;
+                        if($forwardentry->save())
+                        {
+                            return response()->json(['response'=>"Task forwarded Successfully"], 200);
+                        }
+                        else
+                        {
+                            Projectattendeeapproval::where('project_id',$request->input('project_id'))->where('task_type',$request->input('task_type'))->where('task_id',$request->input('task_id'))->where('attendee',$attendee)->update(array("isDeleted"=>0));
+                            return response()->json(['response'=>"Task not forwarded"], 410);
+                        }
+                    }
+                    else
+                    {
+                        Projectattendeeapproval::where('project_id',$request->input('project_id'))->where('task_type',$request->input('task_type'))->where('task_id',$request->input('task_id'))->where('attendee',$attendee)->update(array("isDeleted"=>0));
+                        return response()->json(['response'=>"Task not forwarded"], 410);
+                    }
+                }
+                else
+                {
+                    return response()->json(['response'=>"Task not forwarded"], 410);
+                }
 
-                 $returnData = Projecttemplate::where('template_master_id',$request->input('template_master_id'))->get();
-                 $data = array ("message" => 'Task forwarded successfully',"data" => $returnData );
-                 $response = Response::json($data,200);
-                 echo json_encode($response);
+            }
         }
     }   
     function completetask(Request $request)
@@ -1356,7 +1426,7 @@ class ProjectController extends Controller
 
 		$attendee = "'".$memid."-".$memname."'";
         $task_count = 0;
-        if($request->input('task_type') ==1 || $request->input('task_type')==3)
+        if($request->input('task_type') ==1)
         {
             $task_count = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->whereNotIn("tbl_project_template.task_status",[0,1])->where("tbl_project_template.task_type",1)->where(function($query) use ($memid,$attendee){
                 $query->orwhereRaw("find_in_set($memid,tbl_project_template.mem_responsible)")
@@ -1372,11 +1442,25 @@ class ProjectController extends Controller
                 ->orWhereRaw("find_in_set($memid,tbl_projecttasks_docs.approvers_level2)");
             })->where('tbl_projects.property_id',$request->input('property_id'))->count();
         }
-         return $task_count;
+        if($request->input('task_type')==3)
+        {
+            $work_permits = Projectworkpermit::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_workpermits.project_id')->leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->where('tbl_projects.property_id',$request->input('property_id'))->whereNotIn('tbl_project_workpermits.request_status',[1,2])->where(function($query) use ($memid){
+                $query->orwhereRaw("find_in_set($memid,tbl_projects.assigned_rdd_members)")
+                      ->orWhereRaw("find_in_set($memid,tbl_project_contact_details.member_id)");
+               })->count(Projectworkpermit::raw('DISTINCT tbl_project_workpermits.permit_id'));
+              
+            $inspections = Projectinspections::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_inspections.project_id')->leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->where('tbl_projects.property_id',$request->input('property_id'))->whereNotIn('tbl_project_inspections.inspection_status',[2,3,4])->where(function($query) use ($memid){
+            $query->orwhereRaw("find_in_set($memid,tbl_projects.assigned_rdd_members)")
+                    ->orWhereRaw("find_in_set($memid,tbl_project_contact_details.member_id)");
+            })->count(Projectinspections::raw('DISTINCT tbl_project_inspections.inspection_id'));   
+            
+            $task_count = intval($work_permits)+intval($inspections);
+        }
+        return $task_count;
     }
     function retrieveProjectworkspace($projectid)
     {
-        $project_details = Project::join('fitout_deposit_master','fitout_deposit_master.status_id','=','tbl_projects.fitout_deposit_status')->where('project_id',$projectid)->join('tbl_projecttype_master','tbl_projecttype_master.type_id','=','tbl_projects.project_type')->join('tbl_company_master','tbl_company_master.company_id','=','tbl_projects.investor_company')->join('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->join('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->where('project_id',$projectid)->select('tbl_projects.project_id','tbl_projects.org_id','tbl_projects.project_name','tbl_projects.usage_permissions','tbl_projects.fitout_period','tbl_projects.fitout_deposit_amt','tbl_projects.fitout_deposit_filepath','tbl_projects.owner_work','tbl_projects.owner_work_amt','tbl_projects.owner_work_filepath','tbl_projects.kfd_drawing_status','tbl_projects.ivr_status','tbl_projects.ivr_amt','tbl_projects.ivr_filepath','tbl_projects.workpermit_expiry_date','tbl_projects.insurance_validity_date','tbl_projects.fif_upload_path','tbl_projects.assigned_rdd_members','tbl_projects.fitout_deposit_status','fitout_deposit_master.status_name','tbl_projects.project_type','tbl_projecttype_master.type_name','tbl_projects.investor_company','tbl_company_master.company_name','tbl_company_master.brand_name','tbl_projects.property_id','tbl_properties_master.property_name','tbl_projects.unit_id','tbl_units_master.unit_name','tbl_units_master.unit_area')->get();
+        $project_details = Project::join('fitout_deposit_master','fitout_deposit_master.status_id','=','tbl_projects.fitout_deposit_status')->where('project_id',$projectid)->join('tbl_projecttype_master','tbl_projecttype_master.type_id','=','tbl_projects.project_type')->join('tbl_company_master','tbl_company_master.company_id','=','tbl_projects.investor_company')->join('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->join('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->where('project_id',$projectid)->select('tbl_projects.project_id','tbl_projects.org_id','tbl_projects.project_name','tbl_projects.usage_permissions','tbl_projects.fitout_period','tbl_projects.fitout_deposit_amt','tbl_projects.fitout_deposit_filepath','tbl_projects.owner_work','tbl_projects.owner_work_amt','tbl_projects.owner_work_filepath','tbl_projects.kfd_drawing_status','tbl_projects.ivr_status','tbl_projects.ivr_amt','tbl_projects.ivr_filepath','tbl_projects.workpermit_expiry_date','tbl_projects.insurance_validity_date','tbl_projects.fif_upload_path','tbl_projects.assigned_rdd_members','tbl_projects.fitout_deposit_status','fitout_deposit_master.status_name','tbl_projects.project_type','tbl_projecttype_master.type_name','tbl_projects.investor_company','tbl_company_master.company_name','tbl_projects.investor_brand','tbl_projects.property_id','tbl_properties_master.property_name','tbl_projects.unit_id','tbl_units_master.unit_name','tbl_units_master.unit_area')->get();
         $milestone_dates = Projectmilestonedates::where('project_id',$projectid)->where('active_status',1)->select('date_id','org_id','project_id','concept_submission','detailed_design_submission','unit_handover','fitout_start','fitout_completion','store_opening')->get();
         $investor_dates = Projectinvestordates::where('project_id',$projectid)->where('active_status',1)->select('date_id','org_id','project_id','concept_submission','detailed_design_submission','fitout_start','fitout_completion')->get();
         $member_contact_details = Projectcontact::join('tbl_designation_master','tbl_designation_master.designation_id','=','tbl_project_contact_details.member_designation')->join('users','users.mem_id','=','tbl_project_contact_details.member_id')->where('project_id',$projectid)->whereNotIn('tbl_project_contact_details.member_designation', [13,14])->where('isDeleted',0)->where('project_id',$projectid)->select('tbl_project_contact_details.id','tbl_project_contact_details.project_id','tbl_project_contact_details.member_designation','tbl_project_contact_details.email','tbl_project_contact_details.mobile_number','users.mem_id','users.mem_name','users.mem_last_name','tbl_designation_master.designation_name')->get();
@@ -2232,9 +2316,32 @@ class ProjectController extends Controller
         $task_not_initiated_status = 0;
         $task_lists = "";
 
-        if($request->input('task_type')==1 || $request->input('task_type')==3)
+        if($request->input('task_type')==1)
         {
-            $task_lists = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_project_tasks_approvals','tbl_project_tasks_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_attendees_approvals','tbl_attendees_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.property_id','=','tbl_projects.property_id')->where('tbl_project_template.task_type',1)->whereNotIn('tbl_project_template.task_status', [0,1])->where('tbl_project_template.isDeleted',0)->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name')->where(function($query) use ($memid,$attendee){
+            $forwarded_tasks = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_project_tasks_approvals','tbl_project_tasks_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_attendees_approvals','tbl_attendees_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_task_forwards','tbl_task_forwards.task_id','=','tbl_project_template.id')->where('tbl_project_template.task_type',$request->input('task_type'))->whereNotIn('tbl_project_template.task_status', [0,1])->where('tbl_project_template.isDeleted',0)->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name')->where('tbl_task_forwards.forwarded_to',$memid);
+            if ($request->has('project_id') && !empty($request->input('project_id')))
+            {
+                $forwarded_tasks->where('tbl_project_template.project_id', $request->input('project_id'));
+            }
+            if ($request->has('status') && !empty($request->input('status')))
+            {
+                if($request->input('status')==1)
+                {
+                    $forwarded_tasks->whereIn('tbl_project_tasks_approvals.approval_status', [1,2])->where('tbl_project_tasks_approvals.approver',$memid);
+                }
+                if($request->input('status')==0)
+                {
+                    $forwarded_tasks->whereIn('tbl_project_tasks_approvals.approval_status', [0])->where('tbl_project_tasks_approvals.approver',$memid);
+                }
+            }
+            $forwarded_tasks = $forwarded_tasks->where('tbl_projects.property_id',$request->input('property_id'))->groupBy('tbl_project_template.id')->get();
+
+            for($p=0;$p<count($forwarded_tasks);$p++)
+            {
+                $forwarded_tasks[$p]['forwarded_task']=1;
+            }
+
+            $task_lists = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_project_tasks_approvals','tbl_project_tasks_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_attendees_approvals','tbl_attendees_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.property_id','=','tbl_projects.property_id')->where('tbl_project_template.task_type',$request->input('task_type'))->whereNotIn('tbl_project_template.task_status', [0,1])->where('tbl_project_template.isDeleted',0)->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name')->where(function($query) use ($memid,$attendee){
                 $query->orwhereRaw("find_in_set($memid,tbl_project_template.mem_responsible)")
                 ->orWhereRaw("find_in_set($memid,tbl_project_template.approvers)")
                 ->orWhereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)");
@@ -2254,7 +2361,9 @@ class ProjectController extends Controller
                     $task_lists->whereIn('tbl_project_tasks_approvals.approval_status', [0])->where('tbl_project_tasks_approvals.approver',$memid);
                 }
             }
-            $task_lists = $task_lists->where('tbl_projects.property_id',$request->input('property_id'))->groupBy('tbl_project_template.id')->get();
+            $task_lists = $task_lists->where('tbl_projects.property_id',$request->input('property_id'))->groupBy('tbl_project_template.id')->get()->union($forwarded_tasks);
+
+            return $task_lists;
         }
         if($request->input('task_type')==2)
         {
@@ -2279,8 +2388,32 @@ class ProjectController extends Controller
                 }
             }
             $task_lists = $task_lists->groupBy('doc_id')->get()->groupBy('doc_header');
+            return $task_lists;
         }
-        return $task_lists;
+        if($request->input('task_type')==3)
+        {
+            $work_permits = Projectworkpermit::leftjoin('tbl_workpermit_master','tbl_workpermit_master.permit_id','=','tbl_project_workpermits.work_permit_type')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_workpermits.project_id')->leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.property_id','=','tbl_projects.property_id')->select('tbl_project_workpermits.*','tbl_workpermit_master.permit_type','tbl_projects.project_name','tbl_properties_master.property_name','tbl_units_master.unit_name')->where('tbl_projects.property_id',$request->input('property_id'))->whereNotIn('tbl_project_workpermits.request_status',[1,2])->where(function($query) use ($memid){
+                $query->orwhereRaw("find_in_set($memid,tbl_projects.assigned_rdd_members)")
+                      ->orWhereRaw("find_in_set($memid,tbl_project_contact_details.member_id)");
+               });
+            if ($request->has('project_id') && !empty($request->input('project_id')))
+            {
+                $work_permits->where('tbl_project_workpermits.project_id', $request->input('project_id'));
+            }
+            $work_permits = $work_permits->groupBy('permit_id')->get()->groupBy('project_name');
+              
+            $inspections = Projectinspections::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_inspections.project_id')->leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.property_id','=','tbl_projects.property_id')->select('tbl_project_inspections.*','tbl_projects.project_name','tbl_properties_master.property_name','tbl_units_master.unit_name')->where('tbl_projects.property_id',$request->input('property_id'))->whereNotIn('tbl_project_inspections.inspection_status',[2,3,4])->where(function($query) use ($memid){
+            $query->orwhereRaw("find_in_set($memid,tbl_projects.assigned_rdd_members)")
+                    ->orWhereRaw("find_in_set($memid,tbl_project_contact_details.member_id)");
+            });
+            if ($request->has('project_id') && !empty($request->input('project_id')))
+            {
+                $inspections->where('tbl_project_inspections.project_id', $request->input('project_id'));
+            }
+            $inspections= $inspections->groupBy('inspection_id')->get()->groupBy('project_name');
+            return Response::json(array("work_permits"=>$work_permits,"inspections"=>$inspections));
+        }
+        
     }
     function retrieveinvestortasklists($projectid,$tasktype,$memid,$memname)
     {
@@ -3038,6 +3171,71 @@ class ProjectController extends Controller
     {
         $predocs = Preopeningdocs::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_preopening_docs.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->where('tbl_preopening_docs.project_id',$projectid)->select('tbl_preopening_docs.*','tbl_projects.project_name','tbl_properties_master.property_name')->groupBy('tbl_preopening_docs.id')->get();
         return response()->json(['pre_opening_docs'=>$predocs], 200); 
+    }
+    /*RDD Member - Work Permit Approval action */
+    function rddworkPermitApproval(Request $request)
+    {
+        $created_at = date('Y-m-d H:i:s');
+        $updated_at = date('Y-m-d H:i:s');
+        $validator = Validator::make($request->all(), [ 
+            'permit_id' => 'required', 
+            'project_id' => 'required',
+            'request_status' => 'required',
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
+        //check if already approved or rejected
+        $checkCount = Projectworkpermit::where("project_id",$request->input('project_id'))->where("permit_id",$request->input('permit_id'))->whereIn("request_status",[1,2])->count();
+        if($checkCount>0)
+        {
+            return response()->json(['response'=>"Already approval action done on this work permit"], 410);
+        }
+        else
+        {
+            $updateQuery = Projectworkpermit::where("project_id",$request->input('project_id'))->where("permit_id",$request->input('permit_id'))->update(
+                array(
+                    "request_status" => $request->input('request_status'),
+                    "updated_at" => $updated_at
+                )
+            );
+            $returnData = Projectworkpermit::find($request->input('permit_id'));
+            return response()->json(['response'=>"Work Permit Status Updated Succesfully",'work_permit'=>$returnData], 200);
+        }
+    }
+    /* RDD Member - Inspection Approval action */
+    function rddinspectionsApproval(Request $request)
+    {
+        $created_at = date('Y-m-d H:i:s');
+        $updated_at = date('Y-m-d H:i:s');
+        $validator = Validator::make($request->all(), [ 
+            'inspection_id' => 'required', 
+            'project_id' => 'required',
+            'inspection_status' => 'required',
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+        //check if already approved or rejected
+        $checkCount = Projectinspections::where("project_id",$request->input('project_id'))->where("inspection_id",$request->input('inspection_id'))->whereIn("inspection_status",[2,3,4])->count();
+        if($checkCount>0)
+        {
+            return response()->json(['response'=>"Already approval action done on this inspection"], 410);
+        }
+        else
+        {
+            Projectinspections::where("project_id",$request->input('project_id'))->where("inspection_id",$request->input('inspection_id'))->update(
+                array(
+                    "inspection_status" => $request->input('inspection_status'),
+                    "updated_at" => $updated_at
+                )
+            );
+            $returnData = Projectinspections::find($request->input('inspection_id'));
+            return response()->json(['response'=>"Inspection Status Updated Succesfully",'inpsection'=>$returnData], 200);
+        }
     }
 }
 

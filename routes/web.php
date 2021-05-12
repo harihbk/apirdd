@@ -270,6 +270,14 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /* Completion Phase - Generating Fitout deposit refund status */
     Route::get('/fitoutdepositcheckliststatus/{projectid}', [ProjectController::class, 'rddRetrievefitoutdepositcheckliststatus']);
     Route::get('/checking/{project_id}', [ProjectController::class, 'checking']);
+    /*Approval action on work permit */
+    Route::patch('/permitapproval', [ProjectController::class, 'rddworkPermitApproval']);
+    /*Approval action on Inspections */
+    Route::patch('/inspectionsapproval', [ProjectController::class, 'rddinspectionsApproval']);
+    //project Progress count - chart section
+    Route::get('/getprogresscount/{pid}', [ProjectController::class, 'getProjectstatus']);
+    //forwarding meeting tasks
+    Route::patch('/forwardmeeting', [ProjectController::class, 'forwardMeeting']);
 
 
 
@@ -293,9 +301,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
      Route::post('/siteinspectiondata', [InspectionrequestController::class, 'rddretrievesiteInspectiondata']);
      /* Update site Inspection report data with attachments  */
      Route::patch('/updatesiteinspectiondetails', [InspectionrequestController::class, 'rddUpdatesiteIspectiondata']); 
-    //project Progress count - chart section
-    Route::get('/getprogresscount/{pid}', [ProjectController::class, 'getProjectstatus']);
-
+    
 
 
 
@@ -307,8 +313,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     
     //performing action on uploaded documents
     Route::post('/memdocAction', [ProjectController::class, 'performDocaction']);
-    //forwarding tasks
-    Route::post('/forwardTasks', [ProjectController::class, 'forwardTasks']);
+    
     //completing tasks
     Route::post('/completetask', [ProjectController::class, 'completetask']);
     
@@ -401,6 +406,8 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
     Route::post('/investor/updatepredoc', [ProjectController::class, 'investorcreatePredoc']);
     //get uploaded pre opening docs list
     Route::get('/investor/predocslist/{projectid}', [ProjectController::class, 'investorgetPredocslist']);
+    //forwarding meeting tasks
+    Route::patch('/investor/forwardmeeting', [ProjectController::class, 'forwardMeeting']);
 
 
      

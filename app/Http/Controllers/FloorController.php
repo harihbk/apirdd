@@ -124,7 +124,7 @@ class FloorController extends Controller
     function retrieveByProperty(Request $request,$id)
     {
         $validator = Validator::make($request->all(), [ 
-            'image_path' => 'required'
+            'doc_path' => 'required'
         ]);
 
         if ($validator->fails()) { 
@@ -132,11 +132,11 @@ class FloorController extends Controller
         }
 
         $floors = Floor::where("property_id",$id)->get();
-        $img_path = public_path()."".$request->input('image_path')."/settings/floors";
-        if(!File::isDirectory($img_path)){
-               File::makeDirectory($img_path, 0777, true, true);
+        $doc_path = public_path()."".$request->input('doc_path')."settings/floors";
+        if(!File::isDirectory($doc_path)){
+               File::makeDirectory($doc_path, 0777, true, true);
            }
-           return Response::json(array('image_path' => $img_path,'floors' => $floors));
+           return Response::json(array('doc_path' => $doc_path,'floors' => $floors));
     }
     /* Remove floor */
     function removeFloor($propertyid,$floorid)

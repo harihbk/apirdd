@@ -124,7 +124,6 @@ class MembersController extends Controller
         }
 
         $members = $query->get();
-        // echo json_encode($members); 
         return $members;
     }
     function getMember(Request $request,$id)

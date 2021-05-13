@@ -17,9 +17,9 @@ use Validator;
 
 class AuthorizationgrpController extends Controller
 {
-    function getMastercontent()
+    function getMastercontent($phaseid)
     {
-        $content = Authorizationgrpmaster::where('isDeleted',0)->get();
+        $content = Authorizationgrpmaster::whereRaw("find_in_set($phaseid,phase)")->where('isDeleted',0)->get();
         return Response::json($content,200);
     }
 
@@ -62,8 +62,6 @@ class AuthorizationgrpController extends Controller
                 "content_description" => $datas['content'][$i]['content_description'],
                 "project_display" => $datas['content'][$i]['project_display'],
                 "project_edit" => $datas['content'][$i]['project_edit'],
-                "template_display" => $datas['content'][$i]['template_display'],
-                "template_edit" => $datas['content'][$i]['template_edit'],
                 "created_at" => $created_at,
                 "updated_at" => $updated_at
               ];
@@ -84,7 +82,6 @@ class AuthorizationgrpController extends Controller
                     "group_id" => $groupDetails->id,
                     "content_id" => $datas['workspace_fields'][$a]['content_id'],
                     "display" => $datas['workspace_fields'][$a]['display'],
-                    "edit" => $datas['workspace_fields'][$a]['edit'],
                     "created_at" => $created_at,
                     "updated_at" => $updated_at
                 ];
@@ -96,30 +93,31 @@ class AuthorizationgrpController extends Controller
                     "group_id" => $groupDetails->id,
                     "content_id" => $datas['workspace_sections'][$b]['content_id'],
                     "display" => $datas['workspace_sections'][$b]['display'],
-                    "change" => $datas['workspace_sections'][$b]['change'],
                     "edit" => $datas['workspace_sections'][$b]['edit'],
                     "created_at" => $created_at,
                     "updated_at" => $updated_at
                 ];
             }
-            for($c=0;$c<count($datas['org_access']);$c++)
-            {
-                for($d=0;$d<count($datas['org_access'][$c]['property']);$d++)
-                {
-                    $orgData[] = [
-                        'org_id' => $datas['org_access'][$c]['org_id'],
-                        "org_access" => $datas['org_access'][$c]['org_access'],
-                        "group_id" => $groupDetails->id,
-                        "property_id" => $datas['org_access'][$c]['property'][$d]['property_id'],
-                        "property_access" => $datas['org_access'][$c]['property'][$d]['property_access'],
-                        "created_at" => $created_at,
-                        "updated_at" => $updated_at
-                    ];
-                }
+            // for($c=0;$c<count($datas['org_access']);$c++)
+            // {
+            //     for($d=0;$d<count($datas['org_access'][$c]['property']);$d++)
+            //     {
+            //         $orgData[] = [
+            //             'org_id' => $datas['org_access'][$c]['org_id'],
+            //             "org_access" => $datas['org_access'][$c]['org_access'],
+            //             "group_id" => $groupDetails->id,
+            //             "property_id" => $datas['org_access'][$c]['property'][$d]['property_id'],
+            //             "property_access" => $datas['org_access'][$c]['property'][$d]['property_access'],
+            //             "created_at" => $created_at,
+            //             "updated_at" => $updated_at
+            //         ];
+            //     }
                 
-            }
+            // }
 
-            if(Authorizationgrpcontent::insert($data) && Authorizationgrpmilestone::insert($milestoneData) && Authgrpworkspacefields::insert($workspacefieldsData) && Authgrpworkspacesections::insert($workspacesectionsData) && Authgrporgaccess::insert($orgData))
+            // && Authgrporgaccess::insert($orgData)
+
+            if(Authorizationgrpcontent::insert($data) && Authorizationgrpmilestone::insert($milestoneData) && Authgrpworkspacefields::insert($workspacefieldsData) && Authgrpworkspacesections::insert($workspacesectionsData))
             {
                 $returnData = Authorizationgrp::where('id',$groupDetails->id)->get();
                 $data = array ("message" => 'Auth group Added successfully',"data" => $returnData );
@@ -186,8 +184,6 @@ class AuthorizationgrpController extends Controller
                         "content_description"=> $datas['content'][$i]['content_description'],
                         "project_display"=> $datas['content'][$i]['project_display'],
                         "project_edit"=> $datas['content'][$i]['project_edit'],
-                        "template_display"=> $datas['content'][$i]['template_display'],
-                        "template_edit"=> $datas['content'][$i]['template_edit'],
                         "updated_at" => $updated_at
                     )
                 );
@@ -208,7 +204,6 @@ class AuthorizationgrpController extends Controller
                 Authgrpworkspacefields::where('group_id',$datas['id'])->where('id',$datas['workspace_fields'][$k]['id'])->update(
                     array(
                         "display"=> $datas['workspace_fields'][$k]['display'],
-                        "edit"=> $datas['workspace_fields'][$k]['edit'],
                         "updated_at"=> $updated_at
                     )
                 );
@@ -220,7 +215,6 @@ class AuthorizationgrpController extends Controller
                     array(
                         "display"=> $datas['workspace_sections'][$l]['display'],
                         "edit"=> $datas['workspace_sections'][$l]['edit'],
-                        "change"=> $datas['workspace_sections'][$l]['change'],
                         "updated_at"=> $updated_at
                     )
                 );

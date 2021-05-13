@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Units;
 use Response;
 use Validator;
-
+use File;
 class UnitsController extends Controller
 {
     function index()
@@ -115,6 +115,13 @@ class UnitsController extends Controller
     {
         $limit = 10;
         $offset = 0;
+        $validator = Validator::make($request->all(), [ 
+            'image_path' => 'required',
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
 
         $searchTerm = $request->input('searchkey');
 
@@ -125,7 +132,12 @@ class UnitsController extends Controller
             $query->whereLike(['unit_name'], $searchTerm);
         }
 
+        $img_path = public_path()."".$request->input('image_path')."settings/units";
+        if(!File::isDirectory($img_path)){
+               File::makeDirectory($img_path, 0777, true, true);
+           }
+
         $units = $query->offset($offset)->limit($limit)->get();
-        echo json_encode($units); 
+        return Response::json(array('img_path' => $img_path,'units' => $units));
     }
 }

@@ -278,7 +278,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/getprogresscount/{pid}', [ProjectController::class, 'getProjectstatus']);
     //forwarding meeting tasks
     Route::patch('/forwardmeeting', [ProjectController::class, 'forwardMeeting']);
-
+    /* retrieve meeting task -- dashboard calendar  */
+    Route::post('/getmeetings', [ProjectController::class, 'rddretrieveMeetings']);
 
 
     
@@ -348,7 +349,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /*Get created auth group data */
     Route::get('/authgrp/{id}', [AuthorizationgrpController::class, 'getAuthgrpData']);
     /*Get content for creating authorization group */
-    Route::get('/authgrpcontent', [AuthorizationgrpController::class, 'getMastercontent']);
+    Route::get('/authgrpcontent/{phaseid}', [AuthorizationgrpController::class, 'getMastercontent']);
     /*Creating authorization group */
     Route::post('/authgrp', [AuthorizationgrpController::class, 'createAuthorizationgrp']);
     Route::patch('/updateauthgrp', [AuthorizationgrpController::class, 'editAuthorizationgrp']);
@@ -408,6 +409,9 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
     Route::get('/investor/predocslist/{projectid}', [ProjectController::class, 'investorgetPredocslist']);
     //forwarding meeting tasks
     Route::patch('/investor/forwardmeeting', [ProjectController::class, 'forwardMeeting']);
+    /*retrieve tasks approval status - meeting*/
+    Route::get('/investor/meetingapprovalstatus/{projectid}/{taskid}',[ProjectController::class, 'investorretrievetaskApprovalstatus']);
+    
 
 
      

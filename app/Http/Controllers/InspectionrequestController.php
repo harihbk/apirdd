@@ -108,7 +108,7 @@ class InspectionrequestController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $query = Projectinspections::leftjoin('tbl_projects','tbl_project_inspections.project_id','=','tbl_projects.project_id')->leftjoin('users','users.mem_id','=','tbl_project_inspections.rdd_member_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_inspections.investor_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->select('tbl_projects.project_name','tbl_project_inspections.inspection_id','tbl_project_inspections.inspection_type','tbl_project_inspections.requested_time','tbl_project_inspections.created_at','tbl_project_inspections.investor_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','users.mem_name','users.mem_last_name','tbl_project_inspections.checklist_id','tbl_properties_master.property_name')->where('tbl_project_inspections.project_id',$request->input('project_id'));
+        $query = Projectinspections::leftjoin('tbl_projects','tbl_project_inspections.project_id','=','tbl_projects.project_id')->leftjoin('users','users.mem_id','=','tbl_project_inspections.rdd_member_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_inspections.investor_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->select('tbl_project_inspections.*','tbl_projects.project_name','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','users.mem_name','users.mem_last_name','tbl_properties_master.property_name')->where('tbl_project_inspections.project_id',$request->input('project_id'));
 
         if ($request->has('inspection_type') && !empty($request->input('inspection_type')))
         {
@@ -315,6 +315,7 @@ class InspectionrequestController extends Controller
                  //Update inspections with reschedule data
                   $rescheduling = ProjectInspections::where('inspection_id',$request->input('inspection_id'))->where('project_id',$request->input('project_id'))->update(
                       array(
+                          "requested_time"=>$request->input('requested_time'),
                           "inspection_status"=>$rescheduled_status,
                           "comments"=>$comments
                       )

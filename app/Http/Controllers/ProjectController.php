@@ -105,29 +105,26 @@ class ProjectController extends Controller
     }
     function checking($project_id)
     {
-        $project_details = Project::leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->leftjoin('tbl_project_milestone_dates','tbl_project_milestone_dates.project_id','=','tbl_projects.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->select('tbl_projects.project_id','tbl_projects.project_name','tbl_projects.investor_brand','tbl_properties_master.property_name','tbl_project_milestone_dates.concept_submission','tbl_project_milestone_dates.detailed_design_submission','tbl_project_milestone_dates.unit_handover','tbl_project_milestone_dates.fitout_completion','tbl_project_milestone_dates.store_opening','users.mem_name','users.mem_last_name','users.email','tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name')->where('tbl_projects.project_id',$project_id)->where('tbl_project_contact_details.member_designation',13)->groupBy('tbl_projects.project_id')->get();
+        
+        $project_details = Project::leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')
+        ->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->select('users.mem_name','users.mem_last_name','users.email as mem_email','tbl_tenant_master.email as tenant_email','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name')->where('tbl_projects.project_id',$project_id)->where('tbl_project_contact_details.member_designation',13)->groupBy('tbl_projects.project_id')->get();
+
 
         $data = array();
         $data = [
             "tenant_name" => $project_details[0]['tenant_name'],
             "tenant_last_name" => $project_details[0]['tenant_last_name'],
-            "investor_brand" => $project_details[0]['investor_brand'],
-            "property_name" => $project_details[0]['property_name'],
-            "concept_submission" => date("d-m-Y", strtotime($project_details[0]['concept_submission'])),
-            "detailed_design_submission" => date("d-m-Y", strtotime($project_details[0]['detailed_design_submission'])),
-            "unit_handover" => date("d-m-Y", strtotime($project_details[0]['unit_handover'])),
-            "fitout_completion" => date("d-m-Y", strtotime($project_details[0]['fitout_completion'])),
-            "store_opening" => date("d-m-Y", strtotime($project_details[0]['store_opening'])),
-            "mem_name" => $project_details[0]['mem_name'],
-            "mem_last_name" => $project_details[0]['mem_last_name'],
-            "email" => $project_details[0]['email']
+            "mem_email" => $project_details[0]['mem_email'],
+            "tenant_email" => $project_details[0]['tenant_email']
+
         ];
 
-        Mail::send('emails.projectcreation', $data, function($message)use($data) {
-        $message->to('csedineshbit@gmail.com')
-                ->subject('RDD - Welcoming email');
+        Mail::send('emails.projectworkpermits', $data, function($message)use($data) {
+        $message->to($data['mem_email'])
+                ->cc($data['tenant_email'])
+                ->subject('RDD - Work Permit Request');
         });   
-}
+    }
     function store(Request $request)
     {
         $project = new Project();
@@ -620,8 +617,9 @@ class ProjectController extends Controller
         $projects = $projects->where('tbl_projects.org_id',$request->input('org_id'))->where('tbl_projects.property_id',$request->input('property'))->where(function($query) use ($user){
             $query->orwhereRaw("find_in_set($user,assigned_rdd_members)")
                   ->orWhereRaw("find_in_set($user,tbl_project_contact_details.member_id)")
-                  ->orWhereRaw("find_in_set($user,tbl_project_template.approvers)")
-                  ->orWhereRaw("find_in_set($user,tbl_project_template.mem_responsible)");
+                //   ->orWhereRaw("find_in_set($user,tbl_project_template.approvers)")
+                //   ->orWhereRaw("find_in_set($user,tbl_project_template.mem_responsible)")
+                  ->orWhereRaw("find_in_set($user,tbl_projects.created_by)");
            })->groupBy('tbl_projects.project_id')->get();
         return $projects;
     }
@@ -966,16 +964,16 @@ class ProjectController extends Controller
         {
             return response()->json(['response'=>"Meeting Can be confirmed by Attendees only"], 410);
         }
+        $attendee = $request->input('attendee')."-".$request->input('attendee_name');
         //if approved check for others approval and schedule meeting
         if($request->input('approval_status')==1)
         {
-            Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$request->input('attendee'))->where("isDeleted",0)->update(
+            Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$attendee)->where("isDeleted",0)->update(
                 array(
                     "approval_status"=>$request->input('approval_status'),
                     "updated_at"=>$updated_at
                 )
               );
-
             $approvalprogress = Projectattendeeapproval::where('project_id',$project_id)->where('phase_id',$request->input('phase_id'))->where('task_id',$request->input('id'))->where('approval_status',$yet_to_approve)->where('task_status',$inprogress_task)->where("isDeleted",0)->count();
 
             if($approvalprogress>0)
@@ -1428,11 +1426,14 @@ class ProjectController extends Controller
         $task_count = 0;
         if($request->input('task_type') ==1)
         {
-            $task_count = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->whereNotIn("tbl_project_template.task_status",[0,1])->where("tbl_project_template.task_type",1)->where(function($query) use ($memid,$attendee){
+            $assigned_count = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->whereNotIn("tbl_project_template.task_status",[0,1])->where("tbl_project_template.task_type",1)->where(function($query) use ($memid,$attendee){
                 $query->orwhereRaw("find_in_set($memid,tbl_project_template.mem_responsible)")
                 ->orWhereRaw("find_in_set($memid,tbl_project_template.approvers)")
                 ->orWhereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)");
             })->where('tbl_projects.property_id',$request->input('property_id'))->count();
+
+            $forward_count = ProjectTemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->join('tbl_task_forwards','tbl_task_forwards.task_id','=','tbl_project_template.id')->whereNotIn("tbl_project_template.task_status",[0,1])->where("tbl_project_template.task_type",1)->where('tbl_task_forwards.forwarded_to',$memid)->where('tbl_projects.property_id',$request->input('property_id'))->count();
+            $task_count = intval($assigned_count) + intval($forward_count);
         }
         if($request->input('task_type')==2)
         {
@@ -1842,6 +1843,24 @@ class ProjectController extends Controller
         
         if($permit->save())
         {
+            // $project_details = Project::leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')
+            // ->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->select('users.mem_name','users.mem_last_name','users.email as mem_email','tbl_tenant_master.email as tenant_email','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name')->where('tbl_projects.project_id',$project_id)->where('tbl_project_contact_details.member_designation',13)->groupBy('tbl_projects.project_id')->get();
+
+
+            // $data = array();
+            // $data = [
+            //     "tenant_name" => $project_details[0]['tenant_name'],
+            //     "tenant_last_name" => $project_details[0]['tenant_last_name'],
+            //     "mem_email" => $project_details[0]['mem_email'],
+            //     "tenant_email" => $project_details[0]['tenant_email']
+
+            // ];
+
+            // Mail::send('emails.projectworkpermits', $data, function($message)use($data) {
+            // $message->to($data['mem_email'])
+            //         ->cc($data['tenant_email'])
+            //         ->subject('RDD - Work Permit Request');
+            // });               
             $returnData = $permit->find($permit->permit_id);
             $data = array ("message" => 'Work permit has been requested',"data" => $returnData );
             $response = Response::json($data,200);
@@ -3236,6 +3255,39 @@ class ProjectController extends Controller
             $returnData = Projectinspections::find($request->input('inspection_id'));
             return response()->json(['response'=>"Inspection Status Updated Succesfully",'inpsection'=>$returnData], 200);
         }
+    }
+    function investorretrievetaskApprovalstatus($projectid,$taskid)
+    {
+        // $approval_status = Projecttasksapproval::join('users','users.mem_id','=','tbl_project_tasks_approvals.approver')->where('project_id',$projectid)->where('task_id',$taskid)->select('tbl_project_tasks_approvals.approval_id','tbl_project_tasks_approvals.approver','users.mem_name','users.mem_last_name','tbl_project_tasks_approvals.approval_status','tbl_project_tasks_approvals.task_status')->where('isDeleted',0)->orderBy('tbl_project_tasks_approvals.updated_at','DESC')->get();
+
+        $attendee_approval_status = Projectattendeeapproval::where('project_id',$projectid)->where('task_id',$taskid)->select('tbl_attendees_approvals.approval_id','tbl_attendees_approvals.attendee','tbl_attendees_approvals.approval_status','tbl_attendees_approvals.task_status')->where('isDeleted',0)->orderBy('tbl_attendees_approvals.updated_at','DESC')->get();
+        return response()->json(['attendees' =>$attendee_approval_status], 200); 
+    }
+    /* RDD Member - Retrieve calendar meetings - dashboard */
+    function rddretrieveMeetings(Request $request)
+    {
+        $validator = Validator::make($request->all(), [ 
+            'property_id' => 'required', 
+            'user_id' => 'required',
+            'meetings_date' => 'required',
+            'mem_name' => 'required',
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
+        $startDate = date('Y-m-01', strtotime($request->input('meetings_date')));
+        $endDate = date('Y-m-t', strtotime($request->input('meetings_date')));
+        $memid = $request->input('user_id');
+        $attendee = '"'.$request->input('user_id')."-".$request->input('mem_name').'"';
+        $meetings = Projecttemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->select('tbl_project_template.*','tbl_projects.project_name')->where('tbl_projects.property_id',$request->input('property_id'))->where(function($query) use ($memid,$attendee){
+            $query->orwhereRaw("find_in_set($memid,tbl_project_template.mem_responsible)")
+            ->orWhereRaw("find_in_set($memid,tbl_project_template.approvers)")
+            ->orWhereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)");
+        })->whereIn('tbl_project_template.task_status',[1,4])->whereBetween('tbl_project_template.meeting_date', [$startDate.' 00:00:00',$endDate.' 23:59:59'])->get();
+
+        return response()->json(['response'=>$meetings], 401); 
     }
 }
 

@@ -132,11 +132,7 @@ class TenantController extends Controller
             'tenant_name' => 'required',
             'email' => 'required',
             'tenant_mobile' => 'required',
-            // 'tenant_designation' => 'required',
             'tenant_type' => 'required',
-            //'password' => 'required',
-            'tenant_gender' => 'required',
-            'tenant_address' => 'required',
         ]);
 
         $temp_pass = "123456";
@@ -178,12 +174,7 @@ class TenantController extends Controller
             'tenant_name' => 'required',
             'email' => 'required',
             'tenant_mobile' => 'required',
-            'tenant_designation' => 'required',
-            'tenant_type' => 'required',
-            //'password' => 'required',
-            'tenant_gender' => 'required',
-            'tenant_address' => 'required',
-
+            'tenant_type' => 'required'
         ]);
 
         if ($validator->fails()) { 

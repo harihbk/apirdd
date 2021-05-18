@@ -8,12 +8,14 @@ use App\Models\Tenant;
 use App\Models\Projecttemplate;
 use App\Models\Projectdocs;
 use App\Models\Designation;
+use App\Models\ForgotPassword; 
 use Response;
 use Validator;
 use GuzzleHttp\Client;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth; 
 use Laravel\Passport\Client as OClient;
+use Illuminate\Support\Facades\Mail;
 
 class TenantController extends Controller
 {
@@ -42,7 +44,8 @@ class TenantController extends Controller
                             'org_code' => $returnData->org_code,
                             'mem_type' => $returnData->tenant_type,
                             'doc_path' => $returnData->doc_path,
-                            'image_path' => $returnData->image_path
+                            'image_path' => $returnData->image_path,
+                            'invite_status' => $returnData->invite_status,
                             );
                             return response()->json(['user_info'=>$user_response], 200);
             }
@@ -135,7 +138,8 @@ class TenantController extends Controller
             'tenant_type' => 'required',
         ]);
 
-        $temp_pass = "123456";
+        $temp_pass = $this->randomPassword();
+        $tenantData = array();
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
         }
@@ -161,10 +165,31 @@ class TenantController extends Controller
             $tenants->created_by = $request->input('user_id');
             
             if($tenants->save()) {
-                $returnData = $tenants->find($tenants->tenant_id);
-                $data = array ("message" => 'Tenant added successfully',"data" => $returnData );
-                $response = Response::json($data,200);
-                echo json_encode($response); 
+                $returnData = Tenant::where('tenant_id',$tenants->tenant_id)->get();
+                $tenantData = [
+                    "tenant_email" => $returnData[0]['email'],
+                    "tenant_name" => $returnData[0]['tenant_name'],
+                    "tenant_last_name" => $returnData[0]['tenant_last_name'],
+                    "tenant_mobile" => $returnData[0]['tenant_mobile'],
+                    "start_date" => date("d-m-Y", strtotime($returnData[0]['start_date'])),
+                    "end_date" => date("d-m-Y", strtotime($returnData[0]['end_date'])),
+                    "temp_pass" => $temp_pass
+                ];
+                $to =  $returnData[0]['email'];
+                Mail::send('emails.investorreg', $tenantData, function($message)use($tenantData,$to) {
+                    $message->to($to)
+                            ->subject('RDD - Investor Registration Credentials');
+                    }); 
+                if(Mail::failures())
+                {
+                    return response()->json(['response'=>"Credentials not sent to Investor"], 410);
+                }
+                else
+                {
+                    $data = array ("message" => 'Tenant added successfully',"data" => $returnData );
+                    $response = Response::json($data,200);
+                    echo json_encode($response);
+                } 
             }  
     }
     function update(Request $request)
@@ -317,8 +342,169 @@ class TenantController extends Controller
     }
     function retrieveTenantforprojectcontact($id,$tenanttype)
     {
-        $query = Tenant::select('tenant_id','company_id','tenant_name','tenant_last_name','tbl_tenant_master.email','tenant_mobile','tenant_address','tenant_gender','tenant_type','active_status','brand_name','tenant_designation')->where('tenant_type',$tenanttype)->where('active_status',1)->get();
+        $query = Tenant::select('tenant_id','company_id','tenant_name','tenant_last_name','tbl_tenant_master.email','tenant_mobile','tenant_address','tenant_gender','tenant_type','active_status','brand_name','tenant_designation')->where('tenant_type',$tenanttype)->where('active_status',1)->orderBy('tbl_tenant_master.tenant_name', 'ASC')->get();
         return $query;
     }
+    function randomPassword() {
+        $alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+        $pass = array();
+        $alphaLength = strlen($alphabet) - 1;
+        for ($i = 0; $i < 6; $i++) {
+            $n = rand(0, $alphaLength);
+            $pass[] = $alphabet[$n];
+        }
+        return implode($pass); 
+    }
+    /* Investor checking email for otp generation */
+    public function emailCheck(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required'
+        ]);
 
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
+        $user = Tenant::select('tenant_id','org_id','tenant_name','tenant_last_name','email')->where('email', $request->input('email'))->first();
+        if ($user === null) {
+            return response()->json(['message'=>'User does not exist'], 410);
+        }
+        else
+        {
+            $otpCheck = ForgotPassword::where('user_email', $request->input('email'))->where('user_id', $user->tenant_id)->where('user_type', 2)->where('otp_status',0)->first();
+            if ($otpCheck === null) {
+                    $randomNum = mt_rand(100000, 999999);
+                    $otpDetails = new ForgotPassword();
+        
+                    $otpDetails->user_id = $user->tenant_id;
+                    $otpDetails->user_email = $user->email;
+                    $otpDetails->user_type = 2;
+                    $otpDetails->otp = $randomNum;
+                    $otpDetails->created_at = date('Y-m-d H:i:s');
+                    $otpDetails->updated_at = date('Y-m-d H:i:s');
+
+                    $data = array();
+                    $data = [
+                        "tenant_name" => $user->tenant_name,
+                        "tenant_last_name" => $user->tenant_last_name,
+                        "otp" => $randomNum,
+                        "email" => $user->email
+                    ];
+        
+                    if($otpDetails->save()) {
+                        Mail::send('emails.investorotp', $data, function($message)use($data) {
+                            $message->to($data['email'])
+                                    ->subject('RDD -  Investor Password Reset');
+                            }); 
+                        if(Mail::failures())
+                        {
+                            return response()->json(['response'=>"Otp not sent to Investor"], 410);
+                        }
+                        else
+                        {
+                            $returnData = $otpDetails->find($otpDetails->otp_id);
+                            $data = array ("message" => 'OTP Sent successfully',"data" => $returnData );
+                            $response = Response::json($data,200);
+                            echo json_encode($response);  
+                        } 
+                    }
+            }
+            else
+            {
+                return response()->json(['message'=>'Otp already Sent to this email'], 200);
+            }
+        }
+    }
+     /* Investor OTP Verification   */
+     public function otpVerification(Request $request)
+     {
+         $validator = Validator::make($request->all(), [
+             'otp' => 'required'
+         ]);
+ 
+         if ($validator->fails()) { 
+             return response()->json(['error'=>$validator->errors()], 401);            
+         }
+
+
+         $otpCheck = ForgotPassword::where('otp', $request->input('otp'))->where('otp_status',0)->first();
+         if($otpCheck == null)
+         {
+             return response()->json(['message'=>'Please enter valid otp'], 200);
+         }
+         else
+         {
+             //check expiration time of the OTP
+             $createdTime = $otpCheck->created_at;
+             $now = \Carbon\Carbon::now();
+             $endDate = \Carbon\Carbon::parse($createdTime)->addMinutes(10);
+             $remainingBoostHours = $now->diffInMinutes($endDate);
+             if($remainingBoostHours>1)
+             {
+                 $updateOtp = ForgotPassword::where("otp_id",$otpCheck->otp_id)->where('otp_status',0)->update( 
+                     array( 
+                     "otp_status" => 2,
+                     "updated_at" => date('Y-m-d H:i:s')
+                     ));
+                 
+                 if($updateOtp>0)
+                 {
+                     return response()->json(['message'=>'Otp Expired'], 200);
+                 }
+             }
+             else
+             {
+                 //update otp status
+                 $updateOtp = ForgotPassword::where("otp_id",$otpCheck->otp_id)->where('otp_status',0)->update( 
+                     array( 
+                     "otp_status" => 1,
+                     "updated_at" => date('Y-m-d H:i:s')
+                     ));
+                 
+                 if($updateOtp>0)
+                 {
+                     $user = Tenant::select('tenant_id','org_id','tenant_name','tenant_last_name','email')->where('email', $otpCheck->user_email)->where('tenant_id', $otpCheck->user_id)->first();
+                     return response()->json(['message'=>'Otp Verfied Successfully','message'=>$user], 200);
+                 }
+             }
+         }
+     }
+    public function passwordReset(Request $request)
+    {
+        $validator = Validator::make($request->all(), [ 
+            'user_id' => 'required', 
+            'password' => 'required', 
+            'type' => 'required'
+            // 'c_password' => 'required_with:password|same:password', 
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
+        if($request->input('type')==1)
+        {
+            $members = Tenant::where("tenant_id",$request->input('user_id'))->update( 
+                array( 
+                "password" => Hash::make($request->input('password')),
+                "invite_status"=>2,
+                "updated_at" => date('Y-m-d H:i:s'),
+                ));
+        }
+        if($request->input('type')==2)
+        {
+            $members = Tenant::where("tenant_id",$request->input('user_id'))->update( 
+                array( 
+                "password" => Hash::make($request->input('password')),
+                "updated_at" => date('Y-m-d H:i:s'),
+                ));
+        }
+
+        if($members>0)
+        {
+            $user = Tenant::select('tenant_id','org_id','tenant_name','tenant_last_name','email')->where('tenant_id', $request->input('user_id'))->first();
+            return response()->json(['response'=>'Password has been Reset','user_details'=>$user], 200); 
+        }
+    }
 }

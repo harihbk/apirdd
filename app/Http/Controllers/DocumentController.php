@@ -37,4 +37,28 @@ class DocumentController extends Controller
        return $response;
    
     }
+    function multipledocUpload(Request $request)
+    {
+       $file_path = [];
+       $file_path = $this->uploadFile($request,0,$file_path);
+       return response()->json(['response'=>$file_path], 200);
+    
+    }
+    function uploadFile(Request $request,$index,$file_path)
+    {
+        if($request->hasfile('file'.$index))
+        {
+            $fileIndex = "file".$index;
+            $orignalName = $request->$fileIndex->getClientOriginalName();
+            $request->$fileIndex->move($request->input('docpath'), $orignalName);  
+            array_push($file_path,$request->input('docpath')."/".$orignalName);
+        }
+        else
+        {
+            return $file_path;
+        }
+        $index++;
+        $file_path = $this->uploadFile($request,$index,$file_path);
+        return $file_path;
+    }   
 }

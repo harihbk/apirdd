@@ -95,12 +95,12 @@ class CompanyController extends Controller
         {
             $query->whereLike(['company_name'], $request->input('searchkey'));
         }
-        if (!empty($request->input('active_status')))
+        if ($request->has('active_status'))
         {
             $query->where('active_status',$request->input('active_status'));
         }
 
-        $companies = $query->get();
+        $companies = $query->orderBy('company_name', 'ASC')->get();
         return $companies; 
     }
     function getCompany(Request $request,$id)

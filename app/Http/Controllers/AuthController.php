@@ -256,70 +256,97 @@ class AuthController extends Controller
             echo json_encode($response); 
         }
     }
-    /* Logging in through Outlook */
-    function outlooklogin()
+    /*Outlook response - login */
+    function outlookresponse(Request $request)
     {
-        $oauthClient = new \League\OAuth2\Client\Provider\GenericProvider([
-            'clientId'                => env('OAUTH_APP_ID'),
-            'clientSecret'            => env('OAUTH_APP_PASSWORD'),
-            'redirectUri'             => env('OAUTH_REDIRECT_URI'),
-            'urlAuthorize'            => env('OAUTH_AUTHORITY').env('OAUTH_AUTHORIZE_ENDPOINT'),
-            'urlAccessToken'          => env('OAUTH_AUTHORITY').env('OAUTH_TOKEN_ENDPOINT'),
-            'urlResourceOwnerDetails' => '',
-            'scopes'                  => env('OAUTH_SCOPES')
-          ]);
-          
-          $authUrl = $oauthClient->getAuthorizationUrl();
-          $oauthState = $oauthClient->getState();
-          // Redirect to AAD signin page
-          return redirect()->away($authUrl);
-    }
-    /*Outlook response */
-    function outlookresponse()
-    {
-        $myclient_id = env('OAUTH_APP_ID');
-        $client_secret = env('OAUTH_APP_PASSWORD');
-        $redirect_uri = env('OAUTH_REDIRECT_URI');
+        $updated_at = date('Y-m-d H:i:s');
+        $validator = Validator::make($request->all(), [ 
+            'token_type' => 'required', 
+            'access_token' => 'required',
+            // 'refresh_token' => 'required'
+        ]);
 
-        $authCode = $request->query('code');
-        if(isset($authCode))
-        {
-            $oauthClient = new \League\OAuth2\Client\Provider\GenericProvider([
-                'clientId'                => env('OAUTH_APP_ID'),
-                'clientSecret'            => env('OAUTH_APP_PASSWORD'),
-                'redirectUri'             => env('OAUTH_REDIRECT_URI'),
-                'urlAuthorize'            => env('OAUTH_AUTHORITY').env('OAUTH_AUTHORIZE_ENDPOINT'),
-                'urlAccessToken'          => env('OAUTH_AUTHORITY').env('OAUTH_TOKEN_ENDPOINT'),
-                'urlResourceOwnerDetails' => '',
-                'scopes'                  => env('OAUTH_SCOPES'),
-                'grant_type'              => 'authorization_code'
-              ]);
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
         
-              try {
-              
-                       $accessToken = $oauthClient->getAccessToken('authorization_code', [
-                            'code' => $authCode
-                        ]);
-                      
-                        $newToken = $oauthClient->getAccessToken('refresh_token', [
-                            'refresh_token' => $accessToken->getRefreshToken()
-                          ]);
-                        
-                        $graph = new Graph();
-                        $graph->setAccessToken($accessToken->getToken());
+            try {
+                $graph = new Graph();
+                $graph->setAccessToken($request->input('access_token'));
+                $user = $graph->createRequest('GET', '/me')->setReturnType(Model\User::class)->execute();
+                $userCount = Members::where('email',$user->getMail())->first();
 
-                         $user = $graph->createRequest('GET', '/me')->setReturnType(Model\User::class)->execute();
-                         echo json_encode($user->getMail());
+                //Login integration with the system
+                if ($userCount!=null) { 
+                    $user = $graph->createRequest('GET', '/me')->setReturnType(Model\User::class)->execute();
+                    $passwordString = env('PASSWORD_STRING');
+                    $passwordUpdate = Members::where("email",$user->getMail())->update( 
+                        array( 
+                        "password" => Hash::make($passwordString),
+                        "updated_at" => $updated_at
+                        ));
+                    if($passwordUpdate!=0)
+                    {
+                        $oClient = OClient::where('password_client', 1)->where('id',2)->first();
+                        $finalres = $this->getoutlookTokenAndRefreshToken($oClient, $user->getMail(), $passwordString,2);
+                        $members = Members::where("email",$user->getMail())->update( 
+                            array( 
+                            "access_token" => $finalres->getData()->access_token,
+                            "refresh_token" => $finalres->getData()->refresh_token,
+                            "outlook_token" => $request->input('access_token'),
+                            "outlook_refresh_token" => null,
+                            "updated_at" => $updated_at
+                            ));
+
+                        if($members>0)
+                        {
+                            $returnData = Members::join('tbl_docpath_config_master','users.mem_org_id','=','tbl_docpath_config_master.org_id')->where("users.email",$user->getMail())->where('tbl_docpath_config_master.isDeleted',0)->first();
+                            $user_response = array('token_type' =>  $finalres->getData()->token_type,
+                                        'access_token' => $finalres->getData()->access_token,
+                                        'refresh_token' => $finalres->getData()->refresh_token,
+                                        'user_id' => $returnData->mem_id,
+                                        'first_name' => $returnData->mem_name,
+                                        'last_name' => $returnData->mem_last_name,
+                                        'org_id'=> $returnData->mem_org_id,
+                                        'access_type' => $returnData->access_type,
+                                        'doc_path' => $returnData->doc_path,
+                                        'image_path' => $returnData->image_path
+                                        );
+                                        return response()->json(['user_info'=>$user_response], 200);
+                        }
+                    }
+                    else
+                    {
+                        return response()->json(['response'=>'Cannot login with Outlook'], 410);
+                    }
                 }
-                catch (League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
-                    return redirect('/')
-                      ->with('error', 'Error requesting access token')
-                      ->with('errorDetail', $e->getMessage());
-                  }
-        }
-        else
-        {
-            echo "An error occured";
-        }
+                else
+                {
+                    return response()->json(['error'=>'Not a valid User'], 410); 
+                }
+            }
+            catch (League\OAuth2\Client\Provider\Exception\IdentityProviderException $e) {
+                return redirect('/')
+                    ->with('error', 'Error requesting access token')
+                    ->with('errorDetail', $e->getMessage());
+            }
     }
+    /* generating new token and refresh token - outlook scenario */
+    public function getoutlookTokenAndRefreshToken(OClient $oClient, $email, $password,$usertype) {  
+        $oClient = OClient::where('password_client', 1)->where('id',$usertype)->first();
+        $http = new Client;
+        $response = $http->request('POST', 'https://rdd.octasite.com/rdd_server/public/oauth/token', [
+            'form_params' => [
+                'grant_type' => 'password',
+                'client_id' => $oClient->id,
+                'client_secret' => $oClient->secret,
+                'username' => $email,
+                'password' => $password,
+                'scope' => '*',
+            ],
+        ]);
+
+       $result = json_decode((string) $response->getBody(), true);
+       return response()->json($result, $this->successStatus);
+   }
 }

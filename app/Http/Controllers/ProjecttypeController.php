@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Projecttype;
 use Response;
 use Validator;
+use File;
 
 class ProjecttypeController extends Controller
 {
@@ -85,12 +86,27 @@ class ProjecttypeController extends Controller
                  echo json_encode($response); 
              }
     }
-    function retrieveByOrg($id)
+    function retrieveByOrg(Request $request,$id)
     {
         $limit = 40;
         $offset = 0;
-        $types = Projecttype::join('tbl_templatename_master','tbl_templatename_master.template_id','=','tbl_projecttype_master.template_id')->select('tbl_projecttype_master.*','tbl_templatename_master.template_name')->where("tbl_projecttype_master.org_id",$id)->offset($offset)->limit($limit)->get();
-        echo json_encode($types); 
+
+        $validator = Validator::make($request->all(), [ 
+            'doc_path' => 'required',
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
+        $doc_path = public_path()."".$request->input('doc_path')."settings/projecttypes";
+        if(!File::isDirectory($doc_path)){
+               File::makeDirectory($doc_path, 0777, true, true);
+           }
+
+        $types = Projecttype::join('tbl_templatename_master','tbl_templatename_master.template_id','=','tbl_projecttype_master.template_id')->select('tbl_projecttype_master.*','tbl_templatename_master.template_name')->where("tbl_projecttype_master.org_id",$id)->orderBy('tbl_projecttype_master.type_name', 'ASC')->get();
+        
+        return Response::json(array('doc_path' => $doc_path,'project_types' => $types));
     }
     function getType(Request $request,$id)
     {

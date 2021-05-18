@@ -71,7 +71,6 @@ class FloorController extends Controller
             'floor_id' => 'required',
             'property_id' => 'required', 
             'floor_no' => 'required', 
-            'floor_code' => 'required', 
             'user_id' => 'required',
             'active_status' => 'required'
         ]);
@@ -153,6 +152,12 @@ class FloorController extends Controller
                 $deleteQuery = Floor::where('property_id',$propertyid)->where('floor_id',$floorid)->delete();
                 if($deleteQuery==1)
                 {
+                    $floor_count = Floor::where('property_id',$propertyid)->where('active_status',1)->count();
+                    $properties = Properties::where("property_id",$propertyid)->update( 
+                        array( 
+                         "no_of_floors" => $floor_count,
+                         "updated_at" => date('Y-m-d h:i:s'),
+                         ));
                     return response()->json(['response'=>"Floor Removed Successfully"], 200);
                 }
                 else

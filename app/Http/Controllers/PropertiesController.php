@@ -53,6 +53,7 @@ class PropertiesController extends Controller
                 $data[] = [
                     'org_id' => $request->input('org_id'),
                     'property_id' => $returnData['property_id'],
+                    'floor_no' => $k+intval(1),
                     'created_at' => date('Y-m-d H:i:s'),
                     'updated_at' => date('Y-m-d H:i:s'),
                     'created_by' => $request->input('user_id')

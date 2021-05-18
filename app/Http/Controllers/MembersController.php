@@ -10,6 +10,7 @@ use App\Models\Superuser;
 use App\Models\Designation;
 use Response;
 use Validator;
+use File;
 
 class MembersController extends Controller
 {
@@ -55,6 +56,7 @@ class MembersController extends Controller
         $members->mem_designation = $request->input('mem_designation');
         $members->mem_signature_path = $request->input('mem_signature_path');
         $members->mem_level = $request->input('mem_level');
+        $members->auth_grp = $request->input('auth_grp');
         $members->created_at = date('Y-m-d H:i:s');
         $members->updated_at = date('Y-m-d H:i:s');
         $members->access_type = $request->input('access_type');
@@ -96,6 +98,7 @@ class MembersController extends Controller
                              "mem_designation" => $request->input('mem_designation'),
                              "mem_signature_path" => $request->input('mem_signature_path'),
                              "mem_level" => $request->input('mem_level'),
+                             "auth_grp" => $request->input('auth_grp'),
                              "updated_at" => date('Y-m-d H:i:s'),
                              "access_type" => $request->input('access_type'),
                              "active_status" => $request->input('active_status')
@@ -110,6 +113,14 @@ class MembersController extends Controller
     }
     function retrieveByOrg(Request $request,$id)
     {
+        $validator = Validator::make($request->all(), [ 
+            'image_path' => 'required',
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
         $searchTerm = $request->input('searchkey');
 
         $query = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.mem_org_id',$id)->select('users.mem_id','users.mem_org_id','users.mem_name','users.mem_signature_path','users.created_at','users.mem_last_name','users.email','users.mobile_no','users.mem_designation','tbl_designation_master.designation_name','users.gender','users.access_type','users.active_status');
@@ -123,8 +134,12 @@ class MembersController extends Controller
             $query->where('mem_designation',$request->input('member_role'));
         }
 
-        $members = $query->get();
-        return $members;
+        $members = $query->orderBy('users.mem_name', 'ASC')->get();
+        $image_path = public_path()."".$request->input('image_path')."settings/users";
+        if(!File::isDirectory($image_path)){
+               File::makeDirectory($image_path, 0777, true, true);
+           }
+        return Response::json(array('image_path' => $image_path,'users' => $members));
     }
     function getMember(Request $request,$id)
     {
@@ -145,7 +160,7 @@ class MembersController extends Controller
         $user_type = $des_details[0]['designation_user_type'];
         if($user_type==1)
         {
-            $members = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.active_status',1)->where('users.mem_designation',$designation_id)->where('users.mem_org_id',$org_id)->select('users.mem_id','users.mem_name','users.mem_last_name','users.mem_designation','tbl_designation_master.designation_name','users.email','users.mobile_no')->get();
+            $members = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.active_status',1)->where('users.mem_designation',$designation_id)->where('users.mem_org_id',$org_id)->select('users.mem_id','users.mem_name','users.mem_last_name','users.mem_designation','tbl_designation_master.designation_name','users.email','users.mobile_no')->orderBy('users.mem_name', 'ASC')->get();
         }
         else
         {
@@ -157,7 +172,7 @@ class MembersController extends Controller
             {
                 $tenant_type = 2;
             }
-            $members = Tenant::join('tbl_designation_master','tbl_designation_master.designation_id','=','tbl_tenant_master.tenant_designation')->where('tbl_tenant_master.active_status',1)->where('tenant_type',$tenant_type)->select('tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_tenant_master.email','tbl_designation_master.designation_name','tbl_tenant_master.email','tbl_tenant_master.tenant_mobile')->get();
+            $members = Tenant::join('tbl_designation_master','tbl_designation_master.designation_id','=','tbl_tenant_master.tenant_designation')->where('tbl_tenant_master.active_status',1)->where('tenant_type',$tenant_type)->select('tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_tenant_master.email','tbl_designation_master.designation_name','tbl_tenant_master.email','tbl_tenant_master.tenant_mobile')->orderBy('tbl_tenant_master.tenant_name', 'ASC')->get();
         }
         // return response()->json(['response'=>$members], 200);
         echo json_encode($members);

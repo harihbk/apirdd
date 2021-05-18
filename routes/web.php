@@ -43,12 +43,14 @@ use App\Http\Controllers\NotificationController;
 */
 
 Route::post('/login', [AuthController::class, 'login']);
-Route::get('/outlooklogin', [AuthController::class, 'outlooklogin']);
-Route::get('/outlookresponse',[LoginController::class, 'outlookresponse']);
+Route::post('/outlooklogin', [AuthController::class, 'outlookresponse']);
 Route::post('/tenantlogin', [TenantController::class, 'login']);
 Route::post('/emailcheck', [AuthController::class, 'emailCheck']);
+Route::post('/investoremailcheck', [TenantController::class, 'emailCheck']);
 Route::post('/otpcheck', [AuthController::class, 'otpVerification']);
+Route::post('/investorotpcheck', [TenantController::class, 'otpVerification']);
 Route::post('/passwordreset', [AuthController::class, 'passwordReset']);
+Route::post('/investorpasswordreset', [TenantController::class, 'passwordReset']);
 
 /*For creating Super User*/
 // Route::post('/superuser', [MembersController::class, 'createSuperuser']);
@@ -66,6 +68,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     //fileupload controller
     /* Upload documents */
     Route::post('/uploadfile',[DocumentController::class, 'docUpload']);
+    Route::post('/multipleuploadfile',[DocumentController::class, 'multipledocUpload']);
     
      //organisations
      Route::get('/org', [OrganisationsController::class, 'index']);
@@ -86,6 +89,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/units/update',[UnitsController::class, 'update']);
     Route::post('/units/org/{id}/{propid}',[UnitsController::class, 'retrieveByOrg']);
     Route::post('/units/prop/{propid}/{floorid}',[UnitsController::class, 'retrieveByFloor']);
+    Route::post('/unitslist',[UnitsController::class, 'retrieveUnitsforprojectcreation']);
 
 
     //members
@@ -121,7 +125,6 @@ Route::group(['middleware' => 'userauth:api'], function() {
     // Route::get('/currency', [CurrencyController::class, 'index']);
     // Route::post('/currency', [CurrencyController::class, 'store']);
     // Route::post('/currency/{id}',[CurrencyController::class, 'update']);
-
     //company
     Route::get('/company', [CompanyController::class, 'index']);
     Route::post('/company', [CompanyController::class, 'store']);
@@ -158,7 +161,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/prtypes', [ProjecttypeController::class, 'store']);
     Route::get('/prtypes/{id}',[ProjecttypeController::class, 'getFloor']);
     Route::post('/prtypes/update',[ProjecttypeController::class, 'update']);
-    Route::get('/prtypes/org/{id}',[ProjecttypeController::class, 'retrieveByOrg']);
+    Route::post('/prtypes/org/{id}',[ProjecttypeController::class, 'retrieveByOrg']);
 
     //Mail Frequency
     Route::get('/freq', [MailfrequencyController::class, 'index']);
@@ -269,7 +272,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/fcccheckliststatus/{projectid}', [ProjectController::class, 'rddRetrievefcccheckliststatus']);
     /* Completion Phase - Generating Fitout deposit refund status */
     Route::get('/fitoutdepositcheckliststatus/{projectid}', [ProjectController::class, 'rddRetrievefitoutdepositcheckliststatus']);
-    Route::get('/checking/{project_id}', [ProjectController::class, 'checking']);
+    /* Request payment from finance team  */
+    Route::get('/requestpayment/{project_id}', [ProjectController::class, 'rddrequestPayment']);
     /*Approval action on work permit */
     Route::patch('/permitapproval', [ProjectController::class, 'rddworkPermitApproval']);
     /*Approval action on Inspections */
@@ -280,10 +284,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::patch('/forwardmeeting', [ProjectController::class, 'forwardMeeting']);
     /* retrieve meeting task -- dashboard calendar  */
     Route::post('/getmeetings', [ProjectController::class, 'rddretrieveMeetings']);
-
-
-    
-
+    /* mark project as completed  */
+    Route::patch('/completeproject/{pid}', [ProjectController::class, 'rddprojectComplete']);
 
     //Inspection checklist controller
      /*create inspection request */
@@ -352,6 +354,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/authgrpcontent/{phaseid}', [AuthorizationgrpController::class, 'getMastercontent']);
     /*Creating authorization group */
     Route::post('/authgrp', [AuthorizationgrpController::class, 'createAuthorizationgrp']);
+    /* update auth group data */
     Route::patch('/updateauthgrp', [AuthorizationgrpController::class, 'editAuthorizationgrp']);
 
 
@@ -411,6 +414,7 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
     Route::patch('/investor/forwardmeeting', [ProjectController::class, 'forwardMeeting']);
     /*retrieve tasks approval status - meeting*/
     Route::get('/investor/meetingapprovalstatus/{projectid}/{taskid}',[ProjectController::class, 'investorretrievetaskApprovalstatus']);
+    
     
 
 

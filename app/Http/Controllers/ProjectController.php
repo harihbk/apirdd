@@ -3406,5 +3406,77 @@ class ProjectController extends Controller
             return response()->json(['response'=>"Project tasks not yet Completed"], 410); 
         }
     } 
+    /* Send Notify about doc to investor */
+    function rddSenddocmailtoinvestor(Request $request)
+    {
+        $validator = Validator::make($request->all(), [ 
+            'project_id' => 'required', 
+            'doc_header' => 'required'
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+        $doc_header = $request->input('doc_header');
+        $tenant_details = Project::leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->where('tbl_projects.project_id',$request->input('project_id'))->where('tbl_project_contact_details.member_designation',13)->select('tbl_tenant_master.*','tbl_projects.investor_brand')->get();
+
+        $emaildata = [
+            "tenant_name" => $tenant_details[0]['tenant_name'],
+            "tenant_last_name" => $tenant_details[0]['tenant_last_name'],
+            "investor_brand" => $tenant_details[0]['investor_brand'],
+            "tenant_email" => $tenant_details[0]['email'],
+            "doc_header" => $doc_header
+
+        ];
+        Mail::send('emails.drawingsubmission', $emaildata, function($message)use($emaildata,$doc_header) {
+            $message->to($emaildata['tenant_email'])
+                    ->subject('RDD - '.$doc_header.' Drawings Submission');
+            });
+        if(Mail::failures())
+        {
+            return response()->json(['response'=>"Document notify Mail Not Sent"], 410);
+        }
+        else
+        {
+            return response()->json(['response'=>"Document notify Mail Sent to Investor"], 200);
+        }
+    }
+    /* Send Notify about doc to manager */
+    function rddSenddocmailtomanager(Request $request)
+    {
+        $validator = Validator::make($request->all(), [ 
+            'project_id' => 'required', 
+            'doc_header' => 'required'
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
+        $doc_header = $request->input('doc_header');
+        $tenant_details = Project::leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->where('tbl_projects.project_id',$request->input('project_id'))->select('users.mem_name','users.mem_last_name','users.email','tbl_projects.*')->get();
+
+        $emaildata = [
+            "tenant_name" => $tenant_details[0]['mem_name'],
+            "tenant_last_name" => $tenant_details[0]['mem_last_name'],
+            "investor_brand" => $tenant_details[0]['investor_brand'],
+            "tenant_email" => $tenant_details[0]['email'],
+            "doc_header" => $doc_header
+        ];
+
+        Mail::send('emails.drawingsubmission', $emaildata, function($message)use($emaildata,$doc_header) {
+            $message->to($emaildata['tenant_email'])
+                    ->subject('RDD - '.$doc_header.' Drawings Submission');
+            });
+        if(Mail::failures())
+        {
+            return response()->json(['response'=>"Document notify Mail Not Sent"], 410);
+        }
+        else
+        {
+            return response()->json(['response'=>"Document notify Mail Sent to Rdd manager"], 200);
+        }
+
+    }
 }
 

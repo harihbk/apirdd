@@ -157,6 +157,10 @@ class MembersController extends Controller
         $members='';
         $tenant_type=2;
         $des_details  = Designation::where('designation_id',$designation_id)->get();
+        if(count($des_details)==0)
+        {
+            return response()->json(['response'=>"No members found"], 410);
+        }
         $user_type = $des_details[0]['designation_user_type'];
         if($user_type==1)
         {

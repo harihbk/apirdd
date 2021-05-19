@@ -286,6 +286,11 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/getmeetings', [ProjectController::class, 'rddretrieveMeetings']);
     /* mark project as completed  */
     Route::patch('/completeproject/{pid}', [ProjectController::class, 'rddprojectComplete']);
+    /* Send Mail to investor -for docs*/
+    Route::patch('/docnotifyinvestor', [ProjectController::class, 'rddSenddocmailtoinvestor']);
+    /* Send Mail to investor -for docs*/
+    Route::patch('/docnotifymanager', [ProjectController::class, 'rddSenddocmailtomanager']);
+
 
     //Inspection checklist controller
      /*create inspection request */

@@ -177,6 +177,12 @@ class AuthorizationgrpController extends Controller
         if ($validator->fails()) { 
             return response()->json(['response'=>$validator->errors()], 401);            
         }
+
+            Authorizationgrp::where('id',$datas['id'])->update(
+                array(
+                'group_name' => $datas['group_name'],
+                )
+            );
             for($i=0;$i<count($datas['content']);$i++)
             {
                 Authorizationgrpcontent::where('group_id',$datas['id'])->where('id',$datas['content'][$i]['id'])->update(

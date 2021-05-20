@@ -136,6 +136,7 @@ class TemplateController extends Controller
                                  "activity_desc" => $datas[$i]['tasks'][$k]['activity_desc'],
                                  "person" => $datas[$i]['tasks'][$k]['person'],
                                  "approvers" => $datas[$i]['tasks'][$k]['approvers'],
+                                 "attendees" => $datas[$i]['tasks'][$k]['attendees'],
                                  "fre_id" => $datas[$i]['tasks'][$k]['fre_id'],
                                  "seq_status" => $datas[$i]['tasks'][$k]['seq_status'],
                                  "seq_no" => $datas[$i]['tasks'][$k]['seq_no'],
@@ -237,6 +238,8 @@ class TemplateController extends Controller
 
         if((Templatemaster::insert($data) || $template>0) && (Templatedocs::insert($doc_data) || $templates_doc>0))
             {
+            //update template tasks designations
+            $a = $this->updateDesignations($template_id,$datas[0]['org_id'],$datas[0]['user_id']);
             $returnData = Templatemaster::find($types->template_id);
             $data = array ("message" => 'Template Edited successfully',"data" => $returnData );
             $response = Response::json($data,200);
@@ -375,6 +378,93 @@ class TemplateController extends Controller
         {
             return 0;
         }
+    }
+    //for editing designations on template edit
+    function updateDesignations($template_id,$org_id,$user_id)
+    {
+        $datas = [];
+        $designations = [];
+        $created_at =  date('Y-m-d H:i:s');
+        $updated_at =  date('Y-m-d H:i:s');
+        //remove the old entries and enter new entries
+        Templatedesignations::where('template_id',$template_id)->delete();
+        $tasks = Templatemaster::where('template_id',$template_id)->where('isDeleted',0)->select('person','approvers','attendees')->get();
+        $docs = Templatedocs::where('template_id',$template_id)->where('isDeleted',0)->select('reviewers','approvers_level1','approvers_level2')->get();
+        for($i=0;$i<count($tasks);$i++)
+        {
+            $a = explode(',',$tasks[$i]['person']);
+            $b = explode(',',$tasks[$i]['approvers']);
+            $c = explode(',',$tasks[$i]['attendees']);
+            
+            for($j=0;$j<count($a);$j++)
+            {
+                if(!in_array($a[$j],$datas))
+                {
+                    array_push($datas,$a[$j]);
+                }
+            }
+            for($k=0;$k<count($b);$k++)
+            {
+                if(!in_array($b[$k],$datas))
+                {
+                    array_push($datas,$b[$k]);
+                }
+            }
+            for($l=0;$l<count($c);$l++)
+            {
+                if(!in_array($c[$l],$datas))
+                {
+                    array_push($datas,$c[$l]);
+                }
+            }
+        }
+        for($m=0;$m<count($docs);$m++)
+        {
+            $p = explode(',',$docs[$m]['reviewers']);
+            $q = explode(',',$docs[$m]['approvers_level1']);
+            $r = explode(',',$docs[$m]['approvers_level2']);
+            for($x=0;$x<count($p);$x++)
+            {
+                if(!in_array($p[$x],$datas))
+                {
+                    array_push($datas,$p[$x]);
+                }
+            }
+            for($y=0;$y<count($q);$y++)
+            {
+                if(!in_array($q[$y],$datas))
+                {
+                    array_push($datas,$q[$y]);
+                }
+            }
+            for($z=0;$z<count($r);$z++)
+            {
+                if(!in_array($r[$z],$datas))
+                {
+                    array_push($datas,$r[$z]);
+                }
+            }
+        }
+        //store designations
+        for($r=0;$r<count($datas);$r++)
+        {
+            $designations[] = [
+                'org_id' => $org_id,
+                'template_id' => $template_id,
+                'designation_id' => $datas[$r],
+                'created_by' => $user_id,
+                "created_at" => $created_at,
+                "updated_at" => $updated_at
+            ];
+        }
+             if(Templatedesignations::insert($designations))
+                {
+                    return 1;
+                }
+                else
+                {
+                    return 0;
+                }
     }
 
 }

@@ -210,6 +210,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/template/org/{id}/{pid}', [TemplateController::class, 'retrievebyTemplate']);
     Route::post('/template/phase/{id}/{tid}/', [TemplateController::class, 'getTemplatePhase']);
 
+
     //Checklist template master
     Route::post('/checklisttemplate', [ChecklisttemplateController::class, 'store']);
     Route::get('/checklisttemplate/{orgid}', [ChecklisttemplateController::class, 'retrievebyOrg']);
@@ -290,6 +291,10 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::patch('/docnotifyinvestor', [ProjectController::class, 'rddSenddocmailtoinvestor']);
     /* Send Mail to investor -for docs*/
     Route::patch('/docnotifymanager', [ProjectController::class, 'rddSenddocmailtomanager']);
+    /* get Mom template for mail*/
+    Route::get('/momtemplate/{project_id}/{task_id}', [ProjectController::class, 'getMomtemplate']);
+    
+    
 
 
     //Inspection checklist controller

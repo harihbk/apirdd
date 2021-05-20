@@ -35,6 +35,7 @@ use App\Models\Checklisttemplate;
 use App\Models\Inspectionchecklistmaster;
 use App\Models\Projectinspectionitems;
 use App\Models\Notifications;
+use App\Models\Emailtemplate;
 use Response;
 use Validator;
 use Illuminate\Support\Facades\Mail;
@@ -2561,7 +2562,7 @@ class ProjectController extends Controller
             'datas.*.phase_id' => 'required',
             'datas.*.user_id' => 'required',
             'datas.*.docs.*.doc_id' => 'required',
-            'datas.*.docs.*.file_name' => 'required',
+            // 'datas.*.docs.*.file_name' => 'required',
             'datas.*.docs.*.file_path' => 'required'
         ]);
 
@@ -2580,11 +2581,11 @@ class ProjectController extends Controller
                      "doc_status" => $doc_uploaded_status,
                      "uploaded_by"  => $datas[$i]['user_id'],
                      ));
-                
+                     $file_name = $datas[$i]['docs'][$k]['file_name']?$datas[$i]['docs'][$k]['file_name']:null;
                      $docsHistory[] = [
                         'project_id' => $datas[$i]['project_id'],
                         'doc_id' => $datas[$i]['docs'][$k]['doc_id'],
-                        'file_name' => $datas[$i]['docs'][$k]['file_name'],
+                        'file_name' => $file_name,
                         "file_path"  => $datas[$i]['docs'][$k]['file_path'],
                         "uploaded_by"  => $datas[$i]['user_id'],
                         "created_at" => $created_at,
@@ -2617,7 +2618,8 @@ class ProjectController extends Controller
                 "tenant_name" => $tenant_details[0]['tenant_name'],
                 "tenant_last_name" => $tenant_details[0]['tenant_last_name'],
                 "investor_brand" => $taskdata['investor_brand'],
-                "tenant_email" => $tenant_details[0]['tenant_email']
+                "tenant_email" => $tenant_details[0]['tenant_email'],
+                "doc_header" => $taskdata['doc_header']
 
             ];
             Mail::send('emails.drawingsubmission', $emaildata, function($message)use($emaildata) {
@@ -3478,5 +3480,41 @@ class ProjectController extends Controller
         }
 
     }
-}
 
+    function getMomtemplate(Request $request,$project_id,$task_id)
+    {
+        $project_meeting_completed_status = 1;
+        $task_data = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->select('tbl_project_template.id','tbl_project_template.project_id','tbl_project_template.template_id','tbl_project_template.task_type','activity_desc','meeting_date','meeting_start_time','meeting_end_time','attendees','attendees_designation','approvers','approvers_designation','tbl_project_template.phase_id','mem_responsible','mem_responsible_designation','fre_id','duration','seq_status','seq_no','planned_date','actual_date','tbl_project_template.fif_upload_path','task_status','tbl_project_template.org_id','tbl_projects.project_name','tbl_project_template.meeting_topic')->leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,TRIM(tbl_project_template.mem_responsible))"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_project_template.approvers)"),">",\DB::raw("'0'"))->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.id',$task_id)->where('tbl_project_template.task_status',$project_meeting_completed_status)->where('tbl_project_template.isDeleted',0)->groupBy('tbl_project_template.id')->get();
+        if(count($task_data)>0)
+        {
+            $attendees = explode(',',$task_data[0]['attendees']);
+        $attendees_person  = array();
+        for($a=0;$a<count($attendees);$a++)
+            {
+                $res1 = explode('-',$attendees[$a]);
+                $tenantCheck = Tenant::where('tenant_id',$res1[0])->where('tenant_name',$res1[1])->first();
+                if($tenantCheck!=null)
+                {
+                    $attendees_person[] = $tenantCheck['tenant_name']." ".$tenantCheck['tenant_last_name'];
+                }
+            }
+
+            $content_id = env('MOM_DRAFT');
+            $attendees = implode(" ",$attendees_person);
+            $template = Emailtemplate::where('id',$content_id)->where('isDeleted',0)->first();
+            $content = $template['content'];
+            $find = array("Investor_Name","Meeting_Date");
+            $replace = array("INVESTOR_NAME_HERE","MEETING_DATE_HERE");
+            if($task_data[0]['meeting_date']!=null && $attendees!=null)
+            {
+                $replace = array($attendees,date('d-m-Y', strtotime($task_data[0]['meeting_date'])));
+            }
+            $finalContent = str_replace($find,$replace,$content);
+            return response()->json(['subject'=>$template['subject'],'content'=>$finalContent], 200);
+        }
+        else
+        {
+            return response()->json(['response'=>"Meeting Not Completed"], 411);
+        }
+    }
+} 

@@ -370,6 +370,11 @@ class InspectionrequestController extends Controller
         $inspectionCount = Projectinspections::where('project_id',$datas[0]['project_id'])->where('inspection_id',$datas[0]['inspection_id'])->where('inspection_status',2)->count();
         if($inspectionCount>0)
         {
+            Projectinspections::where('project_id',$datas[0]['project_id'])->where('inspection_id',$datas[0]['inspection_id'])->update(
+                array(
+                    "comments" => $datas[0]['comments']
+                )
+            );
             for($i=0;$i<count($datas);$i++)
             {
                 for($j=0;$j<count($datas[$i]['entries']);$j++)

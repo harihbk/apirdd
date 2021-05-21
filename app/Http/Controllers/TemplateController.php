@@ -8,6 +8,7 @@ use App\Models\Templatenamemaster;
 use App\Models\Templatedocs;
 use App\Models\Projecttype;
 use App\Models\Templatedesignations;
+use App\Models\Filesupload;
 use Response;
 use Validator;
 use DB;
@@ -18,23 +19,11 @@ class TemplateController extends Controller
     {
         $templatename = new Templatenamemaster();
         $doc_data = [];
-        $datas = $request->get('datas');
-        $templatename->org_id = $datas[0]['org_id'];
-        $templatename->template_name = $datas[0]['template_name'];
-        $templatename->created_at = date('Y-m-d H:i:s');
-        $templatename->updated_at = date('Y-m-d H:i:s');
-        $templatename->created_by = $datas[0]['user_id'];
-
-        $created_at =  date('Y-m-d H:i:s');
-        $updated_at =  date('Y-m-d H:i:s');
-
         $validator = Validator::make($request->all(), [ 
             'datas.*.phase_id' => 'required', 
             'datas.*.tasks.*.person' => 'required',
             'datas.*.tasks.*.activity_desc' => 'required',
             'datas.*.tasks.*.approvers' => 'required',
-            'datas.*.tasks.*.start_date' => 'required',
-            'datas.*.tasks.*.end_date' => 'required',
             'datas.*.tasks.*.duration' => 'required',
             'datas.*.tasks.*.task_type' => 'required',
         ]);
@@ -47,13 +36,21 @@ class TemplateController extends Controller
             'datas.*.docs.*.doc_header' => 'required',
             'datas.*.docs.*.doc_title' => 'required',
             'datas.*.docs.*.reviewers' => 'required',
-            'datas.*.docs.*.approvers_level1' => 'required',
-            'datas.*.docs.*.approvers_level1' => 'required',
+            'datas.*.docs.*.approvers_level1' => 'required'
         ]);
 
         if ($doc_validator->fails()) { 
             return response()->json(['error'=>$doc_validator->errors()], 401);            
         }
+        $datas = $request->get('datas');
+        $templatename->org_id = $datas[0]['org_id'];
+        $templatename->template_name = $datas[0]['template_name'];
+        $templatename->created_at = date('Y-m-d H:i:s');
+        $templatename->updated_at = date('Y-m-d H:i:s');
+        $templatename->created_by = $datas[0]['user_id'];
+
+        $created_at =  date('Y-m-d H:i:s');
+        $updated_at =  date('Y-m-d H:i:s');
 
         if($templatename->save())
         {
@@ -81,8 +78,6 @@ class TemplateController extends Controller
                             "fre_id" => $datas[$i]['tasks'][$k]['fre_id'],
                             "seq_status" => $datas[$i]['tasks'][$k]['seq_status'],
                             "seq_no" => $datas[$i]['tasks'][$k]['seq_no'],
-                            "start_date" => $datas[$i]['tasks'][$k]['start_date'],
-                            "end_date" => $datas[$i]['tasks'][$k]['end_date'],
                             "file_upload_path" => $datas[$i]['tasks'][$k]['file_upload_path'],
                             "created_at" => $created_at,
                             "updated_at" => $updated_at,
@@ -103,6 +98,7 @@ class TemplateController extends Controller
                    ];
             }
         }
+        
           if(Templatemaster::insert($data) && Templatedocs::insert($doc_data))
           {
             //get template tasks designations
@@ -140,9 +136,8 @@ class TemplateController extends Controller
                                  "fre_id" => $datas[$i]['tasks'][$k]['fre_id'],
                                  "seq_status" => $datas[$i]['tasks'][$k]['seq_status'],
                                  "seq_no" => $datas[$i]['tasks'][$k]['seq_no'],
-                                 "task_type" => $datas[$i]['tasks'][$k]['task_type'],
-                                 "start_date" => $datas[$i]['tasks'][$k]['start_date'],
-                                 "end_date" => $datas[$i]['tasks'][$k]['end_date'],                 
+                                 "file_upload_path" => $datas[$i]['tasks'][$k]['file_upload_path'],
+                                 "task_type" => $datas[$i]['tasks'][$k]['task_type'],                
                                  "duration" =>$datas[$i]['tasks'][$k]['duration'],
                                  "updated_at" => date('Y-m-d H:i:s'),
                                  "created_by" => $datas[$i]['user_id'],
@@ -165,8 +160,6 @@ class TemplateController extends Controller
                         "fre_id" => $datas[$i]['tasks'][$k]['fre_id'],
                         "seq_status" => $datas[$i]['tasks'][$k]['seq_status'],
                         "seq_no" => $datas[$i]['tasks'][$k]['seq_no'],
-                        "start_date" => $datas[$i]['tasks'][$k]['start_date'],
-                        "end_date" => $datas[$i]['tasks'][$k]['end_date'],
                         "file_upload_path" => $datas[$i]['tasks'][$k]['file_upload_path'],
                         "created_at" => $created_at,
                         "updated_at" => $updated_at,
@@ -195,7 +188,7 @@ class TemplateController extends Controller
                     $doc_data[] = [
                         'template_id' => $template_id,
                         'org_id' => $datas[$i]['org_id'],
-                        'phase_id' => $datas[$i]['docs'][$j]['phase_id'],
+                        'phase_id' => $datas[$i]['phase_id'],
                         'doc_header' => $datas[$i]['docs'][$j]['doc_header'],
                         'doc_title' => $datas[$i]['docs'][$j]['doc_title'],
                         'reviewers' => $datas[$i]['docs'][$j]['reviewers'],
@@ -213,8 +206,6 @@ class TemplateController extends Controller
             'datas.*.tasks.*.activity_desc' => 'required',
             'datas.*.tasks.*.approvers' => 'required',
             'datas.*.tasks.*.attendees' => 'required',
-            'datas.*.tasks.*.start_date' => 'required',
-            'datas.*.tasks.*.end_date' => 'required',
             'datas.*.tasks.*.duration' => 'required',
             'datas.*.tasks.*.task_type' => 'required',
         ]);
@@ -228,7 +219,6 @@ class TemplateController extends Controller
             'datas.*.docs.*.doc_header' => 'required',
             'datas.*.docs.*.doc_title' => 'required',
             'datas.*.docs.*.reviewers' => 'required',
-            'datas.*.docs.*.approvers_level1' => 'required',
             'datas.*.docs.*.approvers_level1' => 'required'
         ]);
 

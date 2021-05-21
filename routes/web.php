@@ -293,6 +293,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::patch('/docnotifymanager', [ProjectController::class, 'rddSenddocmailtomanager']);
     /* get Mom template for mail*/
     Route::get('/momtemplate/{project_id}/{task_id}', [ProjectController::class, 'getMomtemplate']);
+    /*multiple docs - checking doc history before uploading*/
+    // Route::post('/multipledocscheck', [ProjectController::class, 'docsChecking']);
     
     
 

@@ -57,6 +57,7 @@ class InspectionrequestController extends Controller
             $inspection->requested_time = $request->input('requested_time');
             $inspection->checklist_id = $request->input('checklist_id');
             $inspection->comments = $request->input('comments');
+            $inspection->inspection_status = 2;
             $inspection->rdd_member_id = $request->input('user_id');
             $inspection->created_at = date('Y-m-d H:i:s');
             $inspection->updated_at = date('Y-m-d H:i:s');

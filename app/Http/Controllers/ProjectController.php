@@ -411,6 +411,7 @@ class ProjectController extends Controller
             //map the template to project for tracking tasks
             for($r=0;$r<count($templatedetails);$r++)
             {
+                $planned_date = date('Y-m-d h:i:s', strtotime('+'.$templatedetails[$r]['duration'].' days'));
                 $templateData[] = [
                             'project_id' => $project_id,
                             'org_id' => $projectdata[0]['org_id'],
@@ -426,7 +427,7 @@ class ProjectController extends Controller
                             'seq_status' => $templatedetails[$r]['seq_status'],
                             'seq_no' => $templatedetails[$r]['seq_no'],
                             'duration' => $templatedetails[$r]['duration'],
-                            'planned_date' => $templatedetails[$r]['end_date'],
+                            'planned_date' => $planned_date,
                             'fif_upload_path' => $templatedetails[$r]['fif_upload_path'],
                             "created_at" => $created_at,
                             "updated_at" => $updated_at,
@@ -940,7 +941,6 @@ class ProjectController extends Controller
                 Mail::to($persons_array)->send(new Meetingrejection());
                 Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->update(
                     array(
-                        "approval_status"=>$rejection_status,
                         "task_status" => $task_rescheduled_status,
                         "updated_at"=>$updated_at
                     )
@@ -1049,7 +1049,7 @@ class ProjectController extends Controller
         }
         else
         {
-            $reject = Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$request->input('attendee'))->where("isDeleted",0)->update(
+            $reject = Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("attendee",$attendee)->where("isDeleted",0)->update(
                 array(
                     "approval_status"=>$request->input('approval_status'),
                     "updated_at"=>$updated_at
@@ -1058,14 +1058,12 @@ class ProjectController extends Controller
             //attendee approvals update --attendee table
             Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->where("isDeleted",0)->update(
             array(
-                "approval_status"=>$rejection_status,
                 "task_status" => $attendee_task_rejection_status,
                 "updated_at"=>$updated_at
             ));
             //attendee approvals update --approver table
             Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->where("isDeleted",0)->update(
                 array(
-                    "approval_status"=>$rejection_status,
                     "task_status" => $approvers_task_rejection_status,
                     "updated_at"=>$updated_at
                 ));
@@ -1674,7 +1672,7 @@ class ProjectController extends Controller
         $this->assignMembers($projectid,$phase_id);
         $project_details = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->join('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_project_template.phase_id')->select('tbl_project_template.id','tbl_project_template.project_id','tbl_project_template.template_id','tbl_project_template.task_type','activity_desc','meeting_date','meeting_start_time','meeting_end_time','attendees','attendees_designation','approvers','approvers_designation','tbl_project_template.phase_id','mem_responsible','mem_responsible_designation','fre_id','duration','seq_status','seq_no','planned_date','actual_date','tbl_project_template.fif_upload_path','task_status',DB::raw("GROUP_CONCAT(DISTINCT a.mem_name) as member_responsible_person"),DB::raw("GROUP_CONCAT(DISTINCT b.mem_name) as approvers_person"),'tbl_phase_master.phase_name','tbl_project_template.org_id','tbl_projects.project_name')->leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,tbl_project_template.mem_responsible)"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_project_template.approvers)"),">",\DB::raw("'0'"))->where('tbl_project_template.project_id',$projectid)->where('tbl_project_template.phase_id',$phase_id)->where('tbl_project_template.isDeleted',0)->groupBy('tbl_project_template.id')->get();
        
-        $docs_details = Projectdocs::select('doc_id','project_id','phase_id','doc_header','doc_title','reviewers','approvers_level1','approvers_level2','file_path','comment','actual_date','due_date','doc_status')->leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,tbl_projecttasks_docs.reviewers)"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_projecttasks_docs.approvers_level1)"),">",\DB::raw("'0'"))->leftjoin('users as c',\DB::raw("FIND_IN_SET(c.mem_id,tbl_projecttasks_docs.approvers_level2)"),">",\DB::raw("'0'"))->where('tbl_projecttasks_docs.isDeleted',0)->where('tbl_projecttasks_docs.project_id',$projectid)->where('tbl_projecttasks_docs.phase_id',$phase_id)->get()->groupBy('doc_header');
+        $docs_details = Projectdocs::select('doc_id','project_id','phase_id','doc_header','doc_title','reviewers','approvers_level1','approvers_level2','file_path','comment','actual_date','due_date','doc_status')->leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,tbl_projecttasks_docs.reviewers)"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_projecttasks_docs.approvers_level1)"),">",\DB::raw("'0'"))->leftjoin('users as c',\DB::raw("FIND_IN_SET(c.mem_id,tbl_projecttasks_docs.approvers_level2)"),">",\DB::raw("'0'"))->where('tbl_projecttasks_docs.isDeleted',0)->where('tbl_projecttasks_docs.project_id',$projectid)->where('tbl_projecttasks_docs.phase_id',$phase_id)->groupBy('doc_id')->get()->groupBy('doc_header');
 
         $permit_details = Projectworkpermit::join('tbl_workpermit_master','tbl_workpermit_master.permit_id','=','tbl_project_workpermits.work_permit_type')->select('tbl_project_workpermits.permit_id','tbl_project_workpermits.project_id','tbl_project_workpermits.work_permit_type','tbl_project_workpermits.file_path','tbl_project_workpermits.drawing_path','tbl_project_workpermits.start_date','tbl_project_workpermits.end_date','tbl_project_workpermits.description','tbl_project_workpermits.checklist_file_path','tbl_project_workpermits.request_status','tbl_project_workpermits.investor_id','tbl_workpermit_master.permit_type')->where('project_id',$projectid)->get();
 
@@ -2477,7 +2475,11 @@ class ProjectController extends Controller
     {
         $attendee = "'".$memid."-".$memname."'";
         $task_not_initiated_status = 0;
-        $task_lists = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.property_id','=','tbl_projects.property_id')->where('tbl_project_template.task_type',$tasktype)->where('tbl_projects.project_id',$projectid)->whereNotIn('tbl_project_template.task_status', [$task_not_initiated_status])->where('tbl_project_template.isDeleted',0)->whereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)")->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name')->groupBy('tbl_project_template.id')->get();
+        $completed_status = 1;
+        $approvers_rejected_status = 5;
+        $attendee_rejected_status = 6;
+        $meeting_scheduled_status = 2;
+        $task_lists = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.property_id','=','tbl_projects.property_id')->where('tbl_project_template.task_type',$tasktype)->where('tbl_projects.project_id',$projectid)->whereNotIn('tbl_project_template.task_status', [$task_not_initiated_status,$completed_status,$meeting_scheduled_status,$attendee_rejected_status,$approvers_rejected_status])->where('tbl_project_template.isDeleted',0)->whereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)")->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name')->groupBy('tbl_project_template.id')->get();
 
         return $task_lists;
     }
@@ -2767,13 +2769,16 @@ class ProjectController extends Controller
                                     "approval_status"=>$rejection_status
                                 )
                             );
-                            $history->project_id = $request->input('project_id');
-                            $history->doc_id = $request->input('doc_id');
-                            $history->file_name = $request->input('file_name');
-                            $history->file_path = $request->input('file_path');
-                            $history->uploaded_by = $request->input('approver_id');
-                            $history->approval_status = $approved_status;
-                            $history->save();
+                            for($l=0;$l<count($request->input('file_path'));$l++)
+                            {
+                                $history->project_id = $request->input('project_id');
+                                $history->doc_id = $request->input('doc_id');
+                                // $history->file_name = $request->input('file_name');
+                                $history->file_path = $request->input('file_path')[$l];
+                                $history->uploaded_by = $request->input('approver_id');
+                                $history->approval_status = $approved_status;
+                                $history->save();
+                            }
                             //update doc tasks status
                             Projectdocs::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->where('doc_status',$yet_to_start)->update(
                                 array(
@@ -3178,7 +3183,7 @@ class ProjectController extends Controller
         $document_task_count = 0;
         $work_permit_count = 0;
         $inspection_count = 0;
-        $meeting_task_count = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->whereNotIn("tbl_project_template.task_status",[0,1])->where("tbl_project_template.task_type",1)->where(function($query) use ($attendee){
+        $meeting_task_count = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->whereNotIn("tbl_project_template.task_status",[0,1,2,5,6])->where("tbl_project_template.task_type",1)->where(function($query) use ($attendee){
                 $query->orWhereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)");
             })->where('tbl_projects.property_id',$request->input('property_id'))->where('tbl_projects.project_id',$request->input('project_id'))->count();
          $document_task_count = Projectdocs::join('tbl_projects','tbl_projects.project_id','=','tbl_projecttasks_docs.project_id')->whereNotIn("tbl_projecttasks_docs.doc_status",[0])->where('tbl_projects.property_id',$request->input('property_id'))->where('tbl_projects.project_id',$request->input('project_id'))->count();
@@ -3516,5 +3521,48 @@ class ProjectController extends Controller
         {
             return response()->json(['response'=>"Meeting Not Completed"], 411);
         }
+    }
+    /* Check for mulitple doc upload in doc history */
+    function docsChecking(Request $request)
+    {
+        $created_at = date('Y-m-d H:i:s');
+        $updated_at = date('Y-m-d H:i:s');
+        $validator = Validator::make($request->all(), [ 
+            'project_id' => 'required', 
+            'doc_id' => 'required',
+            'file_names'=>'required',
+            'doc_path' => 'required',
+            'user_id' => 'required'
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
+        for($i=0;$i<count($request->input('file_names'));$i++)
+        {
+            $file_path = $request->input('doc_path')."/".$request->input('file_names')[$i];
+            $checkQuery = Projectdocshistory::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->where('file_path',$file_path)->get();
+            if(count($checkQuery)==0)
+            {
+                $history = new Projectdocshistory();
+                $history->project_id = $request->input('project_id');
+                $history->doc_id = $request->input('doc_id');
+                $history->file_name = $request->input('file_names')[$i];
+                $history->file_path = $file_path;
+                $history->uploaded_by = $request->input('user_id');
+                $history->approval_status = 1;
+                $history->created_at = $created_at;
+                $history->updated_at = $updated_at;
+                $history->save();
+
+            }
+            else
+            {
+                continue;
+            }
+        }
+        return response()->json(['response'=>"Document entry made"], 200);
+
     }
 } 

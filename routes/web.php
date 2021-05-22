@@ -204,7 +204,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
 
     /* For master template data edit and adding phase details*/
     Route::get('/template/{template_id}/{phaseid}', [TemplateController::class, 'getTemplateData']);
-    Route::get('/templatelist/{org_id}', [TemplateController::class, 'getTemplatelist']);
+    Route::post('/templatelist/{org_id}', [TemplateController::class, 'getTemplatelist']);
     Route::post('/template', [TemplateController::class, 'store']);
     Route::patch('/template/{template_id}', [TemplateController::class, 'update']);
     Route::post('/template/org/{id}/{pid}', [TemplateController::class, 'retrievebyTemplate']);
@@ -293,8 +293,10 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::patch('/docnotifymanager', [ProjectController::class, 'rddSenddocmailtomanager']);
     /* get Mom template for mail*/
     Route::get('/momtemplate/{project_id}/{task_id}', [ProjectController::class, 'getMomtemplate']);
-    /*multiple docs - checking doc history before uploading*/
-    // Route::post('/multipledocscheck', [ProjectController::class, 'docsChecking']);
+    /* get property document directories - Document section */
+    Route::post('/propertydocs', [ProjectController::class, 'getPropertydocs']);
+    /* get project document directories - Document section */
+    Route::post('/projectdocs', [ProjectController::class, 'getProjectdocs']);
     
     
 

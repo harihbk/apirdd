@@ -20,7 +20,6 @@ class DocumentController extends Controller
            return response()->json(['error'=>$validator->errors()], 401);            
        }
 
-
        $orignalName = $request->file->getClientOriginalName();
 
 
@@ -28,9 +27,9 @@ class DocumentController extends Controller
 
        $fileName = $orignalName;  
   
-       $request->file->move($request->input('docpath'), $fileName);
+       $request->file->move(trim($request->input('docpath'),'"'), $fileName);
 
-       $path = $request->input('docpath')."/".$orignalName;
+       $path = trim($request->input('docpath'),'"')."/".$orignalName;
   
        $data = array ("message" => 'File Uploaded successfully',"file_name"=>$orignalName,"file_path" => $path );
        $response = Response::json($data,200);
@@ -50,8 +49,8 @@ class DocumentController extends Controller
         {
             $fileIndex = "file".$index;
             $orignalName = $request->$fileIndex->getClientOriginalName();
-            $request->$fileIndex->move($request->input('docpath'), $orignalName);  
-            array_push($file_path,$request->input('docpath')."/".$orignalName);
+            $request->$fileIndex->move(trim($request->input('docpath'),'"'), $orignalName);  
+            array_push($file_path,trim($request->input('docpath'),'"')."/".$orignalName);
         }
         else
         {

@@ -2679,6 +2679,7 @@ class ProjectController extends Controller
             }
             else
             {
+                $history = new Projectdocshistory();
                 Projectdocs::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->WhereRaw("find_in_set($memid,reviewers)")->update(
                     array(
                         "comment" => $request->input('comment'),
@@ -2689,7 +2690,7 @@ class ProjectController extends Controller
                 if($docuploadcountQuery>0)
                 {
                     //check if this user already made approval action
-                    $userapprovecheckQuery = Projectdocs::join('tbl_project_docs_approvals','tbl_project_docs_approvals.doc_id','=','tbl_projecttasks_docs.doc_id')->where('tbl_projecttasks_docs.project_id',$request->input('project_id'))->where('tbl_projecttasks_docs.doc_id',$request->input('doc_id'))->WhereRaw("find_in_set($memid,reviewers)")->where('tbl_project_docs_approvals.approver_id',$memid)->where('tbl_project_docs_approvals.approval_status',$yet_to_start)->count();
+                    $userapprovecheckQuery = Projectdocs::join('tbl_project_docs_approvals','tbl_project_docs_approvals.doc_id','=','tbl_projecttasks_docs.doc_id')->where('tbl_projecttasks_docs.project_id',$request->input('project_id'))->where('tbl_projecttasks_docs.doc_id',$request->input('doc_id'))->WhereRaw("find_in_set($memid,reviewers)")->where('tbl_project_docs_approvals.approver_type',$request->input('approver_type'))->where('tbl_project_docs_approvals.approver_id',$memid)->where('tbl_project_docs_approvals.approval_status',$yet_to_start)->count();
                     if($userapprovecheckQuery==0)
                     {
                         return response()->json(['response'=>"Already made Approval Action"], 410);
@@ -2705,6 +2706,19 @@ class ProjectController extends Controller
                         //if  approved
                         if($approval_status==1)
                         {
+                            //make history entry new changes
+                            for($l=0;$l<count($request->input('file_path'));$l++)
+                            {
+                                $history->project_id = $request->input('project_id');
+                                $history->doc_id = $request->input('doc_id');
+                                // $history->file_name = $request->input('file_name');
+                                $history->file_path = $request->input('file_path')[$l];
+                                $history->uploaded_by = $request->input('approver_id');
+                                $history->approval_status = $approved_status;
+                                $history->created_at = $created_at;
+                                $history->updated_at = $updated_at;
+                                $history->save();
+                            }
                             //get count of reviewers if any need to approve
                             $rev_count = ProjectdocsApproval::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->where('approver_type',$request->input('approver_type'))->where('approval_status',$yet_to_start)->count();
                             if($rev_count==0)
@@ -2769,16 +2783,16 @@ class ProjectController extends Controller
                                     "approval_status"=>$rejection_status
                                 )
                             );
-                            for($l=0;$l<count($request->input('file_path'));$l++)
-                            {
-                                $history->project_id = $request->input('project_id');
-                                $history->doc_id = $request->input('doc_id');
-                                // $history->file_name = $request->input('file_name');
-                                $history->file_path = $request->input('file_path')[$l];
-                                $history->uploaded_by = $request->input('approver_id');
-                                $history->approval_status = $approved_status;
-                                $history->save();
-                            }
+                            // for($l=0;$l<count($request->input('file_path'));$l++)
+                            // {
+                            //     $history->project_id = $request->input('project_id');
+                            //     $history->doc_id = $request->input('doc_id');
+                            //     // $history->file_name = $request->input('file_name');
+                            //     $history->file_path = $request->input('file_path')[$l];
+                            //     $history->uploaded_by = $request->input('approver_id');
+                            //     $history->approval_status = $approved_status;
+                            //     $history->save();
+                            // }
                             //update doc tasks status
                             Projectdocs::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->where('doc_status',$yet_to_start)->update(
                                 array(
@@ -2821,6 +2835,7 @@ class ProjectController extends Controller
             }
             else
             {
+                $history = new Projectdocshistory();
                 Projectdocs::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->WhereRaw("find_in_set($memid,approvers_level1)")->update(
                     array(
                         "comment" => $request->input('comment')
@@ -2830,7 +2845,7 @@ class ProjectController extends Controller
                 if($docrevapprovecountQuery>0)
                 {
                     //check if this user already made approval action
-                    $userapprovecheckQuery = Projectdocs::join('tbl_project_docs_approvals','tbl_project_docs_approvals.doc_id','=','tbl_projecttasks_docs.doc_id')->where('tbl_projecttasks_docs.project_id',$request->input('project_id'))->where('tbl_projecttasks_docs.doc_id',$request->input('doc_id'))->WhereRaw("find_in_set($memid,approvers_level1)")->where('tbl_project_docs_approvals.approver_id',$memid)->where('tbl_project_docs_approvals.approval_status',$yet_to_start)->count();
+                    $userapprovecheckQuery = Projectdocs::join('tbl_project_docs_approvals','tbl_project_docs_approvals.doc_id','=','tbl_projecttasks_docs.doc_id')->where('tbl_projecttasks_docs.project_id',$request->input('project_id'))->where('tbl_projecttasks_docs.doc_id',$request->input('doc_id'))->WhereRaw("find_in_set($memid,approvers_level1)")->where('tbl_project_docs_approvals.approver_type',$request->input('approver_type'))->where('tbl_project_docs_approvals.approver_id',$memid)->where('tbl_project_docs_approvals.approval_status',$yet_to_start)->count();
                     if($userapprovecheckQuery==0)
                     {
                         return response()->json(['response'=>"Already made Approval Action"], 410);
@@ -2846,6 +2861,19 @@ class ProjectController extends Controller
                         //if  approved
                         if($approval_status==1)
                         {
+                            //make history entry new changes
+                            for($o=0;$o<count($request->input('file_path'));$o++)
+                            {
+                                $history->project_id = $request->input('project_id');
+                                $history->doc_id = $request->input('doc_id');
+                                // $history->file_name = $request->input('file_name');
+                                $history->file_path = $request->input('file_path')[$o];
+                                $history->uploaded_by = $request->input('approver_id');
+                                $history->approval_status = $approved_status;
+                                $history->created_at = $created_at;
+                                $history->updated_at = $updated_at;
+                                $history->save();
+                            }
                             //get count of approvers_level1 if any need to approve
                             $app1_count = ProjectdocsApproval::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->where('approver_type',$request->input('approver_type'))->where('approval_status',$yet_to_start)->count();
                             if($app1_count==0)
@@ -2893,13 +2921,16 @@ class ProjectController extends Controller
                                     "approval_status"=>$rejection_status
                                 )
                             );
-                            $history->project_id = $request->input('project_id');
-                            $history->doc_id = $request->input('doc_id');
-                            $history->file_name = $request->input('file_name');
-                            $history->file_path = $request->input('file_path');
-                            $history->uploaded_by = $request->input('approver_id');
-                            $history->approval_status = $approved_status;
-                            $history->save();
+                            // for($o=0;$o<count($request->input('file_path'));$o++)
+                            // {
+                            // $history->project_id = $request->input('project_id');
+                            // $history->doc_id = $request->input('doc_id');
+                            // // $history->file_name = $request->input('file_name');
+                            // $history->file_path = $request->input('file_path')[$o];
+                            // $history->uploaded_by = $request->input('approver_id');
+                            // $history->approval_status = $approved_status;
+                            // $history->save();
+                            // }
                             //update doc tasks status
                             Projectdocs::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->where('doc_status',$yet_to_start)->update(
                                 array(
@@ -2939,6 +2970,7 @@ class ProjectController extends Controller
             }
             else
             {
+                $history = new Projectdocshistory();
                 Projectdocs::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->WhereRaw("find_in_set($memid,approvers_level2)")->update(
                     array(
                         "comment" => $request->input('comment')
@@ -2947,7 +2979,7 @@ class ProjectController extends Controller
                 $docapp1approvecountQuery = Projectdocs::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->WhereRaw("find_in_set($memid,approvers_level2)")->where('doc_status',$app1_approved_status)->count();
                 if($docapp1approvecountQuery>0)
                 {
-                    $userapprovecheckQuery = Projectdocs::join('tbl_project_docs_approvals','tbl_project_docs_approvals.doc_id','=','tbl_projecttasks_docs.doc_id')->where('tbl_projecttasks_docs.project_id',$request->input('project_id'))->where('tbl_projecttasks_docs.doc_id',$request->input('doc_id'))->WhereRaw("find_in_set($memid,approvers_level2)")->where('tbl_project_docs_approvals.approver_id',$memid)->where('tbl_project_docs_approvals.approval_status',$yet_to_start)->count();
+                    $userapprovecheckQuery = Projectdocs::join('tbl_project_docs_approvals','tbl_project_docs_approvals.doc_id','=','tbl_projecttasks_docs.doc_id')->where('tbl_projecttasks_docs.project_id',$request->input('project_id'))->where('tbl_projecttasks_docs.doc_id',$request->input('doc_id'))->WhereRaw("find_in_set($memid,approvers_level2)")->where('tbl_project_docs_approvals.approver_type',$request->input('approver_type'))->where('tbl_project_docs_approvals.approver_id',$memid)->where('tbl_project_docs_approvals.approval_status',$yet_to_start)->count();
                     if($userapprovecheckQuery==0)
                     {
                         return response()->json(['response'=>"Already made Approval Action"], 410);
@@ -2961,6 +2993,19 @@ class ProjectController extends Controller
                     {
                         if($approval_status==1)
                         {
+                            //make history entry new changes
+                            for($m=0;$m<count($request->input('file_path'));$m++)
+                            {
+                                $history->project_id = $request->input('project_id');
+                                $history->doc_id = $request->input('doc_id');
+                                // $history->file_name = $request->input('file_name');
+                                $history->file_path = $request->input('file_path')[$m];
+                                $history->uploaded_by = $request->input('approver_id');
+                                $history->approval_status = $approved_status;
+                                $history->created_at = $created_at;
+                                $history->updated_at = $updated_at;
+                                $history->save();
+                            }
                             //get count of approvers_level2 if any need to approve
                             $rev_count = ProjectdocsApproval::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->where('approver_type',$request->input('approver_type'))->where('approval_status',$yet_to_start)->count();
                             if($rev_count==0)
@@ -3008,13 +3053,16 @@ class ProjectController extends Controller
                                     "approval_status"=>$rejection_status
                                 )
                             );
-                            $history->project_id = $request->input('project_id');
-                            $history->doc_id = $request->input('doc_id');
-                            $history->file_name = $request->input('file_name');
-                            $history->file_path = $request->input('file_path');
-                            $history->uploaded_by = $request->input('approver_id');
-                            $history->approval_status = $approved_status;
-                            $history->save();
+                            // for($m=0;$m<count($request->input('file_path'));$m++)
+                            // {
+                            //     $history->project_id = $request->input('project_id');
+                            //     $history->doc_id = $request->input('doc_id');
+                            //     // $history->file_name = $request->input('file_name');
+                            //     $history->file_path = $request->input('file_path')[$m];
+                            //     $history->uploaded_by = $request->input('approver_id');
+                            //     $history->approval_status = $approved_status;
+                            //     $history->save();
+                            // }
                             //update doc tasks status
                             Projectdocs::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->where('doc_status',$app1_approved_status)->update(
                                 array(
@@ -3522,16 +3570,49 @@ class ProjectController extends Controller
             return response()->json(['response'=>"Meeting Not Completed"], 411);
         }
     }
-    /* Check for mulitple doc upload in doc history */
-    function docsChecking(Request $request)
+    /* Get project directories by property */
+    function getPropertydocs(Request $request)
     {
-        $created_at = date('Y-m-d H:i:s');
-        $updated_at = date('Y-m-d H:i:s');
+        $validator = Validator::make($request->all(), [ 
+            'property_id' => 'required', 
+            'doc_path' => 'required',
+            'image_path' => 'required',
+            'user_id' => 'required'
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+        $user = $request->input('user_id');
+        $projectDetails = Project::join('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->join('tbl_company_master','tbl_projects.investor_company','=','tbl_company_master.company_id')->join('tbl_project_contact_details','tbl_projects.project_id','=','tbl_project_contact_details.project_id')->select('tbl_projects.project_id','tbl_projects.project_name','tbl_projects.investor_brand','tbl_company_master.company_name','tbl_properties_master.property_name')->where(function($query) use ($user){
+            $query->orwhereRaw("find_in_set($user,tbl_projects.assigned_rdd_members)")
+                  ->orWhereRaw("find_in_set($user,tbl_project_contact_details.member_id)")
+                  ->orWhereRaw("find_in_set($user,tbl_projects.created_by)");
+                })->where('tbl_projects.property_id',$request->input('property_id'))->whereNotIn('tbl_project_contact_details.member_designation',[13,14])->groupBy('tbl_projects.project_id')->get();
+
+        for($i=0;$i<count($projectDetails);$i++)
+        {
+             $doc_path = public_path()."".$request->input('doc_path')."".$projectDetails[$i]['project_id']."_".$projectDetails[$i]['project_name'];
+             $img_path = public_path()."".$request->input('image_path')."".$projectDetails[$i]['project_id']."_".$projectDetails[$i]['project_name'];
+             $projectDetails[$i]['doc_path'] = $doc_path;
+             $projectDetails[$i]['image_path'] = $img_path;
+            if(!File::isDirectory($doc_path)){
+                $projectDetails[$i]['doc_path'] = null;
+               }
+            if(!File::isDirectory($img_path)){   
+                $projectDetails[$i]['image_path'] = null;
+               }
+        }
+
+        return response()->json(['response'=>$projectDetails], 200);
+    }
+    /* Get project directories by projects */
+    function getProjectdocs(Request $request)
+    {
         $validator = Validator::make($request->all(), [ 
             'project_id' => 'required', 
-            'doc_id' => 'required',
-            'file_names'=>'required',
             'doc_path' => 'required',
+            'image_path' => 'required',
             'user_id' => 'required'
         ]);
 
@@ -3539,30 +3620,47 @@ class ProjectController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        for($i=0;$i<count($request->input('file_names'));$i++)
-        {
-            $file_path = $request->input('doc_path')."/".$request->input('file_names')[$i];
-            $checkQuery = Projectdocshistory::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->where('file_path',$file_path)->get();
-            if(count($checkQuery)==0)
-            {
-                $history = new Projectdocshistory();
-                $history->project_id = $request->input('project_id');
-                $history->doc_id = $request->input('doc_id');
-                $history->file_name = $request->input('file_names')[$i];
-                $history->file_path = $file_path;
-                $history->uploaded_by = $request->input('user_id');
-                $history->approval_status = 1;
-                $history->created_at = $created_at;
-                $history->updated_at = $updated_at;
-                $history->save();
+        $projectDetails = Project::where('project_id',$request->input('project_id'))->first();
+        $projectdocs = Projectdocs::where('project_id',$request->input('project_id'))->where('isDeleted',0)->groupBy('doc_id')->get()->groupBy('doc_header');
 
-            }
-            else
-            {
-                continue;
-            }
-        }
-        return response()->json(['response'=>"Document entry made"], 200);
+        $startup_phase_docs = public_path()."".$request->input('doc_path')."".$projectDetails['project_id']."_".$projectDetails['project_name']."/Startup phase";
+        $startup_phase_images = public_path()."".$request->input('image_path')."".$projectDetails['project_id']."_".$projectDetails['project_name']."/Startup phase";
+        if(!File::isDirectory($startup_phase_docs)){
+            $startup_phase_docs = null;
+           }
+        if(!File::isDirectory($startup_phase_images)){   
+            $startup_phase_images = null;
+           }
 
+
+        $design_phase_docs = public_path()."".$request->input('doc_path')."".$projectDetails['project_id']."_".$projectDetails['project_name']."/Design phase";
+        $design_phase_images = public_path()."".$request->input('image_path')."".$projectDetails['project_id']."_".$projectDetails['project_name']."/Design phase";
+        if(!File::isDirectory($design_phase_docs)){
+            $design_phase_docs = null;
+           }
+        if(!File::isDirectory($design_phase_images)){   
+            $design_phase_images = null;
+           }
+
+        $fitout_phase_docs = public_path()."".$request->input('doc_path')."".$projectDetails['project_id']."_".$projectDetails['project_name']."/Fitout phase";
+        $fitout_phase_images = public_path()."".$request->input('image_path')."".$projectDetails['project_id']."_".$projectDetails['project_name']."/Fitout phase";
+        if(!File::isDirectory($fitout_phase_docs)){
+            $fitout_phase_docs = null;
+           }
+        if(!File::isDirectory($fitout_phase_images)){   
+            $fitout_phase_images = null;
+           }
+
+        $completion_phase_docs = public_path()."".$request->input('doc_path')."".$projectDetails['project_id']."_".$projectDetails['project_name']."/Completion phase";
+        $completion_phase_images = public_path()."".$request->input('image_path')."".$projectDetails['project_id']."_".$projectDetails['project_name']."/Completion phase";
+        if(!File::isDirectory($completion_phase_docs)){
+            $completion_phase_docs = null;
+           }
+        if(!File::isDirectory($completion_phase_images)){   
+            $completion_phase_images = null;
+           }
+
+
+        return response()->json(array("response"=>['startup_phase_docpath'=>$startup_phase_docs,'startup_phase_imagepath'=>$startup_phase_images,'design_phase_docpath'=>$design_phase_docs,'design_phase_imagepath'=>$design_phase_images,'fitout_phase_docpath'=>$fitout_phase_docs,'fitout_phase_imagepath'=>$fitout_phase_images,'completion_phase_docpath'=>$completion_phase_docs,'completion_phase_imagepath'=>$completion_phase_images,'project_docs'=>$projectdocs]), 200);
     }
 } 

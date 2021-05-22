@@ -12,6 +12,7 @@ use App\Models\Filesupload;
 use Response;
 use Validator;
 use DB;
+use File;
 
 class TemplateController extends Controller
 {
@@ -279,10 +280,21 @@ class TemplateController extends Controller
         
         return Response::json(['tasks' => $types,'docs' => $docs],'200');    
     }
-    function getTemplatelist($org_id)
+    function getTemplatelist(Request $request,$org_id)
     {
+        $doc_validator = Validator::make($request->all(), [ 
+            'doc_path' => 'required'
+        ]);
+
+        if ($doc_validator->fails()) { 
+            return response()->json(['error'=>$doc_validator->errors()], 401);            
+        }
         $lists = Templatenamemaster::select('template_id','org_id','template_name')->where('org_id',$org_id)->where('active_status',1)->get();
-        return Response::json(["response"=>$lists],'200');
+        $doc_path = public_path()."".$request->input('doc_path')."settings/templates";
+        if(!File::isDirectory($doc_path)){
+               File::makeDirectory($doc_path, 0777, true, true);
+           }
+        return Response::json(["response"=>$lists,"doc_path"=>$doc_path],'200');
     }
     //for storing designations on template creation
     function storeDesignations($template_id,$org_id,$user_id)

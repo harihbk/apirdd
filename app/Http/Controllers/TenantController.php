@@ -412,7 +412,54 @@ class TenantController extends Controller
             }
             else
             {
-                return response()->json(['message'=>'Otp already Sent to this email'], 200);
+                $updateExistingotp = ForgotPassword::where('user_email', $request->input('email'))->where('user_id', $user->tenant_id)->where('user_type', 2)->where('otp_status',0)->update(
+                    array(
+                        "otp_status"=> 2,
+                        "updated_at" => date('Y-m-d H:i:s')
+                    )
+                );
+                if($updateExistingotp>0)
+                {
+                    $randomNum = mt_rand(100000, 999999);
+                    $otpDetails = new ForgotPassword();
+        
+                    $otpDetails->user_id = $user->tenant_id;
+                    $otpDetails->user_email = $user->email;
+                    $otpDetails->user_type = 2;
+                    $otpDetails->otp = $randomNum;
+                    $otpDetails->created_at = date('Y-m-d H:i:s');
+                    $otpDetails->updated_at = date('Y-m-d H:i:s');
+
+                    $data = array();
+                    $data = [
+                        "tenant_name" => $user->tenant_name,
+                        "tenant_last_name" => $user->tenant_last_name,
+                        "otp" => $randomNum,
+                        "email" => $user->email
+                    ];
+        
+                    if($otpDetails->save()) {
+                        Mail::send('emails.investorotp', $data, function($message)use($data) {
+                            $message->to($data['email'])
+                                    ->subject('RDD -  Investor Password Reset');
+                            }); 
+                        if(Mail::failures())
+                        {
+                            return response()->json(['response'=>"Otp not sent to Investor"], 410);
+                        }
+                        else
+                        {
+                            $returnData = $otpDetails->find($otpDetails->otp_id);
+                            $data = array ("message" => 'OTP Sent successfully',"data" => $returnData );
+                            $response = Response::json($data,200);
+                            echo json_encode($response);  
+                        } 
+                    }
+                }  
+                else
+                {
+                    return response()->json(['response'=>"Not able to Sent Otp"], 410);
+                }
             }
         }
     }
@@ -440,7 +487,7 @@ class TenantController extends Controller
              $now = \Carbon\Carbon::now();
              $endDate = \Carbon\Carbon::parse($createdTime)->addMinutes(10);
              $remainingBoostHours = $now->diffInMinutes($endDate);
-             if($remainingBoostHours>1)
+             if($remainingBoostHours>10)
              {
                  $updateOtp = ForgotPassword::where("otp_id",$otpCheck->otp_id)->where('otp_status',0)->update( 
                      array( 

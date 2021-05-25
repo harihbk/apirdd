@@ -297,6 +297,10 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/propertydocs', [ProjectController::class, 'getPropertydocs']);
     /* get project document directories - Document section */
     Route::post('/projectdocs', [ProjectController::class, 'getProjectdocs']);
+    //forwarding meeting tasks
+    Route::patch('/forwarddocument', [ProjectController::class, 'forwardDocument']);
+    Route::post('/checking',[ProjectController::class, 'checking']);
+    
     
     
 

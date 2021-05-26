@@ -299,7 +299,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/projectdocs', [ProjectController::class, 'getProjectdocs']);
     //forwarding meeting tasks
     Route::patch('/forwarddocument', [ProjectController::class, 'forwardDocument']);
-    Route::post('/checking',[ProjectController::class, 'checking']);
+    /* Retrieving file version for uploading */
+    Route::post('/fileversion',[ProjectController::class, 'getFileVersion']);
     
     
     

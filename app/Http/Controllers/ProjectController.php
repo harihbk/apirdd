@@ -36,6 +36,8 @@ use App\Models\Inspectionchecklistmaster;
 use App\Models\Projectinspectionitems;
 use App\Models\Notifications;
 use App\Models\Emailtemplate;
+use App\Models\Projectdatecomments;
+use App\Models\Projecttaskcomments;
 use Response;
 use Validator;
 use Illuminate\Support\Facades\Mail;
@@ -1768,8 +1770,8 @@ class ProjectController extends Controller
     function retrieveProjectworkspace($projectid)
     {
         $project_details = Project::join('fitout_deposit_master','fitout_deposit_master.status_id','=','tbl_projects.fitout_deposit_status')->where('project_id',$projectid)->join('tbl_projecttype_master','tbl_projecttype_master.type_id','=','tbl_projects.project_type')->join('tbl_company_master','tbl_company_master.company_id','=','tbl_projects.investor_company')->join('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->join('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->where('project_id',$projectid)->select('tbl_projects.project_id','tbl_projects.org_id','tbl_projects.project_name','tbl_projects.usage_permissions','tbl_projects.fitout_period','tbl_projects.fitout_deposit_amt','tbl_projects.fitout_deposit_filepath','tbl_projects.owner_work','tbl_projects.owner_work_amt','tbl_projects.owner_work_filepath','tbl_projects.kfd_drawing_status','tbl_projects.ivr_status','tbl_projects.ivr_amt','tbl_projects.ivr_filepath','tbl_projects.workpermit_expiry_date','tbl_projects.insurance_validity_date','tbl_projects.fif_upload_path','tbl_projects.assigned_rdd_members','tbl_projects.fitout_deposit_status','fitout_deposit_master.status_name','tbl_projects.project_type','tbl_projecttype_master.type_name','tbl_projects.investor_company','tbl_company_master.company_name','tbl_projects.investor_brand','tbl_projects.property_id','tbl_properties_master.property_name','tbl_projects.unit_id','tbl_units_master.unit_name','tbl_units_master.unit_area')->get();
-        $milestone_dates = Projectmilestonedates::where('project_id',$projectid)->where('active_status',1)->select('date_id','org_id','project_id','concept_submission','detailed_design_submission','unit_handover','fitout_start','fitout_completion','store_opening')->get();
-        $investor_dates = Projectinvestordates::where('project_id',$projectid)->where('active_status',1)->select('date_id','org_id','project_id','concept_submission','detailed_design_submission','fitout_start','fitout_completion')->get();
+        $milestone_dates = Projectmilestonedates::where('project_id',$projectid)->select('date_id','org_id','project_id','concept_submission','detailed_design_submission','unit_handover','fitout_start','fitout_completion','store_opening')->get();
+        $investor_dates = Projectinvestordates::where('project_id',$projectid)->select('date_id','org_id','project_id','concept_submission','detailed_design_submission','fitout_start','fitout_completion')->get();
         $member_contact_details = Projectcontact::join('tbl_designation_master','tbl_designation_master.designation_id','=','tbl_project_contact_details.member_designation')->join('users','users.mem_id','=','tbl_project_contact_details.member_id')->where('project_id',$projectid)->whereNotIn('tbl_project_contact_details.member_designation', [13,14])->where('isDeleted',0)->where('project_id',$projectid)->select('tbl_project_contact_details.id','tbl_project_contact_details.project_id','tbl_project_contact_details.member_designation','tbl_project_contact_details.email','tbl_project_contact_details.mobile_number','users.mem_id','users.mem_name','users.mem_last_name','tbl_designation_master.designation_name')->get();
         $investor_contact_details = Projectcontact::leftjoin('tbl_designation_master','tbl_designation_master.designation_id','=','tbl_project_contact_details.member_designation')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->where('tbl_project_contact_details.project_id',$projectid)->where('tbl_project_contact_details.isDeleted',0)->whereIn('tbl_project_contact_details.member_designation',[13,14])->select('tbl_project_contact_details.id','tbl_project_contact_details.project_id','tbl_project_contact_details.member_designation','tbl_project_contact_details.email','tbl_project_contact_details.mobile_number','tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_name','tbl_designation_master.designation_name')->get();
 
@@ -1962,7 +1964,7 @@ class ProjectController extends Controller
 
         if($phase_id!=2)
         {
-            $project_details = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->join('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_project_template.phase_id')->select('tbl_project_template.id','tbl_project_template.project_id','tbl_project_template.template_id','tbl_project_template.task_type','activity_desc','meeting_date','meeting_start_time','meeting_end_time','attendees','attendees_designation','approvers','approvers_designation','tbl_project_template.phase_id','mem_responsible','mem_responsible_designation','fre_id','duration','seq_status','seq_no','planned_date','actual_date','tbl_project_template.fif_upload_path','task_status',DB::raw("GROUP_CONCAT(DISTINCT a.mem_name) as member_responsible_person"),DB::raw("GROUP_CONCAT(DISTINCT b.mem_name) as approvers_person"),'tbl_phase_master.phase_name','tbl_project_template.org_id','tbl_projects.project_name')->leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,tbl_project_template.mem_responsible)"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_project_template.approvers)"),">",\DB::raw("'0'"))->where('tbl_project_template.project_id',$projectid)->where('tbl_project_template.phase_id',$phase_id)->where('tbl_project_template.isDeleted',0)->groupBy('tbl_project_template.id')->get();
+            $project_details = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->join('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_project_template.phase_id')->select('tbl_project_template.id','tbl_project_template.project_id','tbl_project_template.template_id','tbl_project_template.task_type','activity_desc','meeting_date','meeting_start_time','meeting_end_time','attendees','attendees_designation','approvers','approvers_designation','tbl_project_template.phase_id','mem_responsible','mem_responsible_designation','fre_id','duration','seq_status','seq_no','planned_date','actual_date','tbl_project_template.fif_upload_path','tbl_project_template.fif_upload_path as fif_upload_path_input','task_status',DB::raw("GROUP_CONCAT(DISTINCT a.mem_name) as member_responsible_person"),DB::raw("GROUP_CONCAT(DISTINCT b.mem_name) as approvers_person"),'tbl_phase_master.phase_name','tbl_project_template.org_id','tbl_projects.project_name')->leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,tbl_project_template.mem_responsible)"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_project_template.approvers)"),">",\DB::raw("'0'"))->where('tbl_project_template.project_id',$projectid)->where('tbl_project_template.phase_id',$phase_id)->where('tbl_project_template.isDeleted',0)->groupBy('tbl_project_template.id')->get();
 
             $paths = Docpathconfig::where('org_id',$project_details[0]['org_id'])->where('isDeleted',0)->get();
             $doc_path = public_path()."".$paths[0]['doc_path']."".$project_details[0]['project_id']."_".$project_details[0]['project_name']."/".$project_details[0]['phase_name'];
@@ -2064,7 +2066,9 @@ class ProjectController extends Controller
         $milestoneData = [];
         $investorData = [];
         $contactData = [];
-
+        $updated_design_submission_date = "";
+        $updated_fitout_completion_date = "";
+        $updated_store_opening_date = "";
         for($i=0;$i<count($projectdata);$i++) 
         {
             
@@ -2088,6 +2092,12 @@ class ProjectController extends Controller
             );
         }
 
+        //check for current dates version - milestone dates
+        $milestoneDetails = Projectmilestonedates::where('project_id',$project_id)->where('active_status',1)->first();
+
+        //check for current dates version - Investor dates
+        $investordateDetails = Projectinvestordates::where('project_id',$project_id)->where('active_status',1)->first();
+
         //project milestone dates
         $milestone_dates = $request->get('milestone_dates');
 
@@ -2109,6 +2119,10 @@ class ProjectController extends Controller
             }
             else
             {
+                $updated_design_submission_date = $milestone_dates[$j]['detailed_design_submission'];
+                $updated_fitout_completion_date = $milestone_dates[$j]['fitout_completion'];
+                $updated_store_opening_date = $milestone_dates[$j]['store_opening'];
+
                 $milestoneData[] = [
                     'org_id' => $projectdata[0]['org_id'],
                     'project_id' => $project_id,
@@ -2118,6 +2132,7 @@ class ProjectController extends Controller
                     'fitout_start' => $milestone_dates[$j]['fitout_start'],
                     'fitout_completion' => $milestone_dates[$j]['fitout_completion'],
                     'store_opening' => $milestone_dates[$j]['store_opening'],
+                    'version' => intval($milestoneDetails['version'])+1,
                     "created_at" => $created_at,
                     "updated_at" => $updated_at,
                     'created_by' => $projectdata[0]['user_id']
@@ -2150,6 +2165,7 @@ class ProjectController extends Controller
                     'detailed_design_submission' => $investor_dates[$k]['detailed_design_submission'],
                     'fitout_start' => $investor_dates[$k]['fitout_start'],
                     'fitout_completion' => $investor_dates[$k]['fitout_completion'],
+                    'version' => intval($investordateDetails['version'])+1,
                     "created_at" => $created_at,
                     "updated_at" => $updated_at,
                     'created_by' => $projectdata[0]['user_id']
@@ -2192,6 +2208,28 @@ class ProjectController extends Controller
 
         if($project>0 || Projectmilestonedates::insert($milestoneData) || Projectinvestordates::insert($investorData) || Projectcontact::insert($contactData))
         {
+            if(count($milestoneData)>0)
+            {
+                //update all doc tasks due date with detailed submission
+                Projectdocs::where('project_id',$project_id)->update(
+                    array(
+                        'due_date' => $milestone_dates[0]['updated_design_submission_date'],
+                        "updated_at" => $updated_at
+                    )
+                );
+
+                 //update fitout completion certificate entry
+                FitoutCompletionCertificates::where('project_id',$project_id)->where('isDeleted',0)->update(array("planned_date"=>$updated_fitout_completion_date,"updated_at"=>$updated_at));
+
+                //update fitout deposit refund
+                FitoutDepositrefund::where('project_id',$project_id)->where('isDeleted',0)->update(array("planned_date"=>date('Y-m-d', strtotime($updated_store_opening_date. ' + 30 days')),"updated_at"=>$updated_at));
+
+                Projectmilestonedates::where('project_id',$project_id)->where('active_status',1)->where('version',$milestoneDetails['version'])->update(array("active_status"=>0,"updated_at"=>$updated_at));
+            }
+            if(count($investorData)>0)
+            {
+                Projectinvestordates::where('project_id',$project_id)->where('active_status',1)->where('version',$investordateDetails['version'])->update(array("active_status"=>0,"updated_at"=>$updated_at));
+            }
             //mail to be send on account of fitout details update
             $returnData = Project::select('project_id','project_name','created_at')->find($project_id);
             $data = array ("message" => 'Project Edited successfully',"data" => $returnData );
@@ -2469,7 +2507,6 @@ class ProjectController extends Controller
         $validator = Validator::make($request->all(), [ 
             'subject' => 'required',
             'content' => 'required'
-
         ]);
 
         if ($validator->fails()) { 
@@ -2556,18 +2593,19 @@ class ProjectController extends Controller
             $data['attendees'] = $attendees_person;
             $data['responsible_person'] = $responsible_person;
             Notifications::insert($momNotifications);
-            Mail::send('emails.projectmom', $data, function($message)use($data) {
+            $files = array();
+            $files = $request->input('file_path');
+            Mail::send([],[], function($message)use($data,$files) {
                 $message->to($data['attendees'])
                          ->cc($data['responsible_person'])
                         ->subject($data["subject"])
                         ->setBody($data["content"], 'text/html');
-                        
-                // if(count($attachment_files)>0)
-                // {
-                //         foreach ($attachment_files as $file){
-                //          $message->attach($file);
-                //         }
-                //  }
+                        if(count($files)>0)
+                        {
+                            foreach ($files as $file){
+                                $message->attach($file);
+                            }
+                        }
             });
             if(Mail::failures())
             {
@@ -3941,8 +3979,16 @@ class ProjectController extends Controller
 
     function getMomtemplate(Request $request,$project_id,$task_id)
     {
+        $validator = Validator::make($request->all(), [ 
+            'doc_path' => 'required'
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+        
         $project_meeting_completed_status = 1;
-        $task_data = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->select('tbl_project_template.id','tbl_project_template.project_id','tbl_project_template.template_id','tbl_project_template.task_type','activity_desc','meeting_date','meeting_start_time','meeting_end_time','attendees','attendees_designation','approvers','approvers_designation','tbl_project_template.phase_id','mem_responsible','mem_responsible_designation','fre_id','duration','seq_status','seq_no','planned_date','actual_date','tbl_project_template.fif_upload_path','task_status','tbl_project_template.org_id','tbl_projects.project_name','tbl_project_template.meeting_topic')->leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,TRIM(tbl_project_template.mem_responsible))"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_project_template.approvers)"),">",\DB::raw("'0'"))->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.id',$task_id)->where('tbl_project_template.task_status',$project_meeting_completed_status)->where('tbl_project_template.isDeleted',0)->groupBy('tbl_project_template.id')->get();
+        $task_data = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_project_template.phase_id')->select('tbl_project_template.id','tbl_project_template.project_id','tbl_project_template.template_id','tbl_project_template.task_type','activity_desc','meeting_date','meeting_start_time','meeting_end_time','attendees','attendees_designation','approvers','approvers_designation','tbl_project_template.phase_id','mem_responsible','mem_responsible_designation','fre_id','duration','seq_status','seq_no','planned_date','actual_date','tbl_project_template.fif_upload_path','task_status','tbl_project_template.org_id','tbl_projects.project_name','tbl_project_template.meeting_topic','tbl_phase_master.phase_name')->leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,TRIM(tbl_project_template.mem_responsible))"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_project_template.approvers)"),">",\DB::raw("'0'"))->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.id',$task_id)->where('tbl_project_template.task_status',$project_meeting_completed_status)->where('tbl_project_template.isDeleted',0)->groupBy('tbl_project_template.id')->get();
         if(count($task_data)>0)
         {
             $attendees = explode(',',$task_data[0]['attendees']);
@@ -3968,7 +4014,11 @@ class ProjectController extends Controller
                 $replace = array($attendees,date('d-m-Y', strtotime($task_data[0]['meeting_date'])));
             }
             $finalContent = str_replace($find,$replace,$content);
-            return response()->json(['subject'=>$template['subject'],'content'=>$finalContent], 200);
+            $doc_path = public_path()."".$request->input('doc_path')."".$task_data[0]['project_id']."_".$task_data[0]['project_name']."/".$task_data[0]['phase_name']."/Meeting Mom/".$task_data[0]['id']."_".$task_data[0]['meeting_topic'];
+            if(!File::isDirectory($doc_path)){
+                File::makeDirectory($doc_path, 0777, true, true);
+            }
+            return response()->json(['subject'=>$template['subject'],'content'=>$finalContent,"doc_path"=>$doc_path], 200);
         }
         else
         {
@@ -4099,7 +4149,94 @@ class ProjectController extends Controller
         {
             return response()->json(['response'=>"File Not Uploaded by Investor"], 410);
         }
-
-        
     }
-} 
+    /* RDD Member - adding comments for milestone & Investor planned dates */
+    function addComments(Request $request)
+    {   
+        $validator = Validator::make($request->all(), [ 
+            'project_id' => 'required',
+            'date_type' => 'required', 
+            'org_id' => 'required',
+            'comments'=>'required',
+            'user_id'=>'required'
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+        $created_at = date('Y-m-d H:i:s');
+        $updated_at = date('Y-m-d H:i:s');
+
+        //check for current date version in project
+        if($request->input('date_type')==1)
+        {
+            $projectDetails = Projectmilestonedates::where('project_id',$request->input('project_id'))->where('active_status',1)->first();
+        }
+        if($request->input('date_type')==2)
+        {
+            $projectDetails = Projectinvestordates::where('project_id',$request->input('project_id'))->where('active_status',1)->first();
+        }
+
+        Projectdatecomments::where('project_id',$request->input('project_id'))->where('date_type',$request->input('date_type'))->where('version',$projectDetails['version'])->update(array('isDeleted'=>1));
+
+        $comments = new Projectdatecomments();
+
+        $comments->org_id = $request->input('org_id');
+        $comments->project_id = $request->input('project_id');
+        $comments->date_type = $request->input('date_type');
+        $comments->version = $projectDetails['version'];
+        $comments->comments = $request->input('comments');
+        $comments->created_by = $request->input('user_id');
+        $comments->created_at = $created_at;
+        $comments->updated_at = $updated_at;
+
+        if($comments->save())
+        {
+            $details = Projectdatecomments::find($comments->id);
+            return response()->json(['response'=>"Comment Added Sucessfully",'comments'=>$details], 200);
+        }
+        else
+        {
+            return response()->json(['response'=>"Comment not added"], 410);
+        }
+    }
+    /* RDD Member - adding meeting comment */
+    function addMeetingcomment(Request $request)
+    {
+        $validator = Validator::make($request->all(), [ 
+            'project_id' => 'required',
+            'task_id' => 'required', 
+            'org_id' => 'required',
+            'comments'=>'required',
+            'user_id'=>'required'
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+        $created_at = date('Y-m-d H:i:s');
+        $updated_at = date('Y-m-d H:i:s');
+
+        Projecttaskcomments::where('project_id',$request->input('project_id'))->where('task_id',$request->input('task_id'))->update(array('isDeleted'=>1));
+
+        $comments = new Projecttaskcomments();
+
+        $comments->org_id = $request->input('org_id');
+        $comments->project_id = $request->input('project_id');
+        $comments->task_id = $request->input('task_id');
+        $comments->comments = $request->input('comments');
+        $comments->created_by = $request->input('user_id');
+        $comments->created_at = $created_at;
+        $comments->updated_at = $updated_at;
+
+        if($comments->save())
+        {
+            $details = Projectdatecomments::find($comments->id);
+            return response()->json(['response'=>"Comment Added Sucessfully",'comments'=>$details], 200);
+        }
+        else
+        {
+            return response()->json(['response'=>"Comment not added"], 410);
+        }
+    }
+}

@@ -292,7 +292,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /* Send Mail to investor -for docs*/
     Route::patch('/docnotifymanager', [ProjectController::class, 'rddSenddocmailtomanager']);
     /* get Mom template for mail*/
-    Route::get('/momtemplate/{project_id}/{task_id}', [ProjectController::class, 'getMomtemplate']);
+    Route::post('/momtemplate/{project_id}/{task_id}', [ProjectController::class, 'getMomtemplate']);
     /* get property document directories - Document section */
     Route::post('/propertydocs', [ProjectController::class, 'getPropertydocs']);
     /* get project document directories - Document section */
@@ -301,6 +301,15 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::patch('/forwarddocument', [ProjectController::class, 'forwardDocument']);
     /* Retrieving file version for uploading */
     Route::post('/fileversion',[ProjectController::class, 'getFileVersion']);
+    /* Adding comments - Project milestone & Investor dates  */
+    Route::post('/addcomment',[ProjectController::class, 'addComments']);
+    /* Adding task comments - Meeting tasks */
+    Route::post('/addMeetingcomment',[ProjectController::class, 'addMeetingcomment']);
+    
+    
+
+    
+
     
     
     

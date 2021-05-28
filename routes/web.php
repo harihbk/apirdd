@@ -304,7 +304,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /* Adding comments - Project milestone & Investor dates  */
     Route::post('/addcomment',[ProjectController::class, 'addComments']);
     /* Adding task comments - Meeting tasks */
-    Route::post('/addMeetingcomment',[ProjectController::class, 'addMeetingcomment']);
+    Route::post('/addtaskcomment',[ProjectController::class, 'addTaskcomment']);
+
     
     
 
@@ -467,6 +468,8 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
     //fileupload controller
     /* Upload documents */
     Route::post('/investor/uploadfile',[DocumentController::class, 'docUpload']);
+    /* Multiple documents Upload  */
+    Route::post('/investor/multipleuploadfile',[DocumentController::class, 'multipledocUpload']);
 
     //notification controller
     /*Get Active notifications for logged in user */

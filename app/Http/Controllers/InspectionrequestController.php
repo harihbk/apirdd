@@ -195,7 +195,8 @@ class InspectionrequestController extends Controller
                         )
                     );
 
-                    //upload inspection attachments
+                   
+                    // //upload inspection attachments
                     for($k=0;$k<count($datas[$j]['entries'][$i]['attachments']);$k++)
                     {
                         $attachmentData[] = [
@@ -442,7 +443,7 @@ class InspectionrequestController extends Controller
             'phase_id' => 'required', 
             'checklist_id' => 'required',
             'inspection_type' => 'required',
-            'previous_inspection_date' => 'required',
+            // 'previous_inspection_date' => 'required',
             'inspection_date' => 'required',
             'user_id' => 'required'
         ]);
@@ -461,14 +462,24 @@ class InspectionrequestController extends Controller
          else
          {
             $checklistdetails = Inspectionchecklistmaster::where("template_id",$request->input('checklist_id'))->where("isDeleted",0)->get();
-            //create inspections 
-            $inspection = new SiteInspectionReport();
+             //get projects previous site inspection date
+             $previousinspectionDetails = SiteInspectionReport::where('project_id',$request->input('project_id'))->where('isDeleted',0)->orderBy('id', 'desc')->first();
+
+             $previous_date = null;
+             
+
+             if($previousinspectionDetails!="")
+             {
+                $previous_date =  $previousinspectionDetails['inspection_date'];
+             }
+             $inspection = new SiteInspectionReport();
+
 
             $inspection->project_id = $request->input('project_id');
             $inspection->phase_id = $request->input('phase_id');
             $inspection->inspection_type = $request->input('inspection_type');
             $inspection->inspection_date = $request->input('inspection_date');
-            $inspection->previous_inspection_date = $request->input('previous_inspection_date');
+            $inspection->previous_inspection_date = $previous_date;
             $inspection->checklist_id = $request->input('checklist_id');
             $inspection->comments = $request->input('comments');
             $inspection->created_by = $request->input('user_id');

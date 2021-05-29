@@ -305,6 +305,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/addcomment',[ProjectController::class, 'addComments']);
     /* Adding task comments - Meeting tasks */
     Route::post('/addtaskcomment',[ProjectController::class, 'addTaskcomment']);
+    Route::patch('/checking/{project_id}',[ProjectController::class, 'checking']);
 
     
     

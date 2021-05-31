@@ -135,7 +135,7 @@ class ProjectController extends Controller
     function rddrequestPayment($project_id)
     {
         
-        $project_details = Project::leftjoin('tbl_finance_team','tbl_finance_team.org_id','=','tbl_projects.org_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->where('tbl_projects.project_id',$project_id)->select('tbl_projects.investor_brand','tbl_properties_master.property_name','tbl_projects.ivr_status','tbl_projects.ivr_amt','tbl_projects.owner_work','tbl_projects.owner_work_amt','tbl_projects.fitout_deposit_status','tbl_projects.fitout_deposit_amt','users.mem_name','users.mem_last_name','users.email as mem_email','tbl_finance_team.mem_name as finance_name','tbl_finance_team.email as finance_email')->get();
+        $project_details = Project::leftjoin('tbl_finance_team','tbl_finance_team.org_id','=','tbl_projects.org_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->where('tbl_projects.project_id',$project_id)->where('tbl_finance_team.isDeleted',0)->select('tbl_projects.investor_brand','tbl_properties_master.property_name','tbl_projects.ivr_status','tbl_projects.ivr_amt','tbl_projects.owner_work','tbl_projects.owner_work_amt','tbl_projects.fitout_deposit_status','tbl_projects.fitout_deposit_amt','users.mem_name','users.mem_last_name','users.email as mem_email','tbl_finance_team.mem_name as finance_name','tbl_finance_team.email as finance_email')->get();
 
         if(count($project_details)>0)
         {
@@ -167,19 +167,26 @@ class ProjectController extends Controller
             }
             else
             {
-                Mail::send('emails.projectpaymentrequest', $data, function($message)use($data) {
-                    $message->to($data['finance_email'])
-                            ->cc($data['mem_email'])
-                            ->subject('RDD - Payment Request');
-                    }); 
-                    if(Mail::failures())
-                    {
-                        return response()->json(['response'=>"Request Payment Not Sent"], 410);
-                    }
-                    else
-                    {
-                        return response()->json(['response'=>"Request payment Mail Sent"], 200);
-                    }
+                if($project_details[0]['finance_email']!=null)
+                {
+                    Mail::send('emails.projectpaymentrequest', $data, function($message)use($data) {
+                        $message->to($data['finance_email'])
+                                ->cc($data['mem_email'])
+                                ->subject('RDD - Payment Request');
+                        }); 
+                        if(Mail::failures())
+                        {
+                            return response()->json(['response'=>"Request Payment Not Sent"], 410);
+                        }
+                        else
+                        {
+                            return response()->json(['response'=>"Request payment Mail Sent"], 200);
+                        }   
+                }
+                else
+                {
+                    return response()->json(['response'=>"Finance Person not assigned"], 410);
+                }
             }
         }  
     }
@@ -1023,11 +1030,26 @@ class ProjectController extends Controller
                     ];
                 }
                 Notifications::insert($responsibleNotifications);
-                Mail::to($persons_array)->send(new Meetingrejection());
+                // Mail::to($persons_array)->send(new Meetingrejection());
+                $emaildata=array();
+                $emaildata = [
+                    "project_name" => $taskDetails[0]['project_name'],
+                    "meeting_topic" => $taskDetails[0]['meeting_topic']
+                ];
+                try
+                {
+                    Mail::send('emails.meetingrejection', $emaildata, function($message)use($emaildata,$persons_array) {
+                        $message->to($persons_array)
+                                ->subject('RDD - Meeting Rejection Notification');
+                        });
+                }
+                catch (\Exception $e) {
+                return $e->getMessage();
+                }
+
                 Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->update(
                     array(
-                        "task_status" => $task_rescheduled_status,
-                        "updated_at"=>$updated_at
+                        "task_status" => $task_rescheduled_status
                     )
                   );
 
@@ -1156,14 +1178,12 @@ class ProjectController extends Controller
             //attendee approvals update --attendee table
             Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->where("isDeleted",0)->update(
             array(
-                "task_status" => $attendee_task_rejection_status,
-                "updated_at"=>$updated_at
+                "task_status" => $attendee_task_rejection_status
             ));
             //attendee approvals update --approver table
             Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->where("isDeleted",0)->update(
                 array(
-                    "task_status" => $approvers_task_rejection_status,
-                    "updated_at"=>$updated_at
+                    "task_status" => $approvers_task_rejection_status
                 ));
             //attendee approvals update --project template table
             Projecttemplate::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("id",$request->input('id'))->update(
@@ -1189,7 +1209,22 @@ class ProjectController extends Controller
                     ];
                 }
                 Notifications::insert($approverNotifications);
-                Mail::to($persons_array)->send(new Meetingrejection());
+                $emaildata=array();
+                $emaildata = [
+                    "project_name" => $taskdata['project_name'],
+                    "meeting_topic" => $taskdata['meeting_topic']
+                ];
+                try
+                {
+                    Mail::send('emails.meetingrejection', $emaildata, function($message)use($emaildata,$persons_array) {
+                        $message->to($persons_array)
+                                ->subject('RDD - Meeting Rejection Notification');
+                        });
+                }
+                catch (\Exception $e) {
+                return $e->getMessage();
+                }
+
 
                 $returnData = Projecttemplate::find($request->input('id'));
                 $data = array ("message" => 'Meeting has been rejected');
@@ -1313,15 +1348,13 @@ class ProjectController extends Controller
             Projectattendeeapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where('attendee',$attendee)->where("task_status",$inprogress_task)->where("isDeleted",0)->update(
             array(
                 "approval_status"=>$rejection_status,
-                "task_status" => $attendee_task_rejection_status,
-                "updated_at"=>$updated_at
+                "task_status" => $attendee_task_rejection_status
             ));
             //attendee approvals update --approver table
             Projecttasksapproval::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("task_id",$request->input('id'))->where("task_status",$inprogress_task)->where("isDeleted",0)->update(
                 array(
                     // "approval_status"=>$rejection_status,
-                    "task_status" => $approvers_task_rejection_status,
-                    "updated_at"=>$updated_at
+                    "task_status" => $approvers_task_rejection_status
                 ));
             //attendee approvals update --project template table
             Projecttemplate::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("id",$request->input('id'))->update(
@@ -1347,7 +1380,23 @@ class ProjectController extends Controller
                     ];
                 }
                 Notifications::insert($responsibleNotifications);
-                Mail::to($persons_array)->send(new Meetingrejection());
+                // Mail::to($persons_array)->send(new Meetingrejection());
+                $emaildata=array();
+                $emaildata = [
+                    "project_name" => $taskdata['project_name'],
+                    "meeting_topic" => $taskdata['meeting_topic']
+                ];
+                try
+                {
+                    Mail::send('emails.meetingrejection', $emaildata, function($message)use($emaildata,$persons_array) {
+                        $message->to($persons_array)
+                                ->subject('RDD - Meeting Rejection Notification');
+                        });
+                }
+                catch (\Exception $e) {
+                return $e->getMessage();
+                }
+
 
                 $returnData = Projecttemplate::find($request->input('id'));
                 $data = array ("message" => 'Meeting has been rejected');
@@ -2335,13 +2384,15 @@ class ProjectController extends Controller
                 FitoutDepositrefund::where('project_id',$project_id)->where('isDeleted',0)->update(array("planned_date"=>date('Y-m-d', strtotime($updated_store_opening_date. ' + 30 days')),"updated_at"=>$updated_at));
 
                 Projectmilestonedates::where('project_id',$project_id)->where('active_status',1)->where('version',$milestoneDetails['version'])->update(array("active_status"=>0,"updated_at"=>$updated_at));
+
+                //mail to be send on account of fitout details date update
+                 $this->sendMail($project_id,3);
+
             }
             if(count($investorData)>0)
             {
                 Projectinvestordates::where('project_id',$project_id)->where('active_status',1)->where('version',$investordateDetails['version'])->update(array("active_status"=>0,"updated_at"=>$updated_at));
             }
-            //mail to be send on account of fitout details update
-            $this->sendMail($project_id,3);
             $returnData = Project::select('project_id','project_name','created_at')->find($project_id);
             $data = array ("message" => 'Project Edited successfully',"data" => $returnData );
             $response = Response::json($data,200);
@@ -2466,11 +2517,41 @@ class ProjectController extends Controller
         $permit = $request->get('permits');
         for($q=0;$q<count($permit);$q++)
         {
+            $checkQuery = Projectworkpermit::leftjoin('tbl_workpermit_master','tbl_workpermit_master.permit_id','=','tbl_project_workpermits.work_permit_type')->where("tbl_project_workpermits.project_id",$projectid)->where("tbl_project_workpermits.permit_id",$permit[$q]['permit_id'])->where('tbl_project_workpermits.request_status',0)->select('tbl_workpermit_master.permit_type','tbl_project_workpermits.*')->first();
             Projectworkpermit::where("project_id",$projectid)->where("permit_id",$permit[$q]['permit_id'])->update(
                 array(
                     "request_status" => $permit[$q]['request_status']
                 )
             );
+            if($permit[$q]['request_status']==1 && $checkQuery!=null && $checkQuery!='')
+            {
+               $mailDetails = Project::leftjoin('tbl_op_maint_team','tbl_op_maint_team.org_id','=','tbl_projects.org_id')->leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->where("project_id",$projectid)->where('tbl_op_maint_team.isDeleted',0)->select('tbl_op_maint_team.email as op_email','users.email as rdd_manager','users.mem_name','users.mem_last_name')->first();
+
+               if($mailDetails==null || $mailDetails=='')
+               {}   
+               else
+               {
+                   $emaildata = array();
+                   $emaildata = [
+                       "op_email" => $mailDetails['op_email'],
+                       "rdd_manager" => $mailDetails['rdd_manager'],
+                       "mem_name" => $mailDetails['mem_name'],
+                       "mem_last_name" => $mailDetails['mem_last_name'],
+                       "permit_type" => $checkQuery['permit_type']?$checkQuery['permit_type']:null
+                   ];
+                   try
+                   {
+                        Mail::send('emails.workpermitopnotify', $emaildata, function($message)use($emaildata) {
+                            $message->to($emaildata['op_email'])
+                                    ->cc($emaildata['rdd_manager'])
+                                    ->subject('RDD - '.$emaildata['permit_type'].' Work Permit Approval');
+                            });
+                   }
+                   catch (\Exception $e) {
+                    return $e->getMessage();
+                    }
+               }
+            }
         }
 
         //for requested inspections
@@ -2751,6 +2832,7 @@ class ProjectController extends Controller
             $person_list  = explode(',',$task_data[0]['member_responsible_person']);
             $approvers_list  = explode(',',$task_data[0]['approvers_person']);
             $attendees = explode(',',$task_data[0]['attendees']);
+            $investorCheck= '';
             for($c=0;$c<count($person_list);$c++)
             {
                 $responsible_person[] = $person_list[$c];
@@ -2809,17 +2891,37 @@ class ProjectController extends Controller
                         "created_at" => $created_at,
                         "updated_at" => $updated_at
                     ];
+                    $investorCheck = Tenant::where('tenant_id',$res1[0])->where('tenant_name',$res1[1])->where('tenant_type',1)->first();
                 }
             }
             Notifications::insert($momNotifications);
-            Mail::to($attendees_person)->cc($responsible_person)->send(new Meetingreminder());
-            if(Mail::failures())
+            $emaildata = array();
+            $emaildata = [
+                "tenant_name"=>$investorCheck['tenant_name']?$investorCheck['tenant_name']:"Investor",
+                "tenant_last_name"=>$investorCheck['tenant_last_name']?$investorCheck['tenant_last_name']:"",
+                "meeting_date" => date('d-m-Y', strtotime($task_data[0]['meeting_date'])),
+                "meeting_start_time" => date('h:i a', strtotime($task_data[0]['meeting_start_time'])),
+                "meeting_end_time" => date('h:i a', strtotime($task_data[0]['meeting_end_time'])),
+            ];
+            try
             {
-                return response()->json(['response'=>"Meeting reminder Mail Not Sent"], 411);
+                Mail::send('emails.meetingreminder', $emaildata, function($message)use($emaildata,$attendees_person,$responsible_person) {
+                    $message->to($attendees_person)
+                            ->cc($responsible_person)
+                            ->subject('RDD - Meeting Reminder');
+                    });
+
+                    if(Mail::failures())
+                    {
+                        return response()->json(['response'=>"Meeting reminder Mail Not Sent"], 411);
+                    }
+                    else
+                    {
+                        return response()->json(['response'=>"Meeting Reminder Mail Sent"], 200);
+                    }
             }
-            else
-            {
-                return response()->json(['response'=>"Meeting Reminder Mail Sent"], 200);
+            catch (\Exception $e) {
+            return $e->getMessage();
             }
         }
         else
@@ -3006,9 +3108,9 @@ class ProjectController extends Controller
     }
     function retrievetaskApprovalstatus($projectid,$taskid)
     {
-        $approval_status = Projecttasksapproval::join('users','users.mem_id','=','tbl_project_tasks_approvals.approver')->where('project_id',$projectid)->where('task_id',$taskid)->select('tbl_project_tasks_approvals.approval_id','tbl_project_tasks_approvals.approver','users.mem_name','users.mem_last_name','tbl_project_tasks_approvals.approval_status','tbl_project_tasks_approvals.task_status')->where('isDeleted',0)->orderBy('tbl_project_tasks_approvals.updated_at','ASC')->get();
+        $approval_status = Projecttasksapproval::join('users','users.mem_id','=','tbl_project_tasks_approvals.approver')->where('project_id',$projectid)->where('task_id',$taskid)->select('tbl_project_tasks_approvals.approval_id','tbl_project_tasks_approvals.approver','users.mem_name','users.mem_last_name','tbl_project_tasks_approvals.approval_status','tbl_project_tasks_approvals.task_status')->where('isDeleted',0)->orderBy('tbl_project_tasks_approvals.updated_at','DESC')->get();
 
-        $attendee_approval_status = Projectattendeeapproval::where('project_id',$projectid)->where('task_id',$taskid)->select('tbl_attendees_approvals.approval_id','tbl_attendees_approvals.attendee','tbl_attendees_approvals.approval_status','tbl_attendees_approvals.task_status')->where('isDeleted',0)->orderBy('tbl_attendees_approvals.updated_at','ASC')->get();
+        $attendee_approval_status = Projectattendeeapproval::where('project_id',$projectid)->where('task_id',$taskid)->select('tbl_attendees_approvals.approval_id','tbl_attendees_approvals.attendee','tbl_attendees_approvals.approval_status','tbl_attendees_approvals.task_status')->where('isDeleted',0)->orderBy('tbl_attendees_approvals.updated_at','DESC')->get();
         return response()->json(['approvers'=>$approval_status,'attendees' =>$attendee_approval_status], 200); 
     }
     /*Investor dashboard - Retrieve properties,assigned to investor [dropdown] */
@@ -3922,6 +4024,7 @@ class ProjectController extends Controller
                     "updated_at" => $updated_at
                 )
             );
+            
             $returnData = Projectworkpermit::find($request->input('permit_id'));
             return response()->json(['response'=>"Work Permit Status Updated Succesfully",'work_permit'=>$returnData], 200);
         }
@@ -4391,35 +4494,7 @@ class ProjectController extends Controller
         }
     }
 
-    function checking(Request $request,$project_id)
-    {
-        $files = array();
-
-        $taskDetails = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.phase_id',$request->input('phase_id'))->where('tbl_project_template.id',$request->input('id'))->select('tbl_project_template.*','tbl_projects.project_name')->get();
-
-         $files = json_decode($taskDetails[0]['fif_upload_path']);
-         $data = array();
-         $data = [
-            "meeting_date" => date('d-m-Y', strtotime("2021-05-06")),
-            "meeting_start_time" => date('h:i a', strtotime("17:00:00")),
-            "meeting_end_time" => date('h:i a', strtotime("18:30:00")),
-            "tenant_name" => "user_first_name",
-            "tenant_last_name" => "user_last_name"
-        ];
-
-         Mail::send('emails.projectmeetings', $data, function($message)use($data,$files) {
-            $message->to('csedineshbit@gmail.com')
-                    ->subject('RDD - Meeting Notification');
-
-                    if(count($files)>0)
-                    {
-                        foreach ($files as $file){
-                            $message->attach($file);
-                        }
-                    }
-            }); 
-
-    }/* Document notification mail to approvers */
+    /* Document notification mail to approvers */
     function sendDocumentmail($doc_header,$approvers_array,$project_id)
     {
         $rdd_manager_details = Project::leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->where('project_id',$project_id)->select('tbl_projects.project_name','tbl_projects.assigned_rdd_members','users.email')->first();

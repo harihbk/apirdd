@@ -8,6 +8,8 @@ use App\Models\Orgmilestoneconfig;
 use App\Models\Docpathconfig;
 use App\Models\Organisations;
 use App\Models\MilestoneConfig;
+use App\Models\Financeteam;
+use App\Models\Operationsmntteam;
 use Response;
 use Validator;
 use File;
@@ -86,10 +88,11 @@ class ConfigController extends Controller
     }
     function getConfig($org_id)
     {
-        $config = MailConfig::find($org_id);
-        $milestone = Orgmilestoneconfig::where("org_id",$org_id)->where("isDeleted",0)->get();
-        $docpath = Docpathconfig::where("org_id",$org_id)->where("isDeleted",0)->get();
-        return Response::json(["milestone_config"=>$milestone,"mail_config"=>$config,"docpath_config"=>$docpath],200);
+        // $config = MailConfig::find($org_id);
+        $docpath = Docpathconfig::where("org_id",$org_id)->where("isDeleted",0)->first();
+        $finance_team = Financeteam::where("org_id",$org_id)->where("isDeleted",0)->first();
+        $operations_team = Operationsmntteam::where("org_id",$org_id)->where("isDeleted",0)->first();
+        return Response::json(["file_path_config"=>$docpath,"finance_team"=>$finance_team,"operations_team"=>$operations_team],200);
     }
     function createMilestoneconfig(Request $request)
     {
@@ -159,7 +162,7 @@ class ConfigController extends Controller
         echo json_encode($response); 
 
     }
-    function createDocpathconfig(Request $request)
+    function configAction(Request $request)
     {
         $created_at = date('Y-m-d H:i:s');
         $updated_at = date('Y-m-d H:i:s');
@@ -168,6 +171,7 @@ class ConfigController extends Controller
         
         $validator = Validator::make($request->all(), [
             'org_id' => 'required', 
+            'user_id' => 'required',
             'doc_path' => 'required',
             'image_path' => 'required'
         ]);
@@ -176,63 +180,51 @@ class ConfigController extends Controller
             return response()->json(['response'=>$validator->errors()], 401);            
         }
         $org_data = Organisations::find($request->input('org_id'));
-        $paths  = Docpathconfig::where('org_id',$request->input('org_id'))->where('isDeleted',0)->get();
-        $doc_path = public_path().'/uploads/'.$org_data['org_code'].'/'.$request->input('doc_path');
-        $img_path = public_path().'/uploads/'.$org_data['org_code'].'/'.$request->input('image_path');
-        if(count($paths)>0)
+        //check if docpath is already exists
+        $pathCount = Docpathconfig::where('org_id',$request->input('org_id'))->where('isDeleted',0)->count();
+        if($pathCount==0)
         {
-            $update = Docpathconfig::where('org_id',$request->input('org_id'))->where('isDeleted',0)->update(
-                array(
-                    'isDeleted' => 1
-                )
-            );
-            if($update>0)
-            {
-                //insert new data
-                $path->org_id = $request->input('org_id');
-                $path->doc_path = "/uploads/".$org_data['org_code'].'/'.$request->input('doc_path');
-                $path->image_path = "/uploads/".$org_data['org_code'].'/'.$request->input('image_path');
-                $path->created_at = $created_at;
-                $path->updated_at = $updated_at;
-
-                if($path->save())
-                {
-                    if(!File::isDirectory($doc_path)){
-                     File::makeDirectory($doc_path, 0777, true, true);
-                    }
-                    if(!File::isDirectory($img_path)){
-                        File::makeDirectory($img_path, 0777, true, true);
-                    }
-                    $returnData = Docpathconfig::find($request->input('org_id'));
-                    $data = array ("message" => 'Config detail Added successfully',"data" => $returnData );
-                    $response = Response::json($data,200);
-                    echo json_encode($response);
-                }
-            }
-        }
-        else
-        {
-            // new data
             $path->org_id = $request->input('org_id');
-            $path->doc_path = "/uploads/".$org_data['org_code'].'/'.$request->input('doc_path');
-            $path->image_path = "/uploads/".$org_data['org_code'].'/'.$request->input('image_path');
+            $path->doc_path = "/uploads/".$org_data['org_code'].'/'.$request->input('doc_path')."/";
+            $path->image_path = "/uploads/".$org_data['org_code'].'/'.$request->input('image_path')."/";
             $path->created_at = $created_at;
             $path->updated_at = $updated_at;
 
-            if($path->save())
-            {
-                if(!File::isDirectory($doc_path)){
-                 File::makeDirectory($doc_path, 0777, true, true);
-                }
-                if(!File::isDirectory($img_path)){
-                    File::makeDirectory($img_path, 0777, true, true);
-                }
-                $returnData = Docpathconfig::find($request->input('org_id'));
-                $data = array ("message" => 'Config detail Added successfully',"data" => $returnData );
-                $response = Response::json($data,200);
-                echo json_encode($response);
-            }
-        }   
+            $path->save();
+        }
+
+
+        if($request->input('finance_email')!='' || $request->input('finance_email')!=null)
+        {
+            $finance_email = $request->input('finance_email');
+            Financeteam::where('org_id',$request->input('org_id'))->update(array("isDeleted"=>1,"updated_at" => $updated_at));
+            $finance = new Financeteam();
+            $finance->org_id = $request->input('org_id');
+            $finance->email = $finance_email;
+            $finance->created_at = $created_at;
+            $finance->updated_at = $updated_at;
+            $finance->created_by = $request->input('user_id');
+
+            $finance->save();
+        }
+        if($request->input('operationalteam_email')!='' || $request->input('operationalteam_email')!=null)
+        {
+            $operationalteam_email = $request->input('operationalteam_email');
+            Operationsmntteam::where('org_id',$request->input('org_id'))->update(array("isDeleted"=>1,"updated_at" => $updated_at));
+            $op = new Operationsmntteam();
+            $op->org_id = $request->input('org_id');
+            $op->email = $operationalteam_email;
+            $op->created_at = $created_at;
+            $op->updated_at = $updated_at;
+            $op->created_by = $request->input('user_id');
+
+            $op->save();
+        }
+        
+        $data = array ("message" => 'Config detail Added successfully');
+        $response = Response::json($data,200);
+        return $response;
+          
     }
     function updateDocpathconfig(Request $request)
     {

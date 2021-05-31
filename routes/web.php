@@ -28,6 +28,7 @@ use App\Http\Controllers\AuthorizationgrpController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\InspectionrequestController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PDFController;
 
  
 
@@ -305,7 +306,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/addcomment',[ProjectController::class, 'addComments']);
     /* Adding task comments - Meeting tasks */
     Route::post('/addtaskcomment',[ProjectController::class, 'addTaskcomment']);
-    Route::patch('/checking/{project_id}',[ProjectController::class, 'checking']);
+    
 
     
     
@@ -353,18 +354,19 @@ Route::group(['middleware' => 'userauth:api'], function() {
 
 
     //configurations
+    /*Create config*/
+    Route::post('/config', [ConfigController::class, 'configAction']);
+    /*Get all config for organisation*/
+    Route::get('/config/{org_id}', [ConfigController::class, 'getConfig']);
+     /* ------------------- */
     /*Create a Mail config*/
     Route::post('/config/mail', [ConfigController::class, 'createMailconfig']);
     /*Update a Mail config*/
     Route::patch('/config/mail', [ConfigController::class, 'updateMailconfig']);
-    /*Get all config for organisation*/
-    Route::get('/config/{org_id}', [ConfigController::class, 'getConfig']);
     /*Create a Milestone config*/
     Route::post('/config/milestone', [ConfigController::class, 'createMilestoneconfig']);
     /*Update a Milestone config*/
     Route::patch('/config/milestone', [ConfigController::class, 'updateMilestoneconfig']);
-    /*Create a doc path config*/
-    Route::post('/config/docpath', [ConfigController::class, 'createDocpathconfig']);
     /*Update a doc path config*/
     Route::patch('/config/docpath', [ConfigController::class, 'updateDocpathconfig']);
     /*Get all config  master*/
@@ -395,6 +397,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::patch('/updatenotifications', [NotificationController::class, 'updateNotifications']);
 });
 
+//PDF controller
+Route::get('/hoc', [PDFController::class, 'generatePDF']);
 
 Route::group(['middleware' => 'tenantauth:api'], function() {
      //Refresh Token
@@ -444,7 +448,8 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
     Route::patch('/investor/forwardmeeting', [ProjectController::class, 'forwardMeeting']);
     /*retrieve tasks approval status - meeting*/
     Route::get('/investor/meetingapprovalstatus/{projectid}/{taskid}',[ProjectController::class, 'investorretrievetaskApprovalstatus']);
-    
+    /* Investor retrieve doc history */
+    Route::get('/investor/dochistory/{docid}',[ProjectController::class, 'getDochistory']);
     
 
 

@@ -38,6 +38,7 @@ use App\Models\Notifications;
 use App\Models\Emailtemplate;
 use App\Models\Projectdatecomments;
 use App\Models\Projecttaskcomments;
+use App\Models\Workpermit;
 use Response;
 use Validator;
 use Illuminate\Support\Facades\Mail;
@@ -446,7 +447,18 @@ class ProjectController extends Controller
             //map the template to project for tracking tasks
             for($r=0;$r<count($templatedetails);$r++)
             {
-                $planned_date = date('Y-m-d h:i:s', strtotime('+'.$templatedetails[$r]['duration'].' days'));
+                if($templatedetails[$r]['phase_id']==1 || $templatedetails[$r]['phase_id']==2)
+                {
+                    $planned_date = date('Y-m-d h:i:s', strtotime('+'.$templatedetails[$r]['duration'].' days'));
+                }
+                if($templatedetails[$r]['phase_id']==3)
+                {
+                    $planned_date = date('Y-m-d h:i:s', strtotime($milestone_dates[0]['fitout_start']. '+'.$templatedetails[$r]['duration'].' days'));   
+                }
+                if($templatedetails[$r]['phase_id']==4)
+                {
+                    $planned_date = date('Y-m-d h:i:s', strtotime($milestone_dates[0]['fitout_completion']. '+'.$templatedetails[$r]['duration'].' days'));   
+                }
                 $templateData[] = [
                             'project_id' => $project_id,
                             'org_id' => $projectdata[0]['org_id'],
@@ -2227,6 +2239,7 @@ class ProjectController extends Controller
         $updated_design_submission_date = "";
         $updated_fitout_completion_date = "";
         $updated_store_opening_date = "";
+        $updated_fitout_start_date = "";
         for($i=0;$i<count($projectdata);$i++) 
         {
             
@@ -2280,6 +2293,7 @@ class ProjectController extends Controller
                 $updated_design_submission_date = $milestone_dates[$j]['detailed_design_submission'];
                 $updated_fitout_completion_date = $milestone_dates[$j]['fitout_completion'];
                 $updated_store_opening_date = $milestone_dates[$j]['store_opening'];
+                $updated_fitout_start_date = $milestone_dates[$j]['fitout_start'];
 
                 $milestoneData[] = [
                     'org_id' => $projectdata[0]['org_id'],
@@ -2362,6 +2376,10 @@ class ProjectController extends Controller
                 ];
             }
         }
+
+
+
+
         $insertMilestone = Projectmilestonedates::insert($milestoneData);
         $insertInvestordate =  Projectinvestordates::insert($investorData);
 
@@ -2385,6 +2403,30 @@ class ProjectController extends Controller
 
                 Projectmilestonedates::where('project_id',$project_id)->where('active_status',1)->where('version',$milestoneDetails['version'])->update(array("active_status"=>0,"updated_at"=>$updated_at));
 
+
+                $prjtemplateData = Projecttemplate::where("project_id",$project_id)->where("isDeleted",0)->where("org_id",$projectdata[0]['org_id'])->get();
+
+                for($s=0;$s<count($prjtemplateData);$s++)
+                {
+                    if($prjtemplateData[$s]['phase_id']==3)
+                    {
+                        Projecttemplate::where("project_id",$project_id)->where("id",$prjtemplateData[$s]['id'])->where("org_id",$projectdata[0]['org_id'])->where("phase_id",3)->update(
+                            array(
+                                "planned_date" => date('Y-m-d h:i:s', strtotime($updated_fitout_start_date. '+'.$prjtemplateData[$s]['duration'].' days')),
+                                "updated_at"=> $updated_at
+                            )
+                        );
+                    }
+                    if($prjtemplateData[$s]['phase_id']==4)
+                    {
+                        Projecttemplate::where("project_id",$project_id)->where("id",$prjtemplateData[$s]['id'])->where("org_id",$projectdata[0]['org_id'])->where("phase_id",4)->update(
+                            array(
+                                "planned_date" => date('Y-m-d h:i:s', strtotime($updated_fitout_completion_date. '+'.$prjtemplateData[$s]['duration'].' days')),
+                                "updated_at"=> $updated_at
+                            )
+                        );
+                    }
+                }
                 //mail to be send on account of fitout details date update
                  $this->sendMail($project_id,3);
 
@@ -2435,11 +2477,15 @@ class ProjectController extends Controller
         if($permit->save())
         {
             $project_details = Project::leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')
-            ->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->select('users.mem_name','users.mem_last_name','users.email as mem_email','tbl_tenant_master.email as tenant_email','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name')->where('tbl_projects.project_id',$projectid)->where('tbl_project_contact_details.member_designation',13)->groupBy('tbl_projects.project_id')->get();
+            ->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->select('users.mem_name','users.mem_last_name','users.email as mem_email','tbl_tenant_master.email as tenant_email','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_projects.project_name','tbl_projects.assigned_rdd_members')->where('tbl_projects.project_id',$projectid)->where('tbl_project_contact_details.member_designation',13)->groupBy('tbl_projects.project_id')->get();
+
+
+            $permitType = Workpermit::where('permit_id',$request->input('work_permit_type'))->first();
 
             if(count($project_details)!=0)
             {
                 $data = array();
+                $permitNotifications = array();
                 $data = [
                     "tenant_name" => $project_details[0]['tenant_name'],
                     "tenant_last_name" => $project_details[0]['tenant_last_name'],
@@ -2447,7 +2493,18 @@ class ProjectController extends Controller
                     "tenant_email" => $project_details[0]['tenant_email']
 
                 ];
-
+                $created_at = date('Y-m-d H:i:s');
+                $updated_at = date('Y-m-d H:i:s');
+                $permitNotifications[] = [
+                    "project_id" => $projectid,
+                    "content" =>  "Work Permit for ".$permitType['permit_type']." have been requested on Project ".$project_details[0]['project_name'],
+                    "user" => $project_details[0]['assigned_rdd_members'],
+                    "user_type" => 1,
+                    "notification_type"=>env('NOTIFY_WORK_PERMIT'),
+                    "created_at" => $created_at,
+                    "updated_at" => $updated_at
+                ];
+                Notifications::insert($permitNotifications);
                 Mail::send('emails.projectworkpermits', $data, function($message)use($data) {
                 $message->to($data['mem_email'])
                         ->cc($data['tenant_email'])
@@ -2585,6 +2642,7 @@ class ProjectController extends Controller
                 FitoutCompletionCertificates::where("project_id",$projectid)->where("id",$fccdata[$x]['id'])->where("isDeleted",0)->update(
                     array(
                         "actual_date" => $fccdata[$x]['actual_date'],
+                        "file_path" => $fccdata[$x]['file_path'],
                         "comments" => $fccdata[$x]['comments']
                     )
                 );
@@ -2614,6 +2672,7 @@ class ProjectController extends Controller
                 FitoutDepositrefund::where("project_id",$projectid)->where("id",$fitout_deposit_refund[$z]['id'])->where("isDeleted",0)->update(
                     array(
                         "actual_date" => $fitout_deposit_refund[$z]['actual_date'],
+                        "file_path" => $fitout_deposit_refund[$z]['file_path'],
                         "comments" => $fitout_deposit_refund[$z]['comments']
                     )
                 );
@@ -3042,7 +3101,7 @@ class ProjectController extends Controller
         if($request->input('task_type')==2)
         {
             $check = null;
-            $task_lists = Projectdocs::leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,tbl_projecttasks_docs.reviewers)"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_projecttasks_docs.approvers_level1)"),">",\DB::raw("'0'"))->leftjoin('users as c',\DB::raw("FIND_IN_SET(c.mem_id,tbl_projecttasks_docs.approvers_level2)"),">",\DB::raw("'0'"))->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_projecttasks_docs.project_id')->leftjoin('tbl_project_docs_approvals','tbl_project_docs_approvals.doc_id','=','tbl_projecttasks_docs.doc_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_task_forwards','tbl_task_forwards.task_id','=','tbl_projecttasks_docs.doc_id');
+            $task_lists = Projectdocs::leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,tbl_projecttasks_docs.reviewers)"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_projecttasks_docs.approvers_level1)"),">",\DB::raw("'0'"))->leftjoin('users as c',\DB::raw("FIND_IN_SET(c.mem_id,tbl_projecttasks_docs.approvers_level2)"),">",\DB::raw("'0'"))->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_projecttasks_docs.project_id')->leftjoin('tbl_project_docs_approvals','tbl_project_docs_approvals.doc_id','=','tbl_projecttasks_docs.doc_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->leftjoin('tbl_task_forwards','tbl_task_forwards.task_id','=','tbl_projecttasks_docs.doc_id');
             if ($request->input('project_id')!= null && $request->input('project_id')!='')
             {
                 $task_lists->where('tbl_projecttasks_docs.project_id', $request->input('project_id'));
@@ -3071,7 +3130,7 @@ class ProjectController extends Controller
         }
         if($request->input('task_type')==3)
         {
-            $work_permits = Projectworkpermit::leftjoin('tbl_workpermit_master','tbl_workpermit_master.permit_id','=','tbl_project_workpermits.work_permit_type')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_workpermits.project_id')->leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.property_id','=','tbl_projects.property_id')->select('tbl_project_workpermits.*','tbl_workpermit_master.permit_type','tbl_projects.project_name','tbl_properties_master.property_name','tbl_units_master.unit_name')->where('tbl_projects.property_id',$request->input('property_id'))->whereNotIn('tbl_project_workpermits.request_status',[1,2])->where(function($query) use ($memid){
+            $work_permits = Projectworkpermit::leftjoin('tbl_workpermit_master','tbl_workpermit_master.permit_id','=','tbl_project_workpermits.work_permit_type')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_workpermits.project_id')->leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->select('tbl_project_workpermits.*','tbl_workpermit_master.permit_type','tbl_projects.project_name','tbl_properties_master.property_name','tbl_units_master.unit_name')->where('tbl_projects.property_id',$request->input('property_id'))->whereNotIn('tbl_project_workpermits.request_status',[1,2])->where(function($query) use ($memid){
                 $query->orwhereRaw("find_in_set($memid,tbl_projects.assigned_rdd_members)")
                       ->orWhereRaw("find_in_set($memid,tbl_project_contact_details.member_id)");
                });
@@ -3102,7 +3161,7 @@ class ProjectController extends Controller
         $approvers_rejected_status = 5;
         $attendee_rejected_status = 6;
         $meeting_scheduled_status = 2;
-        $task_lists = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.property_id','=','tbl_projects.property_id')->where('tbl_project_template.task_type',$tasktype)->where('tbl_projects.project_id',$projectid)->whereNotIn('tbl_project_template.task_status', [$task_not_initiated_status,$completed_status,$meeting_scheduled_status,$attendee_rejected_status,$approvers_rejected_status])->where('tbl_project_template.isDeleted',0)->whereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)")->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name')->groupBy('tbl_project_template.id')->get();
+        $task_lists = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->where('tbl_project_template.task_type',$tasktype)->where('tbl_projects.project_id',$projectid)->whereNotIn('tbl_project_template.task_status', [$task_not_initiated_status,$completed_status,$meeting_scheduled_status,$attendee_rejected_status,$approvers_rejected_status])->where('tbl_project_template.isDeleted',0)->whereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)")->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name')->groupBy('tbl_project_template.id')->get();
 
         return $task_lists;
     }
@@ -3228,7 +3287,7 @@ class ProjectController extends Controller
         {
             $reviewerNotifications[] = [
                 "project_id" => $datas[0]['project_id'],
-                "content" =>  $taskdata['doc_title']." file for Project ".$taskdata['project_name']." has been Uploaded",
+                "content" =>  $taskdata['doc_header']." file for Project ".$taskdata['project_name']." has been Uploaded",
                 "user" => $reviewers[$f],
                 "user_type" => 1,
                 "notification_type"=>env('NOTIFY_DOCUMENT'),
@@ -3256,6 +3315,7 @@ class ProjectController extends Controller
             $checkQuery = Projectdocs::where('project_id',$datas[0]['project_id'])->where('doc_status',1)->where('doc_header',$taskdata['doc_header'])->count();
             if($totalCount == $checkQuery)
             {
+                Notifications::insert($reviewerNotifications);
                 //check after all upload in a group  
                 Mail::send('emails.drawingsubmission', $emaildata, function($message)use($emaildata) {
                 $message->to($emaildata['tenant_email'])
@@ -3264,7 +3324,6 @@ class ProjectController extends Controller
                 });
             }
         }   
-        Notifications::insert($reviewerNotifications);
         Projectdocshistory::insert($docsHistory);
         return response()->json(['response'=>"Document Upload action has been registered"], 200);
     }
@@ -3363,24 +3422,6 @@ class ProjectController extends Controller
                             $rev_count = ProjectdocsApproval::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->where('approver_type',$request->input('approver_type'))->where('approval_status',$yet_to_start)->where('isDeleted',0)->count();
                             if($rev_count==0)
                             {
-                                //notification part
-                                $approvers1Notifications = array();
-                                $approvers1 = explode(',',$taskdata['approvers_level1']);
-                                for($f=0;$f<count($approvers1);$f++)
-                                {
-                                    $approverNotifications[]=[
-                                        "project_id" => $request->input('project_id'),
-                                        "content" =>  $taskdata['doc_title']." file for Project ".$taskdata['project_name']." has been Uploaded.Kindly make approval action",
-                                        "user" => $approvers1[$f],
-                                        "user_type" => 1,
-                                        "notification_type"=>env('NOTIFY_DOCUMENT'),
-                                        "created_at" => $created_at,
-                                        "updated_at" => $updated_at
-                                    ];
-                                   $approverDetails = Members::where('mem_id',$approvers1[$f])->first();
-                                   $approvers_array[] = $approverDetails['email'];
-                                }
-                                Notifications::insert($approvers1Notifications);
                                 //update doc task status
                                 Projectdocs::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->update(
                                     array('doc_status'=>$reviewers_approved_status)
@@ -3390,6 +3431,24 @@ class ProjectController extends Controller
                                 $checkQuery = Projectdocs::where('project_id',$request->input('project_id'))->where('doc_status',$reviewers_approved_status)->where('doc_header',$taskdata['doc_header'])->count();
                                 if($checkQuery==$totalCount)
                                 {
+                                    //notification part
+                                    $approvers1Notifications = array();
+                                    $approvers1 = explode(',',$taskdata['approvers_level1']);
+                                    for($f=0;$f<count($approvers1);$f++)
+                                    {
+                                        $approverNotifications[]=[
+                                            "project_id" => $request->input('project_id'),
+                                            "content" =>  $taskdata['doc_header']." file for Project ".$taskdata['project_name']." has been Uploaded.Kindly make approval action",
+                                            "user" => $approvers1[$f],
+                                            "user_type" => 1,
+                                            "notification_type"=>env('NOTIFY_DOCUMENT'),
+                                            "created_at" => $created_at,
+                                            "updated_at" => $updated_at
+                                        ];
+                                    $approverDetails = Members::where('mem_id',$approvers1[$f])->first();
+                                    $approvers_array[] = $approverDetails['email'];
+                                    }
+                                    Notifications::insert($approvers1Notifications);
                                     //mail function to approvers level1
                                     $this->sendDocumentmail($taskdata['doc_header'],$approvers_array,$request->input('project_id'));
                                 }
@@ -3436,16 +3495,6 @@ class ProjectController extends Controller
                                     "approval_status"=>$rejection_status
                                 )
                             );
-                            // for($l=0;$l<count($request->input('file_path'));$l++)
-                            // {
-                            //     $history->project_id = $request->input('project_id');
-                            //     $history->doc_id = $request->input('doc_id');
-                            //     // $history->file_name = $request->input('file_name');
-                            //     $history->file_path = $request->input('file_path')[$l];
-                            //     $history->uploaded_by = $request->input('approver_id');
-                            //     $history->approval_status = $approved_status;
-                            //     $history->save();
-                            // }
                             //update doc tasks status
                             Projectdocs::where('project_id',$request->input('project_id'))->where('doc_id',$request->input('doc_id'))->where('doc_status',$yet_to_start)->update(
                                 array(
@@ -3562,6 +3611,22 @@ class ProjectController extends Controller
                                     $checkQuery = Projectdocs::where('project_id',$request->input('project_id'))->where('doc_status',$app1_approved_status)->where('doc_header',$taskdata['doc_header'])->count();
                                     if($checkQuery==$totalCount)
                                     {
+                                        //notification part
+                                        $approvers2Notifications = array();
+                                        $approvers2 = explode(',',$taskdata['approvers_level2']);
+                                        for($f=0;$f<count($approvers2);$f++)
+                                        {
+                                            $approvers2Notifications[]=[
+                                                "project_id" => $request->input('project_id'),
+                                                "content" =>  $taskdata['doc_header']." file for Project ".$taskdata['project_name']." has been Uploaded.Kindly make approval action",
+                                                "user" => $approvers2[$f],
+                                                "user_type" => 1,
+                                                "notification_type"=>env('NOTIFY_DOCUMENT'),
+                                                "created_at" => $created_at,
+                                                "updated_at" => $updated_at
+                                            ];
+                                        }
+                                        Notifications::insert($approvers2Notifications);
                                         //mail function to approvers level1
                                         $this->sendDocumentmail($taskdata['doc_header'],$approvers_array,$request->input('project_id'));
                                     }
@@ -4024,7 +4089,26 @@ class ProjectController extends Controller
                     "updated_at" => $updated_at
                 )
             );
-            
+            $permitDetails = Projectworkpermit::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_workpermits.project_id')->leftjoin('tbl_workpermit_master','tbl_workpermit_master.permit_id','=','tbl_project_workpermits.work_permit_type')->where("tbl_project_workpermits.project_id",$request->input('project_id'))->where("tbl_project_workpermits.permit_id",$request->input('permit_id'))->select('tbl_workpermit_master.permit_type','tbl_project_workpermits.*','tbl_projects.project_id','tbl_projects.project_name')->first();
+
+            if($request->input('request_status')==1)
+            {
+                $status = "Approved";
+            }
+            if($request->input('request_status')==2)
+            {
+                $status = "Declined";
+            }
+            $permitNotifications[] = [
+                "project_id" => $request->input('project_id'),
+                "content" =>  "Work Permit for ".$permitDetails['permit_type']." on Project ".$permitDetails['project_name']." is ".$status,
+                "user" => $permitDetails['investor_id'],
+                "user_type" => 2,
+                "notification_type"=>env('NOTIFY_WORK_PERMIT'),
+                "created_at" => $created_at,
+                "updated_at" => $updated_at
+            ];
+            Notifications::insert($permitNotifications);
             $returnData = Projectworkpermit::find($request->input('permit_id'));
             return response()->json(['response'=>"Work Permit Status Updated Succesfully",'work_permit'=>$returnData], 200);
         }

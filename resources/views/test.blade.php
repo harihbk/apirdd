@@ -1,13 +1,17 @@
-<style>
-#mytable {
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Laravel 7 PDF Example</title>
+    <style>
+	#mytable {
   margin: 0;
   padding: 0;
   background-color: white;
   font: 12pt "Tahoma";
-}
-
-table {
-  border-collapse: collapse;
 }
 
 * {
@@ -36,6 +40,7 @@ table {
   height: 100%;
   width: auto;
 }
+
 .subpage2 {
   padding: 1cm;
 
@@ -69,12 +74,6 @@ table {
 
 .border-bottom:focus {
   box-shadow: unset !important;
-}
-
-div.ex0 {
-  width: 100%;
-  padding: 25px;
-  box-sizing: border-box;
 }
 
 div.ex1 {
@@ -126,98 +125,185 @@ input {
   background: white;
   border-bottom: 1px solid black;
 }
-</style>
 
+input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  border-bottom: 1px solid black;
+}
+
+div.ex10 {
+  width: 17%;
+  padding-right: 1px;
+  white-space: nowrap;
+}
+
+div.ex11 {
+  width: 17%;
+  padding-right: 1px;
+  white-space: nowrap;
+}
+
+.form {
+  display: block;
+  padding: 25px;
+  width: 100%;
+  margin: 1cm auto;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.ex0 {
+  width: 17%;
+  padding-right: 1px;
+  white-space: nowrap;
+}
+
+</style>
+</head>
+
+<body>
 <div id="mytable">
-	<div class="book book col-8 mx-auto">
-		<section class="page-1">
-			<div class="page">
+    <div class="book book col-8 mx-auto">
+        <section class="page-1">
+            <div class="page">
                 <div class="subpage 1">
                     <div class="row">
-						<div class="col-3 d-flex align-items-center">
-							<div class="logo-img">
-								<img class="w-50" src="../assets/tamdeen-logo/tamdeen-logo.png" alt="">
-							</div>
-						</div>
-						<div class="col-6 d-flex align-items-center">
-							<div class="border border-secondary">
-								<h2 class="text-danger">Handover Certificate</h2>
-							</div>
-						</div><br/><br/>
-						<h5>
-                        <div class="ex0">
-							<table>
-									<tr>
-										<td>Premises Numbers</td>
-										<td><input /></td>
-										<td>Premises location</td>
-										<td><input /></td>
-										<td>Concept Zone <br /> (if applicable)</td>
-										<td><input /></td>
-									</tr>
-									<tr>
-										<td>Investor Brand Name</td>
-										<td><input /></td>
-										<td>Handover Inspection Date</td>
-										<td><input /></td>
-										<td>Handover Date<br />(Actual)</td>
-										<td colspan="2"><input /></td>
-									</tr>
-									<tr>
-										<td>Investor Company Name</td>
-										<td colspan="5"><input /></td>
-									</tr>
-							</table>
-                            <br>
-                            <DIV STYLE="background-color:#000000; height:5px; width:100%;">
-                            </DIV>
-                        </div>
-                        </h5> <br>
-						 <h5>
-							<div class="ex1">
-								 <p>Owner’s Work Inspection Checklist</p>
-								 <table class="table table-bordered"  style="width: 100%" >
-									 <thead class="thead-light" >
-										<tr>
-											<th scope="col"  style="width: 10%">Structure</th>
-											<th scope="col"  style="width: 80%">Structure</th>
-											<th scope="col"  style="width: 10%">Complete YES/NO</th>
 
-										</tr>
-									</thead>
-									<tbody>
-										<tr>
-										<td scope="row">Floor</td>
-										<td scope="row">Unfinished reinforced concrete or structural steel (10 cm set
-											down)</td>
-										<td></td>
-										</tr>
-										<tr>
-											<td scope="row">Ceiling</td>
-											<td>Unfinished reinforced concrete or structural steel</td>
-											<td></td>
-										</tr>
-										<tr>
-											<td scope="row">Coloumns</td>
-											<td>Unfinished reinforced concrete</td>
-											<td></td>
-										</tr>
-										<tr>
-											<td scope="row">Walls</td>
-											<td>Unfinished 15 cm concrete block work or steel stud with plasterboard
-												finish (floor to underside of slab unless otherwise noted)
-											</td>
-											<td></td>
-										</tr>
-									</tbody>
-									<thead class="thead-light">
+
+
+                <div class="col-3 d-flex align-items-center">
+                    <div class="logo-img">
+                        <img class="w-50" src="../assets/tamdeen-logo/tamdeen-logo.png" alt="">
+                    </div>
+                </div>
+
+                    
+                    <div class="col-6 d-flex align-items-center">
+                        <div class="border border-secondary">
+                            <h2 class="text-danger">Handover Certificate</h2>
+                        </div>
+                    </div>
+
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+                    <br>
+
+
+<div class="form">
+
+
+<div class="ex0" >
+<label for="test">Premises Numbers</label>
+<span>
+    <input name="Premises Numbers" id="Premises Numbers" type="text" />
+</span>
+
+
+<label for="test">Premises location</label>
+<span>
+    <input name="Premises location" id="Premises location" type="text" />
+</span>
+
+
+<label for="test">Concept Zone (if applicable)</label>
+<span>
+    <input name="Concept Zone" id="Concept Zone" type="text" />
+</span>
+
+</div>
+
+<div class="ex10">
+    <label for="test">Investor Brand Name</label>
+    <span>
+        <input name="Investor Brand Name" id="Investor Brand Name" type="text" />
+    </span>
+
+
+    <label for="test">Handover Inspection Date</label>
+    <span>
+        <input name="Handover Inspection Date" id="Handover Inspection Date" type="text" />
+    </span>
+
+
+    <label for="test">Handover Date (Actual)</label>
+    <span>
+        <input name="Handover Date" id="Handover Date" type="text" />
+    </span>
+
+</div>
+
+
+<div class="ex11">
+    <label for="test">Investor Company Name</label>
+    <span>
+        <input name="Investor Company Name" id="Investor Company Name" type="text" />
+    </span>
+</div>
+
+
+</div>
+
+<DIV STYLE="background-color:#000000; height:5px; width:100%;">
+</DIV>
+</div>
+
+
+
+
+                        <h5>
+                        <div class="ex1">
+                        <p>Owner’s Work Inspection Checklist</p>
+                            <table class="table table-bordered"  style="width: 100%" >
+                                <thead class="thead-light" >
+                                    <tr>
+                                        <th scope="col"  style="width: 10%">Structure</th>
+                                        <th scope="col"  style="width: 80%">Structure</th>
+                                        <th scope="col"  style="width: 10%">Complete YES/NO</th>
+
+                                    </tr>
+                                </thead>
+                                 <tbody>
+
+                                    <tr>
+                                        <td scope="row">Floor</td>
+                                        <td scope="row">Unfinished reinforced concrete or structural steel (10 cm setdown)</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td scope="row">Ceiling</td>
+                                        <td>Unfinished reinforced concrete or structural steel</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td scope="row">Coloumns</td>
+                                        <td>Unfinished reinforced concrete</td>
+                                        <td></td>
+                                    </tr>
+                                    <tr>
+                                        <td scope="row">Walls</td>
+                                        <td>Unfinished 15 cm concrete block work or steel stud with plasterboardfinish (floor to underside of slab unless otherwise noted)</td>
+                                        <td></td>
+                                    </tr>
+                                  </tbody>
+                                  </table>
+                                  </div>
+
+
+                            <div class="ex1">
+                            <table class="table table-bordered" style="width: 100%">
+                            <thead class="thead-light">
                                         <tr>
                                             <th scope="col" style="width: 10%">MEP</th>
                                             <th scope="col"  style="width: 80%">MEP</th>
                                             <th scope="col"  style="width: 10%">Complete YES/NO</th>
                                         </tr>
                                     </thead>
-									<tbody>
+                                    <tbody>
                                     <tr>
                                         <td scope="row">Fire Fighting Detectors & Smoke</td>
                                         <td>A water point at a Owner nominated location at the boundary of the Premises
@@ -294,70 +380,89 @@ input {
                                             includes floor slab penetrations with all setout by the Investor.</td>
                                         <td></td>
                                     </tr>
-									</tbody>
-								 </table>
-							</div>
-						</h5>
-					</div>
-				</div>
-			</div>
-		</section>
-		</div><!---->
-	<h5>
+                              </tbody>  
+                            </table>
+                            </div>
+
+
+
+                    </h5>
+                </div>
+            </div>
+    </section>
+</div>
+
+
+<h5>
+
     <br>
     <br>
-    <br>
-    <br>
+  
+
+
     <p style="page-break-after: always;">&nbsp;</p>
-	 <!-- Second Page starts from here -->
+
+
+    <!-- Second Page starts from here -->
     <div class="book book col-8 mx-auto">
         <section class="page-2">
             <div class="page">
                 <div class="subpage 2">
                     <div class="row">
-						<div class="col-3 d-flex align-items-center">
-						<div class="logo-img">
-						<img class="w-50" src="../assets/tamdeen-logo/tamdeen-logo.png" alt="">
-						</div>
-				    </div>
-					<div class="col-6 d-flex align-items-center">
-						<div class="border border-secondary">
-						<h2 class="text-danger">Handover Certificate</h2>
-						</div>
-					</div>
-					<div class="ex2">
-						<div class="container">
-							<table class="table table-bordered">
-								<thead class="thead-light">
-									<tr>
-										<th scope="col">Shopfront</th>
-										<th scope="col">Shopfront</th>
-										<th scope="col">Complete Yes/No</th>
 
-									</tr>
-								</thead>
-								<tbody>
-									<tr>
-										<td scope="row">Blade correction and armyature</td>
-										<td>A wall or ceiling mounted whichever the case mayby armyature for a blade
-											Sign – in those Premises
-											and locations as nominated by the Owner.</td>
-										<td></td>
-									</tr>
-								</tbody>
-							</table>
-						</div>
-						<br>
-						<DIV STYLE="background-color:#000000; height:5px; width:100%;">
-						</DIV>
-                     </div>
-					 <div class="ex3">
+
+<div class="col-3 d-flex align-items-center">
+    <div class="logo-img">
+        <img class="w-50" src="../assets/tamdeen-logo/tamdeen-logo.png" alt="">
+    </div>
+</div>
+
+
+<div class="col-6 d-flex align-items-center">
+    <div class="border border-secondary">
+        <h2 class="text-danger">Handover Certificate</h2>
+    </div>
+</div>
+
+
+                        <div class="ex2">
+                            <div class="container">
+                                <table class="table table-bordered">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th scope="col">Shopfront</th>
+                                            <th scope="col">Shopfront</th>
+                                            <th scope="col">Complete Yes/No</th>
+
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td scope="row">Blade correction and armyature</td>
+                                            <td>A wall or ceiling mounted whichever the case mayby armyature for a blade
+                                                Sign – in those Premises
+                                                and locations as nominated by the Owner.</td>
+                                            <td></td>
+                                        </tr>
+
+                                    </tbody>
+                                </table>
+                            </div>
+
+
+                            <br>
+                            <DIV STYLE="background-color:#000000; height:5px; width:100%;">
+                            </DIV>
+                        </div>
+
+
+                        <div class="ex3">
                             <div class="date-complete">
-                                <div class="row">
-                                    <div class="col-10">
+                               <div class="row">
+                                    <div class="col-8">
                                         <div class="uncompleted / Defective Works (If any)">
-                                            <div class="title">
-                                                <h5>
+                                             <div class="title"> 
+                                               <h5>
                                                     Uncompleted / Defective Works (If any)
                                                 </h5>
                                             </div>
@@ -381,7 +486,9 @@ input {
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-2">
+
+
+                                    <div class="col-4">
                                         <div class="completetion Date">
                                             <div class="title">
                                                 <h5>
@@ -393,7 +500,6 @@ input {
 
                                                     <input type="text" class="form-control border-bottom">
                                                 </div>
-                                                <div class="border-line">
 
                                                     <div class="form-group">
 
@@ -409,17 +515,23 @@ input {
 
                                                         <input type="text" class="form-control border-bottom">
                                                     </div>
+                                                  </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
 
-                            <DIV STYLE="background-color:#000000; height:5px; width:100%;">
-                            </DIV>
+                                    
+                            <br>
+                            <br>
+
+
+                        <DIV STYLE="background-color:#000000; height:5px; width:100%;">
+                        </DIV>
+                        </div> 
                         </div>
-						<div class="ex4">
+
+                        <div class="ex4">
                             <h4>Acceptance of Handover of Premises</h4>
                             <br>
                             <h5>
@@ -444,11 +556,15 @@ input {
                                         approval of the Owner.</li>
                                 </ul>
                             </h5>
+
+
+
                             <DIV STYLE="background-color:#000000; height:5px; width:100%;">
                             </DIV>
                         </div>
                         <br>
-						<div class="ex5">
+
+                       <div class="ex5">
                         <div class="container">
                             <table class="table table-bordered">
                                 <thead class="thead-light">
@@ -487,17 +603,24 @@ input {
                         </div>
                         <br>
                         <br>
-						<div class="ex6">
+
+                        <div class="ex6">
                             <p>CC: Finance Dept</p>
                             <p>Centre Manager</p>
                             <p> GM – Leasing</p>
                             <p> GM - Marketing & Operations</p>
                             <p> Chief Operating Officer</p>
                         </div>
-					</div><!--end of row-->
-				</div>
-			</div>
-		</section>
-	</div>
-	</h5>
-</div> <!--final->
+
+                        <div>
+                            <button (click)="download()"> Download Pdf </button>
+                        </div>
+
+                    </div>
+               </div>
+        </section>
+    </div>
+</h5>
+</div>
+</body>
+</html>

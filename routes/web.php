@@ -395,10 +395,18 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/notifications/{memid}/{usertype}', [NotificationController::class, 'getNotifications']);
     /*Update Active notifications for logged in user as visited*/
     Route::patch('/updatenotifications', [NotificationController::class, 'updateNotifications']);
+
+    //PDF controller
+    /* Hoc pdf generation */
+    Route::post('/hoc', [PDFController::class, 'generateHOC']);
+    /* fcc pdf generation */
+    Route::post('/fcc', [PDFController::class, 'generateFCC']);
+    /* fdr pdf generation */
+    Route::post('/fdr', [PDFController::class, 'generateFDR']);
 });
 
-//PDF controller
-Route::get('/hoc', [PDFController::class, 'generatePDF']);
+Route::get('/checking', [PDFController::class, 'checking']);
+
 
 Route::group(['middleware' => 'tenantauth:api'], function() {
      //Refresh Token

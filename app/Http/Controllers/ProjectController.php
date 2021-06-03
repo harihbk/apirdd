@@ -51,6 +51,7 @@ use App\Mail\Projectnotification;
 use DB;
 use File;
 
+
 class ProjectController extends Controller
 {
     function retrieveByorg($id)
@@ -225,7 +226,7 @@ class ProjectController extends Controller
         $project->fitout_deposit_amt = $projectdata[0]['fitout_deposit_amt'];
         // $project->fitout_currency_type = $projectdata[0]['fitout_currency_type'];
         // $project->insurance_validity_date = $projectdata[0]['insurance_validity_date'];
-        $project->fif_upload_path = $projectdata[0]['fif_upload_path'];
+        // $project->fif_upload_path = $projectdata[0]['fif_upload_path'];
         $project->assigned_rdd_members = $projectdata[0]['assigned_rdd_members'];
         $project->investor_company = $projectdata[0]['investor_company'];
         $project->investor_brand = $projectdata[0]['investor_brand'];
@@ -494,6 +495,7 @@ class ProjectController extends Controller
                 if(!File::isDirectory($img_path)){
                     File::makeDirectory($img_path, 0777, true, true);
                 }
+            
             Notifications::insert($contactNotifications);
             $returnData = Project::select('project_id','project_name','created_at')->find($project->project_id);
             $data = array ("message" => 'Project Created successfully',"data" => $returnData );
@@ -896,10 +898,10 @@ class ProjectController extends Controller
         $created_at = date('Y-m-d H:i:s');
         $attendees_list = explode(',',$request->input('attendees'));
         $persons_list = explode(',',$request->input('responsible_person'));
-        $attendees_array = [];
         $persons_array = [];
         $investor_array = [];
         $approvers_array = [];
+        $rdd_attendee_array = [];
         $files =  [];
         $investorDetails = "";
         if ($validator->fails()) { 
@@ -958,8 +960,8 @@ class ProjectController extends Controller
                     else
                     {
                         $approvers_array[]= $attendees->email;
+                        $rdd_attendee_array[] = $attendees->email;
                     }  
-                    $attendees_array[]= $attendees->email;  
                     $attendeeNotifications[]=[
                         "project_id" => $project_id,
                         "content" =>  $taskDetails[0]['meeting_topic']." for Project ".$taskDetails[0]['project_name']." has been created.",
@@ -971,7 +973,6 @@ class ProjectController extends Controller
                     ];
                 }
                 Notifications::insert($attendeeNotifications);
-                // Mail::to($attendees_array)->send(new projectmeeting());
                 $approvers_list = explode(',',$taskDetails[0]['approvers']);
                 for($n=0;$n<count($approvers_list);$n++)
                 {
@@ -979,28 +980,43 @@ class ProjectController extends Controller
                     $approvers_array[]= $approvers->email;
                 }
 
-                $emaildata = [
-                    "meeting_date" => date('d-m-Y', strtotime($taskDetails[0]['meeting_date'])),
-                    "meeting_start_time" => date('h:i a', strtotime($taskDetails[0]['meeting_start_time'])),
-                    "meeting_end_time" => date('h:i a', strtotime($taskDetails[0]['meeting_end_time'])),
-                    "tenant_name" => $investorDetails->tenant_name,
-                    "tenant_last_name" => $investorDetails->tenant_last_name
 
-                ];
-                
-                Mail::send('emails.projectmeetings', $emaildata, function($message)use($emaildata,$investor_array,$approvers_array,$files) {
-                    $message->to($investor_array)
-                             ->cc($approvers_array)
-                            ->subject('RDD - Meeting Notification');
-
-                            if(count($files)>0)
-                            {
-                                foreach ($files as $file){
-                                    $message->attach($file);
+                try
+                {
+                    $emaildata = [
+                        "meeting_date" => date('d-m-Y', strtotime($taskDetails[0]['meeting_date'])),
+                        "meeting_start_time" => date('h:i a', strtotime($taskDetails[0]['meeting_start_time'])),
+                        "meeting_end_time" => date('h:i a', strtotime($taskDetails[0]['meeting_end_time'])),
+                        "tenant_name" => $investorDetails!=''?$investorDetails->tenant_name:"Team",
+                        "tenant_last_name" => $investorDetails!=''?$investorDetails->tenant_last_name:"",
+                        "meetingType" => $request->input('phase_id')
+                    ];
+                    $to_people = [];
+                    if($investorDetails!='' && $investorDetails!=null)
+                    {
+                        $to_people = $investor_array;
+                    }
+                    else
+                    {
+                        //mo investor attendee there for this meeting
+                        $to_people = $rdd_attendee_array;
+                    }
+                    Mail::send('emails.projectmeetings', $emaildata, function($message)use($emaildata,$to_people,$approvers_array,$files) {
+                        $message->to($to_people)
+                                 ->cc($approvers_array)
+                                ->subject('RDD - Meeting Notification');
+    
+                                if($files!=null && count($files)>0)
+                                {
+                                    foreach ($files as $file){
+                                        $message->attach($file);
+                                    }
                                 }
-                            }
-                    }); 
-
+                        }); 
+                }
+                catch (\Exception $e) {
+                    return $e->getMessage();
+                    }
 
                 Projecttemplate::where("project_id",$project_id)->where("phase_id",$request->input('phase_id'))->where("id",$request->input('id'))->update(
                  array(
@@ -2613,6 +2629,7 @@ class ProjectController extends Controller
 
         //for requested inspections
         $inspection = $request->get('inspections');        
+        $inspectionNotifications = array();
         for($s=0;$s<count($inspection);$s++)
         {
             Projectinspections::where("project_id",$projectid)->where("inspection_id",$inspection[$s]['inspection_id'])->update(
@@ -2658,6 +2675,7 @@ class ProjectController extends Controller
                 Preopeningdocs::where("project_id",$projectid)->where("id",$predocs[$y]['id'])->where("isDeleted",0)->update(
                     array(
                         "actual_date" => $predocs[$y]['actual_date'],
+                        "doc_status" => $predocs[$y]['doc_status']
                     )
                 );
             }
@@ -4595,5 +4613,19 @@ class ProjectController extends Controller
                     ->cc($emaildata['rdd_manager'])
                     ->subject('RDD -'.$emaildata['doc_header'].' Approval Notification');
             });
+    }
+    function checking(Request $request)
+    {
+        return $request;
+        $doc_path = "/home/rdd.octasite.com/public_html/rdd_server/public/uploads/ORG00001/documents/257_Project_29_05_2021/workspace_docs";
+        $file_path = array();
+        if ($request->hasfile('filenames')) {
+            foreach ($request->file('filenames') as $file) {
+                $orignalName = $file->getClientOriginalName();
+                $file->move(trim($doc_path,'"'), $orignalName);
+                array_push($file_path,trim($doc_path,'"')."/".$orignalName);
+            }
+            return response()->json(['response'=>"file uploaded","file_path"=>$file_path], 200);
+        }
     }
 }

@@ -403,10 +403,14 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/fcc', [PDFController::class, 'generateFCC']);
     /* fdr pdf generation */
     Route::post('/fdr', [PDFController::class, 'generateFDR']);
+
+
+
+    Route::post('/checking', [ProjectController::class, 'checking']);
 });
 
-Route::get('/checking', [PDFController::class, 'checking']);
 
+Route::get('/pdfchecking', [PDFController::class, 'checking']);
 
 Route::group(['middleware' => 'tenantauth:api'], function() {
      //Refresh Token

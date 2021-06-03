@@ -1,143 +1,124 @@
+<br>
+<br>
 
 <head>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+	<style>
+		#mytable {
+		  margin: 0;
+		  padding: 0;
+		  background-color: white;
+		  font: 12pt "Tahoma";
+		}
+
+		* {
+		  box-sizing: border-box;
+		  -moz-box-sizing: border-box;
+		}
+
+		.page {
+		  width: auto;
+		  min-height: 100%;
+		  padding: 10px;
+		  margin: 1cm auto;
+		  border: 1px #d3d3d3 solid;
+		  border-radius: 5px;
+		  background: white;
+		}
+
+		@page {
+		  size: 21cm 29.7cm;
+		  margin: 30mm 45mm 30mm 45mm;
+		}
+
+		.subpage1 {
+		  padding: 1cm;
+		  height: 100%;
+		  width: auto;
+		}
+
+		.subpage2 {
+		  padding: 1cm;
+
+		  height: 100%;
+		  width: auto;
+		}
+
+		@page {
+		  size: A4;
+		  margin: 0;
+		}
+
+		@media print {
+		  .page {
+			margin: 0;
+			border: initial;
+			border-radius: initial;
+			width: initial;
+			min-height: initial;
+			box-shadow: initial;
+			background: white;
+			page-break-after: always;
+		  }
+		}
+
+		div.ex1 {
+		  width: 400%;
+		  padding: 25px;
+		  box-sizing: border-box;
+		}
+
+		div.ex2 {
+		  width: 400%;
+		  padding: 25px;
+		  box-sizing: border-box;
+		}
+
+		div.ex3 {
+		  width: 400%;
+		  padding: 25px;
+		  box-sizing: border-box;
+		}
+
+		div.ex4 {
+		  width: 100%;
+		  padding: 25px;
+		  box-sizing: border-box;
+		}
+
+		div.ex5 {
+		  width: 400%;
+		  padding: 25px;
+		  box-sizing: border-box;
+		}
+		div.ex6 {
+		  width: 400%;
+		  padding: 25px;
+		  box-sizing: border-box;
+		}
+
+		div.ex7 {
+		  width: 400%;
+		  padding: 25px;
+		  box-sizing: border-box;
+		}
+
+		div.ex8 {
+		  width: 400%;
+		  padding: 25px;
+		  box-sizing: border-box;
+		}
+
+		input {
+		  width: 100%;
+		  border: 0;
+		  outline: 0;
+		  background: white;
+		  border-bottom: 1px solid black;
+		}
+	</style>
 </head>
-
-
-<style>
-#mytable {
-  margin: 0;
-  padding: 0;
-  background-color: white;
-  font: 12pt "Tahoma";
-}
-
-* {
-  box-sizing: border-box;
-  -moz-box-sizing: border-box;
-}
-
-.page {
-  width: auto;
-  min-height: 100%;
-  padding: 10px;
-  margin: 1cm auto;
-  border: 1px #d3d3d3 solid;
-  border-radius: 5px;
-  background: white;
-}
-
-@page {
-  size: 21cm 29.7cm;
-  margin: 30mm 45mm 30mm 45mm;
-}
-
-.subpage1 {
-  padding: 1cm;
-  height: 100%;
-  width: auto;
-}
-
-.subpage2 {
-  padding: 1cm;
-
-  height: 100%;
-  width: auto;
-}
-
-@page {
-  size: A4;
-  margin: 0;
-}
-
-@media print {
-  .page {
-    margin: 0;
-    border: initial;
-    border-radius: initial;
-    width: initial;
-    min-height: initial;
-    box-shadow: initial;
-    background: white;
-    page-break-after: always;
-  }
-}
-
-div.ex1 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-div.ex2 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-div.ex3 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-div.ex4 {
-  width: 100%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-div.ex5 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-div.ex6 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-div.ex7 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-div.ex8 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-input {
-  width: 100%;
-  border: 0;
-  outline: 0;
-  background: white;
-  border-bottom: 1px solid black;
-}
-</style> 
-
-
-<script>
-       
-
-            download(); {
-
-                var element = document.getElementById('mytable')
-                html2canvas(element).then((canvas) => {
-                    console.log(canvas)
-                    var imgData = canvas.toDataURL('image/png')
-                    var doc = new jspdf()
-                    var imgWidth = 208;
-                    var imgHeight = canvas.height * imgWidth / canvas.width;
-                    doc.addImage(imgData, 0, 0, imgWidth, imgHeight)
-                    doc.save("image.pdf")
-                })
-            }
-</script>
-
+ 
 
 <div id="mytable">
     <div class="book book col-8 mx-auto">
@@ -152,14 +133,17 @@ input {
                          </div>
                          </div>
 
-                            <div class="col-8 d-flex align-items-center">
+                        <h5>
+                            <div class="col-12 d-flex align-items-center">
                                 <div class="border border-secondary">
                                     <h1 class="text-danger">Fitout Completion Certificate</h1>
                                 </div>
                              </div>
-                       
-
+                        </h5>
                         <div class="ex1">
+                            <h5>
+							  <table>
+							  <tbody>
                                 <tr>
                                     <td>Premises Numbers</td>
                                     <td><input /></td>
@@ -180,16 +164,22 @@ input {
                                     <td>Investor Company Name</td>
                                     <td colspan="5"><input /></td>
                                 </tr>
+							  </tbody>
+							  </table>
+                            </h5>
 
 
+                            <br>
                             <DIV STYLE="background-color:#000000; height:5px; width:100%;">
                             </DIV>
                         </div>
 
                         <div class="ex2">
 
+                            <h5>
                                 <h1>ATTENDEES</h1>
-
+								<table>
+								<tbody>
                                 <tr>
                                     <td>RDD Project Manager</td>
                                     <td colspan="5"><input /></td>
@@ -206,35 +196,40 @@ input {
                                     <td>Investor’s Shop fitter</td>
                                     <td colspan="5"><input /></td>
                                 </tr>
+								</tbody>
+								</table>
+                            </h5>
 
 
-                          
+                            <br>
+                            <br>
                             <DIV STYLE="background-color:#000000; height:5px; width:100%;">
                             </DIV>
                         </div>
+                        <br>
 
 
                         <div class="ex3">
+                            <h5>
                                 <p>Inspection Checklist (in strict compliance with the Investor Fitout
                                     & Design Guidelines and
                                     the
                                     approved Detailed Design
                                     drawings) </p>
+                            </h5>
                         </div>
                         <h5>
                             <div class="ex4">
-                                 <tbody>
-
-                                    <table class="table table-bordered"  style="width: 50%">
+                                    <table class="table table-bordered"  style="width: 100%">
                                         <thead class="thead-light">
                                             <tr>
-                                                <th scope="col"  style="width: 10%">Architectural</th>
-                                                <th scope="col"  style="width: 10%">Comments / Defects</th>
-                                                <th scope="col"  style="width: 10%">Action</th>
+                                                <th scope="col"  style="width: 40%">Architectural</th>
+                                                <th scope="col"  style="width: 20%">Comments / Defects</th>
+                                                <th scope="col"  style="width: 20%">Action</th>
                                                 <th scope="col"  style="width: 20%">Finish Date(By Investor)</th>
                                             </tr>
                                         </thead>
-
+										<tbody>
                                         <tr>
                                             <td scope="row">Shopfront</td>
                                             <td></td>
@@ -295,7 +290,7 @@ input {
                                             <td></td>
 
                                         </tr>
-
+										</tbody>
 
                                         <thead class="thead-light" >
                                             <tr>
@@ -306,6 +301,7 @@ input {
 
                                             </tr>
                                         </thead>
+										<tbody>
                                         <tr>
                                             <td scope="row">MDB Installation & Electricity connected</td>
                                             <td></td>
@@ -332,11 +328,9 @@ input {
                                             <td></td>
                                             <td></td>
                                             <td></td>
-
                                         </tr>
+									</tbody>
                                     </table>
-                                 <tbody>
-
                             </div>
                         </h5>
                     </div>
@@ -371,18 +365,21 @@ input {
                                 </div>
                             </div>
                         </h5>
-                      
+                        <br>
+                        <br>
+                        <br>
+                        <br>
 
 
                         <div class="ex5">
                             
-                                <table class="table table-bordered" style="width: 50%">
+                                <table class="table table-bordered" style="width: 90%">
                                     <thead class="thead-light">
                                         <tr>
-                                            <th scope="col" style="width: 10%">MEP</th>
-                                            <th scope="col" style="width: 10%">Comments / Defects</th>
-                                            <th scope="col" style="width: 10%">Action</th>
-                                            <th scope="col" style="width: 20%">Finish Date (By Investor)</th>
+                                            <th scope="col" style="width: 40%">MEP</th>
+                                            <th scope="col" style="width: 20%">Comments / Defects</th>
+                                            <th scope="col" style="width: 20%">Action</th>
+                                            <th scope="col" style="width: 15%">Finish Date (By Investor)</th>
 
                                         </tr>
                                     </thead>
@@ -446,19 +443,21 @@ input {
                                     </tbody>
                                 </table>
                         </div>
-                     
+                        <br>
+                        <br>
+
 
                         <div class="ex7">
-                            <tbody>
-                                <table class="table table-bordered" style="width: 50%">
+                                <table class="table table-bordered" style="width: 100%">
                                     <thead class="thead-light">
                                         <tr>
-                                            <th style="width: 30%">Fitout Completion Date Compliance(by Investor)</th>
+                                            <th style="width: 80%">Fitout Completion Date Compliance(by Investor)</th>
                                             <th style="width: 20%">YES/NO</th>
 
 
                                         </tr>
                                     </thead>
+									<tbody>
                                     <tr>
                                         <td>Payment of all / any outstanding monies owed to TMM and / or Owner</td>
                                         <td></td>
@@ -480,19 +479,22 @@ input {
                                         <td>Investor or Investor’s Authorised Signatory</td>
                                         <td></td>
                                     </tr>
+								</tbody>
                                 </table>
-                            </tbody>
                         </div>
-                      
+                        <br />
+                        <br />
+                        <br />
+                        <br />
 
                         <div class="ex6">
-                                <table class="table table-bordered" style="width: 50%">
+                                <table class="table table-bordered" style="width: 80%">
                                     <thead class="thead-light">
                                         <tr>
-                                            <th style="width: 10%">Authorization</th>
-                                            <th style="width: 10%">Name</th>
-                                            <th style="width: 10%">Signature</th>
-                                            <th style="width: 20%">Date</th>
+                                            <th style="width: 30%">Authorization</th>
+                                            <th style="width: 20%">Name</th>
+                                            <th style="width: 15%">Signature</th>
+                                            <th style="width: 15%">Date</th>
 
                                         </tr>
                                     </thead>
@@ -530,7 +532,11 @@ input {
                         </tbody>
                         </table>
                         </div>
-                       
+                        <br />
+                        <br />
+                        <br />
+                        <br />
+
                         <div class="ex8">
                             <p>Copy to</p>
                             <p>Chief Operating Officer</p>

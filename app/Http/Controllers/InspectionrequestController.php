@@ -13,6 +13,8 @@ use App\Models\Inspectionroot;
 use App\Models\SiteInspectionReport;
 use App\Models\Siteinspectionitems;
 use App\Models\Siteinspectionattachments;
+use App\Models\Notifications;
+use App\Models\Projectcontact;
 use Response;
 use Validator;
 use DB;
@@ -626,6 +628,21 @@ class InspectionrequestController extends Controller
                 }
                 if(Projectinspectionitems::insert($inspectionItems))
                 {
+                    $notificationsArray = array();
+                    $contactDetails = Projectcontact::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_contact_details.project_id')->where('tbl_project_contact_details.project_id',$request->input('project_id'))->where('tbl_project_contact_details.isDeleted',0)->whereNotIn('tbl_project_contact_details.member_designation',[13,14])->select('tbl_project_contact_details.*','tbl_projects.project_name')->get();
+                    for($r=0;$r<count($contactDetails);$r++)
+                    {
+                        $notificationsArray[]=[
+                            "project_id" => $request->input('project_id'),
+                            "content" => $request->input('inspection_type')." for Project ".$contactDetails[0]['project_name']." has been requested",
+                            "user" => $contactDetails[$r]['member_id'],
+                            "user_type" => 1,
+                            "notification_type"=>env('NOTIFY_INSPECTIONS'),
+                            "created_at" => $created_at,
+                            "updated_at" => $updated_at
+                        ];
+                    }
+                    Notifications::insert($notificationsArray);
                     $inspectionData = Projectinspections::select('inspection_id','inspection_type','requested_time')->find($inspection->inspection_id);
                     $data = array ("message" => 'Inspection Created successfully',"data" => $inspectionData );
                     $response = Response::json($data,200);

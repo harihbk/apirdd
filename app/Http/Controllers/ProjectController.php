@@ -194,6 +194,7 @@ class ProjectController extends Controller
     }
     function store(Request $request)
     {
+
         $project = new Project();
         $template = new Projecttemplate();
 
@@ -495,7 +496,6 @@ class ProjectController extends Controller
                 if(!File::isDirectory($img_path)){
                     File::makeDirectory($img_path, 0777, true, true);
                 }
-            
             Notifications::insert($contactNotifications);
             $returnData = Project::select('project_id','project_name','created_at')->find($project->project_id);
             $data = array ("message" => 'Project Created successfully',"data" => $returnData );
@@ -3069,34 +3069,7 @@ class ProjectController extends Controller
 
         if($request->input('task_type')==1)
         {
-            $forwarded_tasks = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_project_tasks_approvals','tbl_project_tasks_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_attendees_approvals','tbl_attendees_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->leftjoin('tbl_task_forwards','tbl_task_forwards.task_id','=','tbl_project_template.id')->where('tbl_project_template.task_type',$request->input('task_type'))->whereNotIn('tbl_project_template.task_status', [0,1])->where('tbl_project_template.isDeleted',0)->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name')->where('tbl_task_forwards.forwarded_to',$memid);
-            if ($request->has('project_id') && !empty($request->input('project_id')))
-            {
-                $forwarded_tasks->where('tbl_project_template.project_id', $request->input('project_id'));
-            }
-            if ($request->has('status') && !empty($request->input('status')))
-            {
-                if($request->input('status')==1)
-                {
-                    $forwarded_tasks->whereIn('tbl_project_tasks_approvals.approval_status', [1,2])->where('tbl_project_tasks_approvals.approver',$memid);
-                }
-                if($request->input('status')==0)
-                {
-                    $forwarded_tasks->whereIn('tbl_project_tasks_approvals.approval_status', [0])->where('tbl_project_tasks_approvals.approver',$memid);
-                }
-            }
-            $forwarded_tasks = $forwarded_tasks->where('tbl_projects.property_id',$request->input('property_id'))->groupBy('tbl_project_template.id')->get();
-
-            for($p=0;$p<count($forwarded_tasks);$p++)
-            {
-                $forwarded_tasks[$p]['forwarded_task']=1;
-            }
-
-            $task_lists = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_project_tasks_approvals','tbl_project_tasks_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_attendees_approvals','tbl_attendees_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->leftjoin('tbl_company_master','tbl_company_master.company_id','=','tbl_projects.investor_company')->where('tbl_project_template.task_type',$request->input('task_type'))->whereNotIn('tbl_project_template.task_status', [0,1])->where('tbl_project_template.isDeleted',0)->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name','tbl_projects.investor_brand','tbl_company_master.company_name')->where(function($query) use ($memid,$attendee){
-                $query->orwhereRaw("find_in_set($memid,tbl_project_template.mem_responsible)")
-                ->orWhereRaw("find_in_set($memid,tbl_project_template.approvers)")
-                ->orWhereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)");
-            });
+            $task_lists = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_project_tasks_approvals','tbl_project_tasks_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_attendees_approvals','tbl_attendees_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->leftjoin('tbl_company_master','tbl_company_master.company_id','=','tbl_projects.investor_company')->leftjoin('tbl_task_forwards','tbl_task_forwards.task_id','=','tbl_project_template.id')->where('tbl_project_template.task_type',$request->input('task_type'));
             if ($request->has('project_id') && !empty($request->input('project_id')))
             {
                 $task_lists->where('tbl_project_template.project_id', $request->input('project_id'));
@@ -3112,7 +3085,17 @@ class ProjectController extends Controller
                     $task_lists->whereIn('tbl_project_tasks_approvals.approval_status', [0])->where('tbl_project_tasks_approvals.approver',$memid);
                 }
             }
-            $task_lists = $task_lists->where('tbl_projects.property_id',$request->input('property_id'))->groupBy('tbl_project_template.id')->get()->union($forwarded_tasks);
+            $task_lists = $task_lists->whereNotIn('tbl_project_template.task_status', [0,1])->where('tbl_project_template.isDeleted',0)->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name','tbl_projects.investor_brand','tbl_company_master.company_name','tbl_task_forwards.task_id as forwarded_task','tbl_task_forwards.forwarded_from','tbl_task_forwards.forwarded_to')->where(function($query) use ($memid,$attendee){
+                $query->orwhereRaw("find_in_set($memid,tbl_project_template.mem_responsible)")
+                ->orWhereRaw("find_in_set($memid,tbl_project_template.approvers)")
+                ->orWhereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)");
+            });
+            $task_lists = $task_lists->where('tbl_projects.property_id',$request->input('property_id'))->when(!is_null('tbl_task_forwards') , function ($query) use($memid){
+                $query->orWhere('tbl_task_forwards.forwarded_to',$memid);
+             });;
+            
+            
+             $task_lists = $task_lists->groupBy('tbl_project_template.id')->get();
 
             return $task_lists;
         }
@@ -4616,16 +4599,22 @@ class ProjectController extends Controller
     }
     function checking(Request $request)
     {
-        return $request;
-        $doc_path = "/home/rdd.octasite.com/public_html/rdd_server/public/uploads/ORG00001/documents/257_Project_29_05_2021/workspace_docs";
-        $file_path = array();
-        if ($request->hasfile('filenames')) {
-            foreach ($request->file('filenames') as $file) {
-                $orignalName = $file->getClientOriginalName();
-                $file->move(trim($doc_path,'"'), $orignalName);
-                array_push($file_path,trim($doc_path,'"')."/".$orignalName);
+
+        $response =  [
+            "/home/rdd.octasite.com/public_html/rdd_server/public/uploads/ORG00001/documents/common_fifs//Company list page.docx",
+            "/home/rdd.octasite.com/public_html/rdd_server/public/uploads/ORG00001/documents/common_fifs//Document section apis.docx",
+            "/home/rdd.octasite.com/public_html/rdd_server/public/uploads/ORG00001/documents/common_fifs//Project FIF UPLOAD PATH.docx"
+        ];
+
+        for($j=0;$j<count($response);$j++)
+        {
+            $to_doc_path = "/home/rdd.octasite.com/public_html/rdd_server/public/uploads/ORG00001/documents/257_Project_29_05_2021/workspace_docs/".basename($response[$j]);
+            if(file_exists($response[$j]))
+            {
+                File::move($response[$j],$to_doc_path);
             }
-            return response()->json(['response'=>"file uploaded","file_path"=>$file_path], 200);
         }
+        
+        
     }
 }

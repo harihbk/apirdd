@@ -41,7 +41,7 @@ class PDFController extends Controller
     public function checking()
     {
         $data = array();
-        $pdf = PDF::loadView('fccPDF', $data);
+        $pdf = PDF::loadView('test', $data);
     
         return $pdf->download('testing.pdf');
     }

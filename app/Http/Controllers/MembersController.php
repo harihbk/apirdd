@@ -123,7 +123,7 @@ class MembersController extends Controller
 
         $searchTerm = $request->input('searchkey');
 
-        $query = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.mem_org_id',$id)->select('users.mem_id','users.mem_org_id','users.mem_name','users.mem_signature_path','users.created_at','users.mem_last_name','users.email','users.mobile_no','users.mem_designation','tbl_designation_master.designation_name','users.gender','users.access_type','users.active_status');
+        $query = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.mem_org_id',$id)->select('users.mem_id','users.mem_org_id','users.mem_name','users.mem_signature_path','users.created_at','users.mem_last_name','users.email','users.mobile_no','users.mem_designation','tbl_designation_master.designation_name','users.gender','users.access_type','users.active_status','users.auth_grp');
 
         if (!empty($request->input('searchkey')))
         {
@@ -217,5 +217,22 @@ class MembersController extends Controller
         echo json_encode($datas);
          
     }
-    
+    /* get designation for member */
+    function getdesignationdetails(Request $request)
+    {
+        $validator = Validator::make($request->all(), [ 
+            'mem_id' => 'required',
+            'user_type' => 'required'
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
+        if($request->input('user_type')==1)
+        {
+            $designationDetails = Members::leftjoin('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('mem_id',$request->input('mem_id'))->select('users.mem_id','users.mem_name','users.mem_last_name','tbl_designation_master.designation_id','tbl_designation_master.designation_name')->first();
+            return response()->json(['designation_details'=>$designationDetails], 200);
+        }
+    }
 }

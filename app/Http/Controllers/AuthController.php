@@ -47,7 +47,8 @@ class AuthController extends Controller
                             'org_id'=> $returnData->mem_org_id,
                             'access_type' => $returnData->access_type,
                             'doc_path' => $returnData->doc_path,
-                            'image_path' => $returnData->image_path
+                            'image_path' => $returnData->image_path,
+                            'auth_grp' => $returnData->auth_grp
                             );
                             return response()->json(['user_info'=>$user_response], 200);
             }
@@ -310,7 +311,8 @@ class AuthController extends Controller
                                         'org_id'=> $returnData->mem_org_id,
                                         'access_type' => $returnData->access_type,
                                         'doc_path' => $returnData->doc_path,
-                                        'image_path' => $returnData->image_path
+                                        'image_path' => $returnData->image_path,
+                                        'auth_grp' => $returnData->auth_grp,
                                         );
                                         return response()->json(['user_info'=>$user_response], 200);
                         }

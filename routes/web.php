@@ -102,6 +102,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/members/org/{id}/type/{tid}',[MembersController::class, 'getMemberByType']);
     Route::get('/members/bydesignation/{org_id}/{designation_id}',[MembersController::class, 'getMemberByDesignation']);
     Route::post('/members/getMembers',[MembersController::class, 'retreiveMembersforProject']);
+    Route::post('/members/getdesignation',[MembersController::class, 'getdesignationdetails']);
+    
     
 
 

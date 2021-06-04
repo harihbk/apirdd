@@ -1,559 +1,67 @@
-
-<head>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
-</head>
-
-
-<style>
-#mytable {
-  margin: 0;
-  padding: 0;
-  background-color: white;
-  font: 12pt "Tahoma";
-}
-
-* {
-  box-sizing: border-box;
-  -moz-box-sizing: border-box;
-}
-
-.page {
-  width: auto;
-  min-height: 100%;
-  padding: 10px;
-  margin: 1cm auto;
-  border: 1px #d3d3d3 solid;
-  border-radius: 5px;
-  background: white;
-}
-
-@page {
-  size: 21cm 29.7cm;
-  margin: 30mm 45mm 30mm 45mm;
-}
-
-.subpage1 {
-  padding: 1cm;
-  height: 100%;
-  width: auto;
-}
-
-.subpage2 {
-  padding: 1cm;
-
-  height: 100%;
-  width: auto;
-}
-
-@page {
-  size: A4;
-  margin: 0;
-}
-
-@media print {
-  .page {
-    margin: 0;
-    border: initial;
-    border-radius: initial;
-    width: initial;
-    min-height: initial;
-    box-shadow: initial;
-    background: white;
-    page-break-after: always;
-  }
-}
-
-div.ex1 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-div.ex2 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-div.ex3 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-div.ex4 {
-  width: 100%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-div.ex5 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-div.ex6 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-div.ex7 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-div.ex8 {
-  width: 400%;
-  padding: 25px;
-  box-sizing: border-box;
-}
-
-input {
-  width: 100%;
-  border: 0;
-  outline: 0;
-  background: white;
-  border-bottom: 1px solid black;
-}
-</style> 
-
-
-<script>
-       
-
-            download(); {
-
-                var element = document.getElementById('mytable')
-                html2canvas(element).then((canvas) => {
-                    console.log(canvas)
-                    var imgData = canvas.toDataURL('image/png')
-                    var doc = new jspdf()
-                    var imgWidth = 208;
-                    var imgHeight = canvas.height * imgWidth / canvas.width;
-                    doc.addImage(imgData, 0, 0, imgWidth, imgHeight)
-                    doc.save("image.pdf")
-                })
-            }
-</script>
-
-
-<div id="mytable">
-    <div class="book book col-8 mx-auto">
-        <section class="page-1">
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Fitout Completion Certificate</title>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+		<style>
+		@page
+		{
+		   size: A4 portrait;
+		}
+		.header-sec
+		{
+			background: #cacaca;
+		}
+		.pt-40 {
+		  padding-top: 40px;
+		}
+		.pl-10
+		{
+			padding-left: 25px;
+		}
+		.header-value
+		{
+			font-weight:bolder;
+		}
+		.pt-10
+		{
+			padding-top: 10px;
+		}
+		</style>
+    </head>
+    <body>
+		<section class="page-1">
             <div class="page">
                 <div class="subpage 1">
                     <div class="row">
-
-                         <div class="col-3 d-flex align-items-center">
+						<div class="col-4 d-flex align-items-center">
                          <div class="logo-img">
-                         <img class="w-50" src="../assets/tamdeen-logo/tamdeen-logo.png" alt="">
+                         <img class="w-25" src="./tamdeen-logo.png" alt="">
                          </div>
                          </div>
-
-                            <div class="col-8 d-flex align-items-center">
-                                <div class="border border-secondary">
-                                    <h1 class="text-danger">Fitout Completion Certificate</h1>
+						 <div class="col-6 d-flex align-items-center">
+                                <div class="border border-secondary header-sec">
+                                    <h3 class="text-danger p-2">Fitout Completion Certificate</h3>
                                 </div>
-                             </div>
-                       
-
-                        <div class="ex1">
-                                <tr>
-                                    <td>Premises Numbers</td>
-                                    <td><input /></td>
-                                    <td>Premises location</td>
-                                    <td><input /></td>
-                                    <td>Concept Zone <br /> (if applicable)</td>
-                                    <td><input /></td>
-                                </tr>
-                                <tr>
-                                    <td>Investor Brand Name</td>
-                                    <td><input /></td>
-                                    <td> Inspection Date</td>
-                                    <td><input /></td>
-                                    <td>Fitout Completion<br />Date (Actual)</td>
-                                    <td><input /></td>
-                                </tr>
-                                <tr>
-                                    <td>Investor Company Name</td>
-                                    <td colspan="5"><input /></td>
-                                </tr>
-
-
-                            <DIV STYLE="background-color:#000000; height:5px; width:100%;">
-                            </DIV>
-                        </div>
-
-                        <div class="ex2">
-
-                                <h1>ATTENDEES</h1>
-
-                                <tr>
-                                    <td>RDD Project Manager</td>
-                                    <td colspan="5"><input /></td>
-                                </tr>
-                                <tr>
-                                    <td>TMM MEP Consultant</td>
-                                    <td colspan="5"><input /></td>
-                                </tr>
-                                <tr>
-                                    <td>Investor’s Authorized Signatory</td>
-                                    <td colspan="5"><input /></td>
-                                </tr>
-                                <tr>
-                                    <td>Investor’s Shop fitter</td>
-                                    <td colspan="5"><input /></td>
-                                </tr>
-
-
-                          
-                            <DIV STYLE="background-color:#000000; height:5px; width:100%;">
-                            </DIV>
-                        </div>
-
-
-                        <div class="ex3">
-                                <p>Inspection Checklist (in strict compliance with the Investor Fitout
-                                    & Design Guidelines and
-                                    the
-                                    approved Detailed Design
-                                    drawings) </p>
-                        </div>
-                        <h5>
-                            <div class="ex4">
-                                 <tbody>
-
-                                    <table class="table table-bordered"  style="width: 50%">
-                                        <thead class="thead-light">
-                                            <tr>
-                                                <th scope="col"  style="width: 10%">Architectural</th>
-                                                <th scope="col"  style="width: 10%">Comments / Defects</th>
-                                                <th scope="col"  style="width: 10%">Action</th>
-                                                <th scope="col"  style="width: 20%">Finish Date(By Investor)</th>
-                                            </tr>
-                                        </thead>
-
-                                        <tr>
-                                            <td scope="row">Shopfront</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                        </tr>
-                                        <tr>
-                                            <td scope="row">Signage</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                        </tr>
-                                        <tr>
-                                            <td scope="row">Ceiling</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-                                        </tr>
-                                        <tr>
-                                            <td scope="row">Walls</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-
-                                        </tr>
-                                        <tr>
-                                            <td scope="row">Floors & Waterproofing</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-
-                                        </tr>
-                                        <tr>
-                                            <td scope="row">Shop Fittings</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-
-                                        </tr>
-                                        <tr>
-                                            <td scope="row">Exit and Emergency Lighting</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-
-                                        </tr>
-                                        <tr>
-                                            <td scope="row">Fire Exit Doors (If applicable)</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-
-                                        </tr>
-                                        <tr>
-                                            <td scope="row">Other</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-
-                                        </tr>
-
-
-                                        <thead class="thead-light" >
-                                            <tr>
-                                                <th scope="col">MEP</th>
-                                                <th scope="col">Comments / Defects</th>
-                                                <th scope="col">Action</th>
-                                                <th scope="col">Finish Date (By Investor)</th>
-
-                                            </tr>
-                                        </thead>
-                                        <tr>
-                                            <td scope="row">MDB Installation & Electricity connected</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-
-                                        </tr>
-                                        <tr>
-                                            <td scope="row">Electromechanical meter(s) (electricity & water)</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-
-                                        </tr>
-                                        <tr>
-                                            <td scope="row">Airconditiong (AHU’s / Fan Coil Units)</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-
-                                        </tr>
-                                        <tr>
-                                            <td scope="row">ThermostatsPage</td>
-                                            <td></td>
-                                            <td></td>
-                                            <td></td>
-
-                                        </tr>
-                                    </table>
-                                 <tbody>
-
-                            </div>
-                        </h5>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
-
-
-    <p style="page-break-after: always;">&nbsp;</p>
-
-
-
-    <div class="book book col-8 mx-auto">
-        <section class="page-1">
-            <div class="page">
-                <div class="subpage 1">
-                    <div class="row">
-
-                        
-                    <div class="col-3 d-flex align-items-center">
-                        <div class="logo-img">
-                            <img class="w-50" src="../assets/tamdeen-logo/tamdeen-logo.png" alt="">
-                        </div>
-                    </div>
-
-
-                        <h5>
-                            <div class="col-12 d-flex align-items-end">
-                                <div class="border border-secondary">
-                                    <h1 class="text-danger">Fitout Completion Certificate</h1>
-                                </div>
-                            </div>
-                        </h5>
-                      
-
-
-                        <div class="ex5">
-                            
-                                <table class="table table-bordered" style="width: 50%">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th scope="col" style="width: 10%">MEP</th>
-                                            <th scope="col" style="width: 10%">Comments / Defects</th>
-                                            <th scope="col" style="width: 10%">Action</th>
-                                            <th scope="col" style="width: 20%">Finish Date (By Investor)</th>
-
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                    <tr>
-                                        <td scope="row">Fire Fighting Detectors & Smoke</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td scope="row">Alarms, Extinguishers</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td scope="row">Lighting Layout</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td scope="row">Ceiling Access Panels</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td scope="row">Gas and detector system installed and connected</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td scope="row">Waterproofing, drainage and plumbing</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td scope="row">Grease Traps and / or Sewer</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td scope="row">Kitchen & Toilet Exhaust</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-
-                                    </tr>
-                                    </tbody>
-                                </table>
-                        </div>
-                     
-
-                        <div class="ex7">
-                            <tbody>
-                                <table class="table table-bordered" style="width: 50%">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th style="width: 30%">Fitout Completion Date Compliance(by Investor)</th>
-                                            <th style="width: 20%">YES/NO</th>
-
-
-                                        </tr>
-                                    </thead>
-                                    <tr>
-                                        <td>Payment of all / any outstanding monies owed to TMM and / or Owner</td>
-                                        <td></td>
-                                    </tr>
-
-                                    <tr>
-                                        <td>Hard Copy submission of all applicable fitout related approvals (Kuwait
-                                            Municipality , KFD, etc)
-                                        </td>
-                                        <td></td>
-                                    </tr>
-
-                                    <tr>
-                                        <td>Hard and soft Copy of all “as built” drawings</td>
-                                        <td></td>
-                                    </tr>
-
-                                    <tr>
-                                        <td>Investor or Investor’s Authorised Signatory</td>
-                                        <td></td>
-                                    </tr>
-                                </table>
-                            </tbody>
-                        </div>
-                      
-
-                        <div class="ex6">
-                                <table class="table table-bordered" style="width: 50%">
-                                    <thead class="thead-light">
-                                        <tr>
-                                            <th style="width: 10%">Authorization</th>
-                                            <th style="width: 10%">Name</th>
-                                            <th style="width: 10%">Signature</th>
-                                            <th style="width: 20%">Date</th>
-
-                                        </tr>
-                                    </thead>
-                                     <tbody>
-
-                                    <tr>
-                                        <td>RDD Project Manager</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td>Investor’s Authorized Signatory</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td>Investor’s Shopfitter</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-
-                                    </tr>
-                                    <tr>
-                                        <td>Owner’s Project Manager</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-
-                                    </tr>
-
-                        </tbody>
-                        </table>
-                        </div>
-                       
-                        <div class="ex8">
-                            <p>Copy to</p>
-                            <p>Chief Operating Officer</p>
-                            <p> Manager - Leasing</p>
-                            <p>General Manager – Operations & Marketing</p>
-                            <p> Manager – Retail Design & Delivery</p>
-                            <p> Center Manager</p>
-                        </div>
-                        <div>
-                            <button (click)="download()">Download Pdf</button>
-                        </div>
-
-
-
-
-                    </div>
-                </div>
-            </div>
-        </section>
-    </div>
-</div>
-
-
-
-
-
+                          </div>
+					</div>	
+				</div>
+				<div class="row pt-40">
+					    <div class="col-sm-4 pl-10">Premises Numbers <span class="header-value">UNIT 01</span></div>
+						<div class="col-sm-4">Premises location <span class="header-value">UNIT 01</span></div>
+						<div class="col-sm-4">Concept Zone(if applicable) <span class="header-value">-</span></div>
+			    </div>
+				<div class="row pt-10">
+					    <div class="col-sm-4 pl-10">Investor Brand Name <span class="header-value">UNIT 01</span></div>
+						<div class="col-sm-4">Inspection Date <span class="header-value">UNIT 01</span></div>
+						<div class="col-sm-4">Fitout Completion <span class="header-value">-</span></div>
+			    </div>
+				<div class="row pt-10">
+					    <div class="col-sm-10 pl-10">Investor Company Name <span class="header-value">UNIT 01</span></div>
+			    </div>
+			</div>
+		</section>
+	</body>
+</html>

@@ -10,9 +10,23 @@
 		{
 		   size: A4 portrait;
 		}
+		.page {
+			  width: 100%;
+			  min-height: 100%;
+			  padding: 10px;
+			  margin: auto;
+			  border: 1px #d3d3d3 solid;
+			  border-radius: 15px;
+			  background: white;
+			  font-size:0.9rem;
+			}
 		.header-sec
 		{
 			background: #cacaca;
+			border:1px solid black;
+			font-size: 1.5rem;
+			font-weight: bolder;
+			padding:3px;
 		}
 		.pt-40 {
 		  padding-top: 40px;
@@ -29,38 +43,38 @@
 		{
 			padding-top: 10px;
 		}
+		.center-text
+		{
+			text-align:center;
+		}
+		.grid-item1 .logo-img
+		{
+			 width:30%;
+			 height:auto;
+			 grid-column-start: 1;
+			 grid-column-end: 2;
+			 
+		}
+		.grid-container {
+		  display: grid;
+		  grid-template-columns: 40% auto auto auto;
+		  padding: 5px;
+		  grid-column-gap: 5px;
+		}
+		.grid-item2 {
+		  font-size: 1.5rem;
+		}
 		</style>
     </head>
     <body>
 		<section class="page-1">
             <div class="page">
                 <div class="subpage 1">
-                    <div class="row">
-						<div class="col-4 d-flex align-items-center">
-                         <div class="logo-img">
-                         <img class="w-25" src="./tamdeen-logo.png" alt="">
-                         </div>
-                         </div>
-						 <div class="col-6 d-flex align-items-center">
-                                <div class="border border-secondary header-sec">
-                                    <h3 class="text-danger p-2">Fitout Completion Certificate</h3>
-                                </div>
-                          </div>
-					</div>	
+				<div class="grid-container">
+					<div class="grid-item1"><img class="logo-img" src="./tamdeen-logo.png" alt="check"></div>
+					<div class="grid-item2"><span class="text-danger header-sec">Fitout Completion Certificate</span></div>
 				</div>
-				<div class="row pt-40">
-					    <div class="col-sm-4 pl-10">Premises Numbers <span class="header-value">UNIT 01</span></div>
-						<div class="col-sm-4">Premises location <span class="header-value">UNIT 01</span></div>
-						<div class="col-sm-4">Concept Zone(if applicable) <span class="header-value">-</span></div>
-			    </div>
-				<div class="row pt-10">
-					    <div class="col-sm-4 pl-10">Investor Brand Name <span class="header-value">UNIT 01</span></div>
-						<div class="col-sm-4">Inspection Date <span class="header-value">UNIT 01</span></div>
-						<div class="col-sm-4">Fitout Completion <span class="header-value">-</span></div>
-			    </div>
-				<div class="row pt-10">
-					    <div class="col-sm-10 pl-10">Investor Company Name <span class="header-value">UNIT 01</span></div>
-			    </div>
+				</div>
 			</div>
 		</section>
 	</body>

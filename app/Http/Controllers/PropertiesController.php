@@ -111,6 +111,7 @@ class PropertiesController extends Controller
             $query->whereLike(['property_name'], $searchTerm);
         }
         $properties = $query->offset($offset)->limit($limit)->get();
-        echo json_encode($properties); 
+        // echo json_encode($properties); 
+        return $properties;
     }
 }

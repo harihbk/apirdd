@@ -292,7 +292,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::patch('/completeproject/{pid}', [ProjectController::class, 'rddprojectComplete']);
     /* Send Mail to investor -for docs*/
     Route::patch('/docnotifyinvestor', [ProjectController::class, 'rddSenddocmailtoinvestor']);
-    /* Send Mail to investor -for docs*/
+    /* Send Mail to rdd manager -for docs*/
     Route::patch('/docnotifymanager', [ProjectController::class, 'rddSenddocmailtomanager']);
     /* get Mom template for mail*/
     Route::post('/momtemplate/{project_id}/{task_id}', [ProjectController::class, 'getMomtemplate']);
@@ -464,6 +464,8 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
     Route::get('/investor/meetingapprovalstatus/{projectid}/{taskid}',[ProjectController::class, 'investorretrievetaskApprovalstatus']);
     /* Investor retrieve doc history */
     Route::get('/investor/dochistory/{docid}',[ProjectController::class, 'getDochistory']);
+    /* Document tasks send notify to manager */
+    Route::patch('/investor/docnotifymanager', [ProjectController::class, 'investorSenddocmailtomanager']);
     
 
 

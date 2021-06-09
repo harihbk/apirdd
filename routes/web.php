@@ -29,6 +29,7 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\InspectionrequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PDFController;
+use App\Http\Controllers\DashboardController;
 
  
 
@@ -227,7 +228,6 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /**Transactional Data Api's **/
 
     //Project Controller
-
     /*Create Project */
     Route::post('/project', [ProjectController::class, 'store']);
     /*get project lists for orgaanisation */
@@ -263,7 +263,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /*Create Work Permit for project */
     Route::post('/project/workpermit/{projectid}', [ProjectController::class, 'rddcreateWorkpermit']);
     /*retrieve tasks list - meeting,todo,documents*/
-    Route::post('/project/tasklist',[ProjectController::class, 'retrieveMembertasklists']);
+    Route::post('/project/tasklist',[DashboardController::class, 'retrieveMembertasklists']);
     /*retrieve tasks approval status - meeting,todo,documents*/
     Route::get('/project/approvalstatus/{projectid}/{taskid}',[ProjectController::class, 'retrievetaskApprovalstatus']);
     /*get document history - drawer*/
@@ -445,7 +445,7 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
      /* Get Attendee assigned project lists */
      Route::get('/investor/projectlists/{memid}/{memname}/{propertyid}',[ProjectController::class, 'retrievetenantProjectlists']);
      /*retrieve tasks list - meeting,todo,documents*/
-    Route::get('/investor/tasklist/{projectid}/{tasktype}/{memid}/{memname}',[ProjectController::class, 'retrieveinvestortasklists']);
+    Route::get('/investor/tasklist/{projectid}/{tasktype}/{memid}/{memname}',[DashboardController::class, 'retrieveinvestortasklists']);
     /* retrieve project phase wise details */
     Route::get('investor/project/phase/{projectid}/{phase_id}', [ProjectController::class, 'investorretrieveProjectPhase']);
     //get active request count -- For dashboard

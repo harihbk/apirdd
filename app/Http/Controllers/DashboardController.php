@@ -36,32 +36,33 @@ class DashboardController extends Controller
         $attendee = "'".$memid."-".$memname."'";
         $task_not_initiated_status = 0;
         $task_lists = "";
-
+        $project_id="";
+        $project_id= $request->input('project_id');
         if($request->input('task_type')==1)
         {
             $task_lists = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_project_tasks_approvals','tbl_project_tasks_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_attendees_approvals','tbl_attendees_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->leftjoin('tbl_company_master','tbl_company_master.company_id','=','tbl_projects.investor_company')->leftjoin('tbl_task_forwards','tbl_task_forwards.task_id','=','tbl_project_template.id')->where('tbl_project_template.task_type',$request->input('task_type'));
-            if ($request->has('project_id') && !empty($request->input('project_id')))
+            if ($request->input('project_id')!="")
             {
-                $task_lists->where('tbl_project_template.project_id', $request->input('project_id'));
+                $task_lists = $task_lists->where('tbl_project_template.project_id', $request->input('project_id'));
             }
             if ($request->has('status') && !empty($request->input('status')))
             {
                 if($request->input('status')==1)
                 {
-                    $task_lists->whereIn('tbl_project_tasks_approvals.approval_status', [1,2])->where('tbl_project_tasks_approvals.approver',$memid);
+                    $task_lists = $task_lists->whereIn('tbl_project_tasks_approvals.approval_status', [1,2])->where('tbl_project_tasks_approvals.approver',$memid);
                 }
                 if($request->input('status')==0)
                 {
-                    $task_lists->whereIn('tbl_project_tasks_approvals.approval_status', [0])->where('tbl_project_tasks_approvals.approver',$memid);
+                    $task_lists = $task_lists->whereIn('tbl_project_tasks_approvals.approval_status', [0])->where('tbl_project_tasks_approvals.approver',$memid);
                 }
             }
-            $task_lists = $task_lists->whereNotIn('tbl_project_template.task_status', [0,1])->where('tbl_project_template.isDeleted',0)->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name','tbl_projects.investor_brand','tbl_company_master.company_name','tbl_task_forwards.task_id as forwarded_task','tbl_task_forwards.forwarded_from','tbl_task_forwards.forwarded_to')->where(function($query) use ($memid,$attendee){
+            $task_lists = $task_lists->whereNotIn('tbl_project_template.task_status', [0,1])->where('tbl_project_template.isDeleted',0)->select('tbl_project_template.*','tbl_properties_master.property_id','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name','tbl_projects.investor_brand','tbl_company_master.company_name','tbl_task_forwards.task_id as forwarded_task','tbl_task_forwards.forwarded_from','tbl_task_forwards.forwarded_to')->where(function($query) use ($memid,$attendee){
                 $query->orwhereRaw("find_in_set($memid,tbl_project_template.mem_responsible)")
                 ->orWhereRaw("find_in_set($memid,tbl_project_template.approvers)")
                 ->orWhereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)");
             });
-            $task_lists = $task_lists->where('tbl_projects.property_id',$request->input('property_id'))->when(!is_null('tbl_task_forwards') , function ($query) use($memid){
-                $query->orWhere('tbl_task_forwards.forwarded_to',$memid);
+            $task_lists = $task_lists->where('tbl_projects.property_id',$request->input('property_id'))->when(!is_null('tbl_task_forwards') , function ($query1) use($memid,$project_id){
+                $query1->orWhere('tbl_task_forwards.forwarded_to',$memid)->where('tbl_task_forwards.project_id',$project_id);
              });
             
             
@@ -73,7 +74,7 @@ class DashboardController extends Controller
         {
             $check = null;
             $task_lists = Projectdocs::leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,tbl_projecttasks_docs.reviewers)"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_projecttasks_docs.approvers_level1)"),">",\DB::raw("'0'"))->leftjoin('users as c',\DB::raw("FIND_IN_SET(c.mem_id,tbl_projecttasks_docs.approvers_level2)"),">",\DB::raw("'0'"))->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_projecttasks_docs.project_id')->leftjoin('tbl_project_docs_approvals','tbl_project_docs_approvals.doc_id','=','tbl_projecttasks_docs.doc_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->leftjoin('tbl_task_forwards','tbl_task_forwards.task_id','=','tbl_projecttasks_docs.doc_id');
-            if ($request->input('project_id')!= null && $request->input('project_id')!='')
+            if ($request->input('project_id')!='')
             {
                 $task_lists->where('tbl_projecttasks_docs.project_id', $request->input('project_id'));
             }
@@ -93,8 +94,8 @@ class DashboardController extends Controller
                 $query->orwhereRaw("find_in_set($memid,tbl_projecttasks_docs.reviewers)")
                 ->orWhereRaw("find_in_set($memid,tbl_projecttasks_docs.approvers_level1)")
                 ->orWhereRaw("find_in_set($memid,tbl_projecttasks_docs.approvers_level2)");
-            })->where('tbl_projects.property_id',$request->input('property_id'))->select('tbl_projecttasks_docs.doc_id','tbl_projecttasks_docs.project_id','tbl_projecttasks_docs.phase_id','tbl_projecttasks_docs.doc_header','tbl_projecttasks_docs.doc_title','tbl_projecttasks_docs.reviewers','tbl_projecttasks_docs.approvers_level1','tbl_projecttasks_docs.approvers_level2','tbl_projecttasks_docs.file_path','tbl_projecttasks_docs.comment','tbl_projecttasks_docs.actual_date','tbl_projecttasks_docs.due_date','tbl_projecttasks_docs.doc_status','tbl_properties_master.property_name','tbl_units_master.unit_name','tbl_projects.project_name','tbl_task_forwards.task_id as forwarded_task','tbl_task_forwards.forwarded_from','tbl_task_forwards.forwarded_to')->where('tbl_projects.property_id',$request->input('property_id'))->when(!is_null('tbl_task_forwards') , function ($query) use($memid){
-                $query->orWhere('tbl_task_forwards.forwarded_to',$memid);
+            })->where('tbl_projects.property_id',$request->input('property_id'))->select('tbl_projecttasks_docs.doc_id','tbl_projecttasks_docs.project_id','tbl_projecttasks_docs.phase_id','tbl_projecttasks_docs.doc_header','tbl_projecttasks_docs.doc_title','tbl_projecttasks_docs.reviewers','tbl_projecttasks_docs.approvers_level1','tbl_projecttasks_docs.approvers_level2','tbl_projecttasks_docs.file_path','tbl_projecttasks_docs.comment','tbl_projecttasks_docs.actual_date','tbl_projecttasks_docs.due_date','tbl_projecttasks_docs.doc_status','tbl_properties_master.property_id','tbl_properties_master.property_name','tbl_units_master.unit_name','tbl_projects.project_name','tbl_task_forwards.task_id as forwarded_task','tbl_task_forwards.forwarded_from','tbl_task_forwards.forwarded_to')->where('tbl_projects.property_id',$request->input('property_id'))->when(!is_null('tbl_task_forwards') , function ($query) use($memid,$project_id){
+                $query->orWhere('tbl_task_forwards.forwarded_to',$memid)->where('tbl_task_forwards.project_id',$project_id);
              });
             $task_lists = $task_lists->groupBy('doc_id')->get()->groupBy('doc_header');
             return $task_lists;
@@ -105,7 +106,7 @@ class DashboardController extends Controller
                 $query->orwhereRaw("find_in_set($memid,tbl_projects.assigned_rdd_members)")
                       ->orWhereRaw("find_in_set($memid,tbl_project_contact_details.member_id)");
                });
-            if ($request->has('project_id') && !empty($request->input('project_id')))
+            if ($request->input('project_id')!="")
             {
                 $work_permits->where('tbl_project_workpermits.project_id', $request->input('project_id'));
             }
@@ -115,17 +116,21 @@ class DashboardController extends Controller
             $query->orwhereRaw("find_in_set($memid,tbl_projects.assigned_rdd_members)")
                     ->orWhereRaw("find_in_set($memid,tbl_project_contact_details.member_id)");
             });
-            if ($request->has('project_id') && !empty($request->input('project_id')))
+            if ($request->input('project_id')!="")
             {
                 $inspections->where('tbl_project_inspections.project_id', $request->input('project_id'));
             }
             $inspections= $inspections->groupBy('inspection_id')->get()->groupBy('project_name');
 
             //todo tasks
-            $task_lists = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_project_tasks_approvals','tbl_project_tasks_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_attendees_approvals','tbl_attendees_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->leftjoin('tbl_company_master','tbl_company_master.company_id','=','tbl_projects.investor_company');
-            if ($request->has('project_id') && !empty($request->input('project_id')))
+            $task_lists = ProjectTemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->leftjoin('tbl_project_tasks_approvals','tbl_project_tasks_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_attendees_approvals','tbl_attendees_approvals.task_id','=','tbl_project_template.id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->leftjoin('tbl_company_master','tbl_company_master.company_id','=','tbl_projects.investor_company')->where(function($query) use ($memid,$attendee){
+                $query->orwhereRaw("find_in_set($memid,tbl_project_template.mem_responsible)")
+                ->orWhereRaw("find_in_set($memid,tbl_project_template.approvers)")
+                ->orWhereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)");
+            });
+            if ($request->input('project_id')!="")
             {
-                $task_lists->where('tbl_project_template.project_id', $request->input('project_id'));
+                $task_lists = $task_lists->where('tbl_project_template.project_id', $request->input('project_id'));
             }
             $task_lists = $task_lists->whereNotIn('tbl_project_template.task_status', [0,1])->where('tbl_project_template.isDeleted',0)->select('tbl_project_template.*','tbl_properties_master.property_name','tbl_projects.project_name','tbl_units_master.unit_name','tbl_projects.investor_brand','tbl_company_master.company_name')->where('tbl_projects.property_id',$request->input('property_id'))->where('tbl_project_template.task_type',2)->groupBy('tbl_project_template.id')->get();
 

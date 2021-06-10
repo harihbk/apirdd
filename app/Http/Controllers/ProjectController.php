@@ -983,7 +983,11 @@ class ProjectController extends Controller
                         $user_type=2;
 
                         $investorDetails = Tenant::leftjoin('tbl_project_contact_details','tbl_project_contact_details.member_id','=','tbl_tenant_master.tenant_id')->where('tbl_project_contact_details.project_id',$project_id)->where('tbl_project_contact_details.member_designation',13)->where('tenant_id',explode("-",$exp[0]))->where('tenant_name',explode("-",$exp[1]))->select('tbl_tenant_master.*')->first();
-                        $investor_array[] = $investorDetails->email;
+                        if($investorDetails!='' && $investorDetails!=null)
+                        {
+                            $investor_array[] = $investorDetails->email;
+                        }
+                        
                     } 
                     else
                     {
@@ -1977,7 +1981,15 @@ class ProjectController extends Controller
                     ->orWhereRaw("find_in_set($memid,tbl_project_contact_details.member_id)");
             })->count(Projectinspections::raw('DISTINCT tbl_project_inspections.inspection_id'));   
             
-            $task_count = intval($work_permits)+intval($inspections);
+
+            $todotask_count = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->whereNotIn("tbl_project_template.task_status",[0,1])->where("tbl_project_template.task_type",2)->where(function($query) use ($memid,$attendee){
+                $query->orwhereRaw("find_in_set($memid,tbl_project_template.mem_responsible)")
+                ->orWhereRaw("find_in_set($memid,tbl_project_template.approvers)")
+                ->orWhereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)");
+            })->where('tbl_projects.property_id',$request->input('property_id'))->count();
+
+
+            $task_count = intval($work_permits)+intval($inspections)+intval($todotask_count);
         }
         return $task_count;
     }
@@ -3099,7 +3111,9 @@ class ProjectController extends Controller
     function retrievetenantProjectlists($memid,$memname,$propertyid)
     {
         $attendee = "'".$memid."-".$memname."'";
-        $projectData  = Project::join('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->join('tbl_project_template','tbl_project_template.project_id','=','tbl_projects.project_id')->whereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)")->orWhere('tbl_project_contact_details.member_id',$memid)->where('tbl_project_contact_details.member_designation','>',6)->where('tbl_projects.property_id',$propertyid)->select('tbl_projects.project_id','tbl_projects.project_name','tbl_projects.property_id')->groupBy('project_id')->get();
+        // $projectData  = Project::join('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->join('tbl_project_template','tbl_project_template.project_id','=','tbl_projects.project_id')->whereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)")->orWhere('tbl_project_contact_details.member_id',$memid)->where('tbl_project_contact_details.member_designation','>',6)->where('tbl_projects.property_id',$propertyid)->select('tbl_projects.project_id','tbl_projects.project_name','tbl_projects.property_id')->groupBy('project_id')->get();
+
+        $projectData  = Project::join('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->join('tbl_project_template','tbl_project_template.project_id','=','tbl_projects.project_id')->where('tbl_projects.property_id',$propertyid)->select('tbl_projects.project_id','tbl_projects.project_name','tbl_projects.property_id')->groupBy('project_id')->get();
         
         return response()->json(['project_data'=>$projectData ], 200);
     }

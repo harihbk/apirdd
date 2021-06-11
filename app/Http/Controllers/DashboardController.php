@@ -62,7 +62,12 @@ class DashboardController extends Controller
                 ->orWhereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)");
             });
             $task_lists = $task_lists->where('tbl_projects.property_id',$request->input('property_id'))->when(!is_null('tbl_task_forwards') , function ($query1) use($memid,$project_id){
-                $query1->orWhere('tbl_task_forwards.forwarded_to',$memid)->where('tbl_task_forwards.project_id',$project_id);
+                $query1->orWhere('tbl_task_forwards.forwarded_to',$memid)->where('tbl_task_forwards.isDeleted',0)->where('tbl_task_forwards.task_type',1);
+                if($project_id!='')
+                {
+                    $query1 = $query1->where('tbl_task_forwards.project_id',$project_id)->where('tbl_task_forwards.isDeleted',0);
+                }
+                
              });
             
             
@@ -95,7 +100,7 @@ class DashboardController extends Controller
                 ->orWhereRaw("find_in_set($memid,tbl_projecttasks_docs.approvers_level1)")
                 ->orWhereRaw("find_in_set($memid,tbl_projecttasks_docs.approvers_level2)");
             })->where('tbl_projects.property_id',$request->input('property_id'))->select('tbl_projecttasks_docs.doc_id','tbl_projecttasks_docs.project_id','tbl_projecttasks_docs.phase_id','tbl_projecttasks_docs.doc_header','tbl_projecttasks_docs.doc_title','tbl_projecttasks_docs.reviewers','tbl_projecttasks_docs.approvers_level1','tbl_projecttasks_docs.approvers_level2','tbl_projecttasks_docs.file_path','tbl_projecttasks_docs.comment','tbl_projecttasks_docs.actual_date','tbl_projecttasks_docs.due_date','tbl_projecttasks_docs.doc_status','tbl_properties_master.property_id','tbl_properties_master.property_name','tbl_units_master.unit_name','tbl_projects.project_name','tbl_task_forwards.task_id as forwarded_task','tbl_task_forwards.forwarded_from','tbl_task_forwards.forwarded_to')->where('tbl_projects.property_id',$request->input('property_id'))->when(!is_null('tbl_task_forwards') , function ($query) use($memid,$project_id){
-                $query->orWhere('tbl_task_forwards.forwarded_to',$memid)->where('tbl_task_forwards.project_id',$project_id);
+                $query->orWhere('tbl_task_forwards.forwarded_to',$memid)->where('tbl_task_forwards.project_id',$project_id)->where('tbl_task_forwards.isDeleted',0)->where('tbl_task_forwards.task_type',2);
              });
             $task_lists = $task_lists->groupBy('doc_id')->get()->groupBy('doc_header');
             return $task_lists;

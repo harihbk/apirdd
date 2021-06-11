@@ -895,6 +895,8 @@ class ProjectController extends Controller
             {
                 Notifications::insert($approverNotifications);
                 $returnData = Projecttemplate::find($request->input('id'));
+                //Reset all task forwards
+                Forwardtask::where('project_id',$project_id)->where('task_id',$request->input('id'))->delete();
                 $data = array ("message" => 'Meeting has been Schdeuled successfully',"data" => $returnData );
                 $response = Response::json($data,200);
                 echo json_encode($response);
@@ -944,7 +946,11 @@ class ProjectController extends Controller
         $userCheck = Projecttemplate::where('project_id',$project_id)->where('phase_id',$request->input('phase_id'))->where('id',$request->input('id'))->whereRaw("find_in_set($memid,tbl_project_template.approvers)")->get();
         if(count($userCheck)==0)
         {
-            return response()->json(['response'=>"Meeting Can be Approved by Approvers Persons only"], 410);
+            $forward_count = Forwardtask::where('project_id',$project_id)->where('task_id',$request->input('id'))->where('forwarded_to',$memid)->where('isDeleted',0)->count();
+            if($forward_count==0)
+            {
+                return response()->json(['response'=>"Meeting Can be Approved by Approvers Persons only"], 410);
+            }
         }
         //if approved check for others approval and schedule meeting
         if($request->input('approval_status')==1)
@@ -1319,6 +1325,7 @@ class ProjectController extends Controller
         $attendee = $request->input('attendee')."-".$request->input('attendee_name');
         $persons_array = [];
         $emaildata = [];
+        $forwarded_ids = [];
         $persons_list = explode(',',$request->input('responsible_person'));
         $taskdata = Projecttemplate::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->where('tbl_project_template.project_id',$project_id)->where('tbl_project_template.phase_id',$request->input('phase_id'))->where('tbl_project_template.id',$request->input('id'))->select('tbl_project_template.*','tbl_projects.project_name')->first();
         $a = explode(',',$taskdata['attendees']);
@@ -1329,7 +1336,11 @@ class ProjectController extends Controller
         }
         if(!in_array($memid,$ids))
         {
-            return response()->json(['response'=>"Meeting Can be confirmed by Attendees only"], 410);
+            $forward_count = Forwardtask::where('project_id',$project_id)->where('task_id',$request->input('id'))->where('forwarded_to',$memid)->where('isDeleted',0)->count();
+            if($forward_count==0)
+            {
+                return response()->json(['response'=>"Meeting Can be confirmed by Attendees only"], 410);
+            }
         }
         //if approved check for others approval and schedule meeting
         if($request->input('approval_status')==1)
@@ -1955,7 +1966,7 @@ class ProjectController extends Controller
                 ->orWhereRaw("find_in_set(trim($attendee),tbl_project_template.attendees)");
             })->where('tbl_projects.property_id',$request->input('property_id'))->count();
 
-            $forward_count = ProjectTemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->join('tbl_task_forwards','tbl_task_forwards.task_id','=','tbl_project_template.id')->whereNotIn("tbl_project_template.task_status",[0,1])->where("tbl_project_template.task_type",1)->where('tbl_task_forwards.forwarded_to',$memid)->where('tbl_projects.property_id',$request->input('property_id'))->count();
+            $forward_count = ProjectTemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->join('tbl_task_forwards','tbl_task_forwards.task_id','=','tbl_project_template.id')->whereNotIn("tbl_project_template.task_status",[0,1])->where("tbl_project_template.task_type",1)->where('tbl_task_forwards.forwarded_to',$memid)->where('tbl_task_forwards.isDeleted',0)->where('tbl_task_forwards.task_type',1)->where('tbl_projects.property_id',$request->input('property_id'))->count();
             $task_count = intval($assigned_count) + intval($forward_count);
         }
         if($request->input('task_type')==2)
@@ -1966,7 +1977,7 @@ class ProjectController extends Controller
                 ->orWhereRaw("find_in_set($memid,tbl_projecttasks_docs.approvers_level2)");
             })->where('tbl_projects.property_id',$request->input('property_id'))->count(Projectdocs::raw('DISTINCT tbl_projecttasks_docs.doc_id'));
 
-            $forward_count = Projectdocs::join('tbl_projects','tbl_projects.project_id','=','tbl_projecttasks_docs.project_id')->leftjoin('tbl_task_forwards','tbl_task_forwards.task_id','=','tbl_projecttasks_docs.doc_id')->whereNotIn("tbl_projecttasks_docs.doc_status",[0,8])->where('tbl_task_forwards.forwarded_to',$memid)->where('tbl_projects.property_id',$request->input('property_id'))->count();
+            $forward_count = Projectdocs::join('tbl_projects','tbl_projects.project_id','=','tbl_projecttasks_docs.project_id')->leftjoin('tbl_task_forwards','tbl_task_forwards.task_id','=','tbl_projecttasks_docs.doc_id')->whereNotIn("tbl_projecttasks_docs.doc_status",[0,8])->where('tbl_task_forwards.forwarded_to',$memid)->where('tbl_task_forwards.isDeleted',0)->where('tbl_task_forwards.task_type',2)->where('tbl_projects.property_id',$request->input('property_id'))->count();
             $task_count = intval($task_count) + intval($forward_count);     
         }
         if($request->input('task_type')==3)

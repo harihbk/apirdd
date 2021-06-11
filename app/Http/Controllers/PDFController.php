@@ -66,9 +66,9 @@ class PDFController extends Controller
 
         try
         {
-            $pdf = PDF::loadView('hocPDF', $data);
+            $pdf = PDF::loadView('fccPDF', $data);
     
-            return  $pdf->download('testing.pdf');
+            return  $pdf->download('fcc.pdf');
         }
         catch (\Exception $e) {
              return $e->getMessage();

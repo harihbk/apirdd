@@ -18,7 +18,7 @@ class UnitsController extends Controller
         if($units!=null) {
             $data = array ("message" => 'Units data',"data" => $units );
             $response = Response::json($data,200);
-            echo json_encode($response); 
+            return $response;
         } 
     }
     function store(Request $request)

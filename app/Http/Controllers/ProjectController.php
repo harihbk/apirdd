@@ -69,9 +69,7 @@ class ProjectController extends Controller
         {
             $contact_people[] = $contact[$u]['email'];
         }
-        if($type==1)
-        {
-            $project_details = Project::leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->leftjoin('tbl_project_milestone_dates','tbl_project_milestone_dates.project_id','=','tbl_projects.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->select('tbl_projects.project_id','tbl_projects.project_name','tbl_projects.investor_brand','tbl_properties_master.property_name','tbl_project_milestone_dates.concept_submission','tbl_project_milestone_dates.detailed_design_submission','tbl_project_milestone_dates.unit_handover','tbl_project_milestone_dates.fitout_completion','tbl_project_milestone_dates.store_opening','users.mem_name','users.mem_last_name','users.email','tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name')->where('tbl_project_milestone_dates.active_status',1)->where('tbl_projects.project_id',$project_id)->where('tbl_project_contact_details.member_designation',13)->groupBy('tbl_projects.project_id')->get();
+        $project_details = Project::leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->leftjoin('tbl_project_milestone_dates','tbl_project_milestone_dates.project_id','=','tbl_projects.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->select('tbl_projects.project_id','tbl_projects.project_name','tbl_projects.investor_brand','tbl_properties_master.property_name','tbl_project_milestone_dates.concept_submission','tbl_project_milestone_dates.detailed_design_submission','tbl_project_milestone_dates.unit_handover','tbl_project_milestone_dates.fitout_completion','tbl_project_milestone_dates.store_opening','users.mem_name','users.mem_last_name','users.email','tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name')->where('tbl_project_milestone_dates.active_status',1)->where('tbl_projects.project_id',$project_id)->where('tbl_project_contact_details.member_designation',13)->groupBy('tbl_projects.project_id')->get();
 
             $data = array();
             $data = [
@@ -88,7 +86,8 @@ class ProjectController extends Controller
                 "mem_last_name" => $project_details[0]['mem_last_name'],
                 "email" => $project_details[0]['email']
             ];
-    
+        if($type==1)
+        {
             Mail::send('emails.projectcreation', $data, function($message)use($data,$contact_people) {
             $message->to($contact_people)
                     ->subject('RDD - Welcoming email');
@@ -96,7 +95,10 @@ class ProjectController extends Controller
         }
         if($type==2)
         {
-            Mail::to($contact_people)->send(new Projectnotification());
+            Mail::send('emails.projectnotify', $data, function($message)use($data,$contact_people) {
+                $message->to($contact_people)
+                        ->subject('RDD - Project Notification');
+                });
             if(Mail::failures())
             {
                 return response()->json(['response'=>"Project notify Mail Not Sent"], 411);
@@ -110,24 +112,6 @@ class ProjectController extends Controller
         //for sending mail about updated milestone dates
         if($type==3)
         {
-            $project_details = Project::leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->leftjoin('tbl_project_milestone_dates','tbl_project_milestone_dates.project_id','=','tbl_projects.project_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->select('tbl_projects.project_id','tbl_projects.project_name','tbl_projects.investor_brand','tbl_properties_master.property_name','tbl_project_milestone_dates.concept_submission','tbl_project_milestone_dates.detailed_design_submission','tbl_project_milestone_dates.unit_handover','tbl_project_milestone_dates.fitout_completion','tbl_project_milestone_dates.store_opening','users.mem_name','users.mem_last_name','users.email','tbl_tenant_master.tenant_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name')->where('tbl_project_milestone_dates.active_status',1)->where('tbl_projects.project_id',$project_id)->where('tbl_project_contact_details.member_designation',13)->groupBy('tbl_projects.project_id')->get();
-
-            $data = array();
-            $data = [
-                "tenant_name" => $project_details[0]['tenant_name'],
-                "tenant_last_name" => $project_details[0]['tenant_last_name'],
-                "investor_brand" => $project_details[0]['investor_brand'],
-                "property_name" => $project_details[0]['property_name'],
-                "concept_submission" => date("d-m-Y", strtotime($project_details[0]['concept_submission'])),
-                "detailed_design_submission" => date("d-m-Y", strtotime($project_details[0]['detailed_design_submission'])),
-                "unit_handover" => date("d-m-Y", strtotime($project_details[0]['unit_handover'])),
-                "fitout_completion" => date("d-m-Y", strtotime($project_details[0]['fitout_completion'])),
-                "store_opening" => date("d-m-Y", strtotime($project_details[0]['store_opening'])),
-                "mem_name" => $project_details[0]['mem_name'],
-                "mem_last_name" => $project_details[0]['mem_last_name'],
-                "email" => $project_details[0]['email']
-            ];
-
             Mail::send('emails.projectdatenotify', $data, function($message)use($data,$contact_people) {
                 $message->to($contact_people)
                         ->subject('RDD - Project Milestone Dates Update');
@@ -2966,6 +2950,7 @@ class ProjectController extends Controller
             $approvers_list  = explode(',',$task_data[0]['approvers_person']);
             $attendees = explode(',',$task_data[0]['attendees']);
             $investorCheck= '';
+            $rdd_attendee_array = [];
             for($c=0;$c<count($person_list);$c++)
             {
                 $responsible_person[] = $person_list[$c];
@@ -2978,7 +2963,7 @@ class ProjectController extends Controller
                     "notification_type"=>env('NOTIFY_MEETING_REMIINDER'),
                     "created_at" => $created_at,
                     "updated_at" => $updated_at
-                ];
+                ]; 
             }
             for($b=0;$b<count($approvers_list);$b++)
             {
@@ -3011,6 +2996,8 @@ class ProjectController extends Controller
                         "created_at" => $created_at,
                         "updated_at" => $updated_at
                     ];
+                    $rdd_attendee_array[] = $memCheck['email'];
+
                 }
                 if($tenantCheck!=null)
                 {
@@ -3030,16 +3017,26 @@ class ProjectController extends Controller
             Notifications::insert($momNotifications);
             $emaildata = array();
             $emaildata = [
-                "tenant_name"=>$investorCheck['tenant_name']?$investorCheck['tenant_name']:"Investor",
-                "tenant_last_name"=>$investorCheck['tenant_last_name']?$investorCheck['tenant_last_name']:"",
+                "tenant_name"=>$investorCheck!=''?$investorCheck['tenant_name']:"Team",
+                "tenant_last_name"=>$investorCheck!=''?$investorCheck['tenant_last_name']:"",
                 "meeting_date" => date('d-m-Y', strtotime($task_data[0]['meeting_date'])),
                 "meeting_start_time" => date('h:i a', strtotime($task_data[0]['meeting_start_time'])),
                 "meeting_end_time" => date('h:i a', strtotime($task_data[0]['meeting_end_time'])),
             ];
             try
             {
-                Mail::send('emails.meetingreminder', $emaildata, function($message)use($emaildata,$attendees_person,$responsible_person) {
-                    $message->to($attendees_person)
+                $to_people = [];
+                if($investorCheck!='' && $investorCheck!=null)
+                {
+                    $to_people = $attendees_person;
+                }
+                else
+                {
+                    //mo investor attendee there for this meeting
+                    $to_people = $rdd_attendee_array;
+                }
+                Mail::send('emails.meetingreminder', $emaildata, function($message)use($emaildata,$attendees_person,$to_people,$responsible_person) {
+                    $message->to($to_people)
                             ->cc($responsible_person)
                             ->subject('RDD - Meeting Reminder');
                     });
@@ -3257,11 +3254,11 @@ class ProjectController extends Controller
             {
                 Notifications::insert($reviewerNotifications);
                 //check after all upload in a group  
-                Mail::send('emails.drawingsubmission', $emaildata, function($message)use($emaildata) {
-                $message->to($emaildata['tenant_email'])
-                          ->cc($emaildata['rdd_manager_email'])
-                        ->subject('RDD - '.$emaildata['doc_header'].' Submission');
-                });
+                // Mail::send('emails.drawingsubmission', $emaildata, function($message)use($emaildata) {
+                // $message->to($emaildata['tenant_email'])
+                //           ->cc($emaildata['rdd_manager_email'])
+                //         ->subject('RDD - '.$emaildata['doc_header'].' Submission');
+                // });
             }
         }   
         Projectdocshistory::insert($docsHistory);
@@ -4423,6 +4420,15 @@ class ProjectController extends Controller
         $projectDetails = Project::where('project_id',$request->input('project_id'))->first();
         $projectdocs = Projectdocs::join('tbl_projects','tbl_projects.project_id','=','tbl_projecttasks_docs.project_id')->join('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->join('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->where('tbl_projecttasks_docs.project_id',$request->input('project_id'))->where('tbl_projecttasks_docs.isDeleted',0)->select('tbl_projecttasks_docs.*','tbl_properties_master.property_name','tbl_units_master.unit_id','tbl_units_master.unit_name')->groupBy('doc_id')->get()->groupBy('doc_header');
 
+        $project_docs = public_path()."".$request->input('doc_path')."".$projectDetails['project_id']."_".$projectDetails['project_name'];
+        $project_images = public_path()."".$request->input('image_path')."".$projectDetails['project_id']."_".$projectDetails['project_name'];
+        if(!File::isDirectory($project_docs)){
+            $project_docs = null;
+           }
+        if(!File::isDirectory($project_images)){   
+            $project_images = null;
+           }
+
         $startup_phase_docs = public_path()."".$request->input('doc_path')."".$projectDetails['project_id']."_".$projectDetails['project_name']."/Startup phase";
         $startup_phase_images = public_path()."".$request->input('image_path')."".$projectDetails['project_id']."_".$projectDetails['project_name']."/Startup phase";
         if(!File::isDirectory($startup_phase_docs)){
@@ -4461,7 +4467,7 @@ class ProjectController extends Controller
            }
 
 
-        return response()->json(array("response"=>['startup_phase_docpath'=>$startup_phase_docs,'startup_phase_imagepath'=>$startup_phase_images,'design_phase_docpath'=>$design_phase_docs,'design_phase_imagepath'=>$design_phase_images,'fitout_phase_docpath'=>$fitout_phase_docs,'fitout_phase_imagepath'=>$fitout_phase_images,'completion_phase_docpath'=>$completion_phase_docs,'completion_phase_imagepath'=>$completion_phase_images,'project_docs'=>$projectdocs]), 200);
+        return response()->json(array("response"=>['doc_path'=>$project_docs,'image_path'=>$project_images,'startup_phase_docpath'=>$startup_phase_docs,'startup_phase_imagepath'=>$startup_phase_images,'design_phase_docpath'=>$design_phase_docs,'design_phase_imagepath'=>$design_phase_images,'fitout_phase_docpath'=>$fitout_phase_docs,'fitout_phase_imagepath'=>$fitout_phase_images,'completion_phase_docpath'=>$completion_phase_docs,'completion_phase_imagepath'=>$completion_phase_images,'project_docs'=>$projectdocs]), 200);
     }
     function getFileVersion(Request $request)
     { 
@@ -4604,19 +4610,5 @@ class ProjectController extends Controller
                     ->cc($emaildata['rdd_manager'])
                     ->subject('RDD -'.$emaildata['doc_header'].' Approval Notification');
             });
-    }
-    function checking(Request $request)
-    {
-
-        $results = DB::select( DB::raw("select version()") );
-        $mysql_version =  $results[0]->{'version()'};
-        // $mariadb_version = '';
-
-        // if (strpos($mysql_version, 'Maria') !== false) {
-        //     $mariadb_version = $mysql_version;
-        //     $mysql_version = '';
-        // }
-        return $mysql_version;
-        
     }
 }

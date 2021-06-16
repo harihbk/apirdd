@@ -406,13 +406,17 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /* fdr pdf generation */
     Route::post('/fdr', [PDFController::class, 'generateFDR']);
 
+    //document section
+    /*project docs zip API*/
+    Route::post('/projectzip', [DocumentController::class, 'projectDocszip']);
+    /* project phase docs zip API*/
+    Route::post('/phasezip', [DocumentController::class, 'phaseDocszip']);
+    /* All document docs zip API*/
+    Route::post('/alldocumentszip', [DocumentController::class, 'alldocumentzip']);
 
-
-    Route::post('/checking', [ProjectController::class, 'checking']);
 });
 
 
-Route::get('/pdfchecking', [PDFController::class, 'checking']);
 
 Route::group(['middleware' => 'tenantauth:api'], function() {
      //Refresh Token
@@ -466,6 +470,8 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
     Route::get('/investor/dochistory/{docid}',[ProjectController::class, 'getDochistory']);
     /* Document tasks send notify to manager */
     Route::patch('/investor/docnotifymanager', [ProjectController::class, 'investorSenddocmailtomanager']);
+    /* get project document directories - Document section */
+    Route::post('/investor/projectdocs', [ProjectController::class, 'getProjectdocs']);
     
 
 
@@ -498,6 +504,12 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
     Route::get('/investor/notifications/{memid}/{usertype}', [NotificationController::class, 'getNotifications']);
     /*Update Active notifications for logged in user as visited*/
     Route::patch('/investor/updatenotifications', [NotificationController::class, 'updateNotifications']);
+
+    //document section
+    /*project docs zip API*/
+    Route::post('/investor/projectzip', [DocumentController::class, 'projectDocszip']);
+    /* project phase docs zip API*/
+    Route::post('/investor/phasezip', [DocumentController::class, 'phaseDocszip']);
 
 
 });

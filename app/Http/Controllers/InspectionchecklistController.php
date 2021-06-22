@@ -72,34 +72,48 @@ class InspectionchecklistController extends Controller
     }
     function update(Request $request)
     {
+        $datas = $request->get('template');
+        $data = array();
+
+        $created_at = date('Y-m-d H:i:s');
+        $updated_at = date('Y-m-d H:i:s');
+
         $validator = Validator::make($request->all(), [ 
-            'org_id' => 'required',
-            'template_id' => 'required',
-            'root_id' => 'required', 
-            'checklist_desc' => 'required', 
-            'active_status' => 'required'
+            'template.org_id' => 'required',
+            'template.id' => 'required', 
+            'template.entries.*.root_id' => 'required',
+            'template.user_id' => 'required'
         ]);
 
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
-        $types = Inspectionchecklistmaster::where("ch_id",$request->input('org_id'))->where("org_id",$request->input('org_id'))->where("template_id",$request->input('template_id'))->update( 
-            array(
-             "root_id" => $request->input('root_id'), 
-             "checklist_desc" => $request->input('checklist_desc'),
-             "updated_at" => date('Y-m-d H:i:s'),
-             "active_status" => $request->input('active_status')
-             ));
-        
-             if($types>0)
-             {
-                 $returnData = Inspectionchecklistmaster::join('tbl_inspection_root_categories', 'tbl_checklist_master.root_id','=','tbl_inspection_root_categories.root_id')->get(['tbl_checklist_master.*', 'tbl_inspection_root_categories.root_name'])->where("template_id",$request->input('template_id'))->where("isDeleted",0)->groupBy('root_name');
-                 $data = array ("message" => 'Inspection Checklist Updated successfully',"data" => $returnData );
-                 $response = Response::json($data,200);
-                 echo json_encode($response); 
-             }
+        for($k=0;$k<count($datas['entries']);$k++) 
+        {
+            if($datas['entries'][$k]['ch_id']==intval(0))
+            {
+                    //insert template activities
+                    $data[] = [
+                        'org_id' => $datas['org_id'],
+                        'template_id' => $datas['template_id'],
+                        'root_id' => $datas['entries'][$k]['root_id'],
+                        'checklist_desc' => $datas['entries'][$k]['checklist_desc'],
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at,
+                        'created_by' => $datas['user_id']
+                        ];
+            }
+        }
+
+            Inspectionchecklistmaster::insert($data);
+            $types = Inspectionchecklistmaster::join('tbl_inspection_root_categories', 'tbl_checklist_master.root_id','=','tbl_inspection_root_categories.root_id')->get(['tbl_checklist_master.*', 'tbl_inspection_root_categories.root_name'])->where("template_id",$datas['template_id'])->where("isDeleted",0)->groupBy('root_name');
+
+            $data = array ("message" => 'Template updated successfully',"data"=>$types);
+            $response = Response::json($data,200);
+            return $response;
     }
+    
     function updateDeletion(Request $request,$id)
     {
         $types = Inspectionchecklistmaster::where("ch_id",$id)->update( 

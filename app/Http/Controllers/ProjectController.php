@@ -135,7 +135,7 @@ class ProjectController extends Controller
                 "mem_name" => $project_details[0]['mem_name'],
                 "mem_last_name" => $project_details[0]['mem_last_name'],
                 "mem_email" => $project_details[0]['mem_email'],
-                "finance_name" => $project_details[0]['finance_name'],
+                "finance_name" => $project_details[0]['finance_name']?$project_details[0]['finance_name']:'Member',
                 "finance_email" => $project_details[0]['finance_email']
             ];
 
@@ -795,11 +795,11 @@ class ProjectController extends Controller
         }
         else
         {
-            $taskCheck = Projecttemplate::where('project_id',$project_id)->where('phase_id',$request->input('phase_id'))->where('id',$request->input('id'))->whereRaw("find_in_set($memid,tbl_project_template.mem_responsible)")->whereNotIn('task_status', [$project_meeting_schedule_status,$project_meeting_completed_status,$project_meeting_approvers_approved_status,$project_meeting_attendees_approved_status])->get();
-            if(count($taskCheck)==0)
-            {
-                return response()->json(['response'=>"Meeting may be scheduled or in approval stage,cannot be scheduled"], 411);
-            }
+            // $taskCheck = Projecttemplate::where('project_id',$project_id)->where('phase_id',$request->input('phase_id'))->where('id',$request->input('id'))->whereRaw("find_in_set($memid,tbl_project_template.mem_responsible)")->whereNotIn('task_status', [$project_meeting_schedule_status,$project_meeting_completed_status,$project_meeting_approvers_approved_status,$project_meeting_attendees_approved_status])->get();
+            // if(count($taskCheck)==0)
+            // {
+            //     return response()->json(['response'=>"Meeting may be scheduled or in approval stage,cannot be scheduled"], 411);
+            // }
         }
         $approvers_list = explode(',',$request->input('approvers'));
         $attendees_list = explode(',',$request->input('attendees'));
@@ -868,10 +868,13 @@ class ProjectController extends Controller
                 "meeting_start_time" => date('h:i a', strtotime($request->input('meeting_start_time'))),
                 "meeting_end_time" => date('h:i a', strtotime($request->input('meeting_end_time'))),
                 "meeting_topic" => $request->input('meeting_topic'),
-                "project_name" => $taskDetails[0]['project_name']
+                "project_name" => $taskDetails[0]['project_name'],
+                "tenant_name" => "Team",
+                "tenant_last_name" => "",
+                "meetingType" => $request->input('phase_id')
             ];
             
-            Mail::send('emails.meetingnotifyreviewer', $data, function($message)use($data,$approvers_array) {
+            Mail::send('emails.projectmeetings', $data, function($message)use($data,$approvers_array) {
                 $message->to($approvers_array)
                         ->subject('RDD - Meeting Notification');
                 });  
@@ -2312,6 +2315,10 @@ class ProjectController extends Controller
                     "ivr_amt" => $projectdata[$i]['ivr_amt'],
                     "ivr_filepath" => $projectdata[$i]['ivr_filepath'],
                     "workpermit_expiry_date" => $projectdata[$i]['workpermit_expiry_date'],
+                    // "investor_brand" => $projectdata[$i]['investor_brand'],
+                    // "unit_id" => $projectdata[$i]['unit_id'],
+                    // "usage_permissions" => $projectdata[$i]['usage_permissions'],
+                    // "fitout_period" => $projectdata[$i]['fitout_period'],
                     "updated_at" => $updated_at
                 )
             );
@@ -3022,6 +3029,7 @@ class ProjectController extends Controller
                 "meeting_date" => date('d-m-Y', strtotime($task_data[0]['meeting_date'])),
                 "meeting_start_time" => date('h:i a', strtotime($task_data[0]['meeting_start_time'])),
                 "meeting_end_time" => date('h:i a', strtotime($task_data[0]['meeting_end_time'])),
+                "meetingType"=>$task_data[0]['phase_id']
             ];
             try
             {
@@ -3035,7 +3043,7 @@ class ProjectController extends Controller
                     //mo investor attendee there for this meeting
                     $to_people = $rdd_attendee_array;
                 }
-                Mail::send('emails.meetingreminder', $emaildata, function($message)use($emaildata,$attendees_person,$to_people,$responsible_person) {
+                Mail::send('emails.projectmeetings', $emaildata, function($message)use($emaildata,$attendees_person,$to_people,$responsible_person) {
                     $message->to($to_people)
                             ->cc($responsible_person)
                             ->subject('RDD - Meeting Reminder');

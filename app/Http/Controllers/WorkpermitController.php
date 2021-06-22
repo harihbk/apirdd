@@ -32,6 +32,12 @@ class WorkpermitController extends Controller
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
         }
+        
+        $prCheck = Workpermit::where('permit_type', $request->input('permit_type'))->where('isDeleted',0)->count();
+        if($prCheck!=0)
+        {
+            return response()->json(['response'=>"Permit name already exists"], 410); 
+        }
 
         $types = new Workpermit();
 
@@ -62,6 +68,12 @@ class WorkpermitController extends Controller
 
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
+        $prCheck = Workpermit::where('permit_type', $request->input('permit_type'))->where('isDeleted',0)->where('permit_id','!=',$request->input('permit_id'))->count();
+        if($prCheck!=0)
+        {
+            return response()->json(['response'=>"Permit type name already exists"], 410); 
         }
 
         $types = Workpermit::where("permit_id",$request->input('permit_id'))->update( 

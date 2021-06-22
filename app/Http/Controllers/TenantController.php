@@ -144,6 +144,12 @@ class TenantController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
+        $tenantCheck = Tenant::where('email', $request->input('email'))->count();
+        if($tenantCheck!=0)
+        {
+            return response()->json(['response'=>"Tenant already exists"], 410); 
+        }
+
         $tenants = new Tenant();
 
 
@@ -206,6 +212,12 @@ class TenantController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
+        $tenantCheck = Tenant::where('email', $request->input('email'))->where('tenant_id','!=',$request->input('tenant_id'))->count();
+        if($tenantCheck!=0)
+        {
+            return response()->json(['response'=>"Tenant already exists"], 410); 
+        }
+
         $tenants = Tenant::where("tenant_id",$request->input('tenant_id'))->update( 
             array(
              "company_id" => $request->input('company_id'),
@@ -217,8 +229,8 @@ class TenantController extends Controller
              "tenant_type" => $request->input('tenant_type'),
              "tenant_gender" => $request->input('tenant_gender'),
              "tenant_address" => $request->input('tenant_address'),
-             "start_date" => date('Y-m-d H:i:s'),
-             "end_date" => date('Y-m-d H:i:s'),
+             "start_date" => $request->input('start_date'),
+             "end_date" => $request->input('end_date'),
              "updated_at" => date('Y-m-d H:i:s'),
              "active_status" => $request->input('active_status'),
              ));
@@ -233,11 +245,7 @@ class TenantController extends Controller
     }
     function retrieveByOrg(Request $request,$id)
     {
-        $limit = 10;
-        $offset = 0;
         $searchTerm = $request->input('searchkey');
-
-        // $query = Tenant::join('tbl_company_master','tbl_tenant_master.company_id','=','tbl_company_master.company_id')->where("tbl_tenant_master.org_id",$id)->where("tbl_tenant_master.active_status",1)->join('tbl_designation_master','tbl_tenant_master.tenant_designation','=','tbl_designation_master.designation_id')->join('users','users.mem_id','=','tbl_tenant_master.created_by')->select('tbl_tenant_master.tenant_id','tbl_tenant_master.company_id','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_tenant_master.email','tbl_tenant_master.tenant_mobile','tbl_tenant_master.tenant_address','tbl_tenant_master.tenant_gender','tbl_tenant_master.tenant_type','tbl_tenant_master.active_status','tbl_company_master.company_name','tbl_tenant_master.brand_name','tbl_designation_master.designation_name','tbl_tenant_master.start_date','tbl_tenant_master.end_date','users.mem_name','tbl_tenant_master.tenant_designation');
 
         $present_date = date('Y-m-d');
         Tenant::where('org_id',$id)->where('end_date','<',$present_date)->update(
@@ -262,7 +270,7 @@ class TenantController extends Controller
             $query->whereLike(['tbl_tenant_master.tenant_name'], $searchTerm);
         }
 
-        $tenants = $query->get();
+        $tenants = $query->orderBy('tbl_tenant_master.tenant_name','ASC')->get();
         return $tenants; 
     }
     function getTenant(Request $request,$id)

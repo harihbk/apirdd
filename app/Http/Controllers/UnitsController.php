@@ -37,6 +37,12 @@ class UnitsController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
+        $prCheck = Units::where('unit_name', $request->input('unit_name'))->where('property_id',$request->input('property_id'))->count();
+        if($prCheck!=0)
+        {
+            return response()->json(['response'=>"Unit name already exists"], 410); 
+        }
+
         $units = new Units();
 
         $units->org_id = $request->input('org_id');
@@ -72,6 +78,12 @@ class UnitsController extends Controller
 
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
+        $prCheck = Units::where('unit_name', $request->input('unit_name'))->where('property_id',$request->input('property_id'))->where('unit_id','!=',$request->input('unit_id'))->count();
+        if($prCheck!=0)
+        {
+            return response()->json(['response'=>"Unit name already exists"], 410); 
         }
 
         $units = Units::where("unit_id",$request->input('unit_id'))->update( 
@@ -113,8 +125,6 @@ class UnitsController extends Controller
     }
     function retrieveByFloor(Request $request,$propid,$floorid)
     {
-        $limit = 10;
-        $offset = 0;
         $validator = Validator::make($request->all(), [ 
             'image_path' => 'required',
         ]);
@@ -137,7 +147,7 @@ class UnitsController extends Controller
                File::makeDirectory($img_path, 0777, true, true);
            }
 
-        $units = $query->offset($offset)->limit($limit)->get();
+        $units = $query->orderBy('unit_name','ASC')->get();
         return Response::json(array('img_path' => $img_path,'units' => $units));
     }
     function retrieveUnitsforprojectcreation(Request $request)

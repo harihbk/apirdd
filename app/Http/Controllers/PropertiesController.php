@@ -37,6 +37,12 @@ class PropertiesController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
+        $prCheck = Properties::where('property_name', $request->input('property_name'))->count();
+        if($prCheck!=0)
+        {
+            return response()->json(['response'=>"Property name already exists"], 410); 
+        }
+
         $properties = new Properties();
 
         $properties->org_id = $request->input('org_id');
@@ -65,7 +71,7 @@ class PropertiesController extends Controller
             {
                 $data = array ("message" => 'Property added successfully',"data" => $returnData );
                 $response = Response::json($data,200);
-                echo json_encode($response);
+                return $response;
             }
         } 
     }
@@ -80,6 +86,12 @@ class PropertiesController extends Controller
 
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
+        $prCheck = Properties::where('property_name', $request->input('property_name'))->where('property_id','!=',$request->input('property_id'))->count();
+        if($prCheck!=0)
+        {
+            return response()->json(['response'=>"Property name already exists"], 410); 
         }
 
         $properties = Properties::where("property_id",$request->input('property_id'))->update( 
@@ -99,9 +111,6 @@ class PropertiesController extends Controller
     }
     function retrieve(Request $request,$id)
     {
-        $limit = 1000;
-        $offset = 0;
-
         $searchTerm = $request->input('searchkey');
 
         $query = Properties::where("org_id",$id)->select('property_id','property_name','no_of_floors','created_at','updated_at','active_status');
@@ -110,8 +119,7 @@ class PropertiesController extends Controller
         {
             $query->whereLike(['property_name'], $searchTerm);
         }
-        $properties = $query->offset($offset)->limit($limit)->get();
-        // echo json_encode($properties); 
+        $properties = $query->orderBy('property_name','ASC')->get();
         return $properties;
     }
 }

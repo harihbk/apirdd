@@ -36,6 +36,13 @@ class CompanyController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
+        $companyCheck = Company::where('company_name', $request->input('company_name'))->count();
+        if($companyCheck!=0)
+        {
+            return response()->json(['response'=>"Company name already exists"], 410); 
+        }
+
+
         $companies = new Company();
 
         $companies->org_id = $request->input('org_id');
@@ -68,6 +75,12 @@ class CompanyController extends Controller
 
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
+        $companyCheck = Company::where('company_name', $request->input('company_name'))->where('company_id','!=',$request->input('company_id'))->count();
+        if($companyCheck!=0)
+        {
+            return response()->json(['response'=>"Company name already exists"], 410); 
         }
 
         $companies = Company::where("company_id",$request->input('company_id'))->update( 

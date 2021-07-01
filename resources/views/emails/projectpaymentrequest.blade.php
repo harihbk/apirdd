@@ -13,7 +13,7 @@
         </style>
     </head>
     <body>
-        <h3>Dear {{$finance_name}},</h3>
+        <h3>Dear Finance Team,</h3>
         <div>We would like to request a payment update for {{$brand_name}}-{{$property}} on the below</div>
         <div><ul>
         <li>IVR ({{$ivr_amt}}) </li>

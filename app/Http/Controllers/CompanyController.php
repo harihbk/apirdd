@@ -26,9 +26,6 @@ class CompanyController extends Controller
         $validator = Validator::make($request->all(), [ 
             'org_id' => 'required', 
             'company_name' => 'required',
-            'contact_person' => 'required', 
-            'contact_email' => 'required', 
-            'mobile_no' => 'required',
             'user_id' => 'required'
         ]);
 
@@ -67,9 +64,6 @@ class CompanyController extends Controller
             'org_id' => 'required',
             'company_id' => 'required', 
             'company_name' => 'required',
-            'contact_person' => 'required', 
-            'contact_email' => 'required', 
-            'mobile_no' => 'required',
             'user_id' => 'required'
         ]);
 

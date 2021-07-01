@@ -90,9 +90,7 @@ class ConfigController extends Controller
     {
         // $config = MailConfig::find($org_id);
         $docpath = Docpathconfig::where("org_id",$org_id)->where("isDeleted",0)->first();
-        $finance_team = Financeteam::where("org_id",$org_id)->where("isDeleted",0)->first();
-        $operations_team = Operationsmntteam::where("org_id",$org_id)->where("isDeleted",0)->first();
-        return Response::json(["file_path_config"=>$docpath,"finance_team"=>$finance_team,"operations_team"=>$operations_team],200);
+        return Response::json(["file_path_config"=>$docpath],200);
     }
     function createMilestoneconfig(Request $request)
     {
@@ -191,34 +189,6 @@ class ConfigController extends Controller
             $path->updated_at = $updated_at;
 
             $path->save();
-        }
-
-
-        if($request->input('finance_email')!='' || $request->input('finance_email')!=null)
-        {
-            $finance_email = $request->input('finance_email');
-            Financeteam::where('org_id',$request->input('org_id'))->update(array("isDeleted"=>1,"updated_at" => $updated_at));
-            $finance = new Financeteam();
-            $finance->org_id = $request->input('org_id');
-            $finance->email = $finance_email;
-            $finance->created_at = $created_at;
-            $finance->updated_at = $updated_at;
-            $finance->created_by = $request->input('user_id');
-
-            $finance->save();
-        }
-        if($request->input('operationalteam_email')!='' || $request->input('operationalteam_email')!=null)
-        {
-            $operationalteam_email = $request->input('operationalteam_email');
-            Operationsmntteam::where('org_id',$request->input('org_id'))->update(array("isDeleted"=>1,"updated_at" => $updated_at));
-            $op = new Operationsmntteam();
-            $op->org_id = $request->input('org_id');
-            $op->email = $operationalteam_email;
-            $op->created_at = $created_at;
-            $op->updated_at = $updated_at;
-            $op->created_by = $request->input('user_id');
-
-            $op->save();
         }
         
         $data = array ("message" => 'Config detail Added successfully');

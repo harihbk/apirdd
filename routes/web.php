@@ -84,6 +84,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/properties', [PropertiesController::class, 'store']);
     Route::post('/properties/update',[PropertiesController::class, 'update']);
     Route::post('/properties/org/{id}',[PropertiesController::class, 'retrieve']);
+    Route::get('/properties/members/{orgid}/{propid}',[PropertiesController::class, 'getMembers']);
+    Route::post('/properties/members',[PropertiesController::class, 'addMembers']);
 
     //units
     Route::get('/units', [UnitsController::class, 'index']);
@@ -309,6 +311,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /* Adding task comments - Meeting tasks */
     Route::post('/addtaskcomment',[ProjectController::class, 'addTaskcomment']);
     
+    
 
     
     
@@ -405,6 +408,11 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/fcc', [PDFController::class, 'generateFCC']);
     /* fdr pdf generation */
     Route::post('/fdr', [PDFController::class, 'generateFDR']);
+    /* Send FCC */
+    Route::post('/sendfcc',[PDFController::class, 'sendFcc']);
+    /* Send FDR */
+    Route::post('/senddrf',[PDFController::class, 'sendDrf']);
+
 
     //document section
     /*project docs zip API*/

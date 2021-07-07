@@ -47,12 +47,14 @@
             <td>{{$fitout_completion}}</td>
         </tr>
         <tr>
-            <td>Opening Day: </td>
+            <td>Opening Date: </td>
             <td>{{$store_opening}}</td>
         </tr>
         </table>
         <div>
         Your main point of contact will be {{$mem_name}} {{$mem_last_name}}, {{$email}}, who will lead and discuss in detail the Design & Fitout process and clarify any queries you may have along the way.
+        </div>
+        <div>
         We look forward to working with you and your team to ensure a successful opening of the store.
         </div>
     </body>

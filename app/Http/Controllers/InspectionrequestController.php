@@ -411,7 +411,6 @@ class InspectionrequestController extends Controller
             //send mail to rdd manager
             $memberDetails = Project::join('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->select('users.email')->where('project_id',$datas[0]['project_id'])->get();
             $rddManager = $memberDetails[0]['email'];
-            Mail::to($rddManager)->send(new Projectinspection());
             return response()->json(['response'=>"Inspection Report data Saved and sent"], 200);
         }
         else
@@ -629,7 +628,7 @@ class InspectionrequestController extends Controller
                 if(Projectinspectionitems::insert($inspectionItems))
                 {
                     $notificationsArray = array();
-                    $contactDetails = Projectcontact::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_contact_details.project_id')->where('tbl_project_contact_details.project_id',$request->input('project_id'))->where('tbl_project_contact_details.isDeleted',0)->whereNotIn('tbl_project_contact_details.member_designation',[13,14])->select('tbl_project_contact_details.*','tbl_projects.project_name')->get();
+                    $contactDetails = Projectcontact::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_contact_details.project_id')->leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->where('tbl_project_contact_details.project_id',$request->input('project_id'))->where('tbl_project_contact_details.isDeleted',0)->whereNotIn('tbl_project_contact_details.member_designation',[13,14])->select('tbl_project_contact_details.*','tbl_projects.project_name','users.email as rdd_manager_email','users.mem_name','users.mem_last_name','tbl_properties_master.property_name','tbl_units_master.unit_name')->get();
                     for($r=0;$r<count($contactDetails);$r++)
                     {
                         $notificationsArray[]=[
@@ -643,6 +642,18 @@ class InspectionrequestController extends Controller
                         ];
                     }
                     Notifications::insert($notificationsArray);
+                    $data = array();
+                    $data = [
+                        "rdd_manager_email" => $contactDetails[0]['rdd_manager_email'],
+                        "rdd_manager_name" => $contactDetails[0]['mem_name']." ".($contactDetails[0]['mem_last_name']!=null?$contactDetails[0]['mem_last_name']:""),
+                        "unit_name" => $contactDetails[0]['unit_name'],
+                        "property_name" => $contactDetails[0]['property_name'],
+                        "inspection_type" =>$request->input('inspection_type')
+                    ];
+                    Mail::send('emails.projectinspections', $data, function($message)use($data) {
+                        $message->to($data['rdd_manager_email'])
+                                ->subject($data['unit_name']."-".$data['property_name']."-Inspection Request");
+                        });
                     $inspectionData = Projectinspections::select('inspection_id','inspection_type','requested_time')->find($inspection->inspection_id);
                     $data = array ("message" => 'Inspection Created successfully',"data" => $inspectionData );
                     $response = Response::json($data,200);

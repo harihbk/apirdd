@@ -24,7 +24,7 @@
     </head>
     <body>
         <h3>Dear Team,</h3>
-        <p>{{ $meeting_topic }} for Project {{ $project_name }} hase been approved on the scheduled time.</p>
+        <p>{{ $meeting_topic }} for Project {{ $project_name }} has been approved on the scheduled time.</p>
         <table>
         <tr>
             <td>Meeting Date: </td>

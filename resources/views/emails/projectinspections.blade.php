@@ -6,7 +6,11 @@
         <title>Project Inspection</title>
     </head>
     <body>
-        <h1>Welcome,</h1>
-        <p>This is to notify that project Inspection has been Approved and report generated</p>
+        <h3>Dear {{$rdd_manager_name}}</h3>
+        <div><p>Kindly review the {{$inspection_type}} request submitted by the unit mentioned above</p></div>
+        <p><a target="_blank" href="http://rdd.octasite.com/rdd_portal/login">click here to Follow!</a></p>
+        <br/>
+        <div><p>Regards</p></div>
+        <div><p>RDD Team.</p></div>
     </body>
 </html>

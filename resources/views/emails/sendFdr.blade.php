@@ -14,7 +14,8 @@
     </head>
     <body>
         <h3>Dear Team,</h3>
-        <div>We have attached the FDR Report for Project {{$project_name}} with this mail</div><br/>
+        <div>Kindly find the attached fitout refund form for your refence and action please.
+        </div><br/>
         <div>Many thanks.</div><br/>
         <div>Regards,</div>
         <div>{{$rdd_manager_name}}</div>

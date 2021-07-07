@@ -291,7 +291,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /* retrieve meeting task -- dashboard calendar  */
     Route::post('/getmeetings', [ProjectController::class, 'rddretrieveMeetings']);
     /* mark project as completed  */
-    Route::patch('/completeproject/{pid}', [ProjectController::class, 'rddprojectComplete']);
+    Route::patch('/completeproject/{pid}/{type}', [ProjectController::class, 'rddprojectComplete']);
     /* Send Mail to investor -for docs*/
     Route::patch('/docnotifyinvestor', [ProjectController::class, 'rddSenddocmailtoinvestor']);
     /* Send Mail to rdd manager -for docs*/
@@ -311,15 +311,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /* Adding task comments - Meeting tasks */
     Route::post('/addtaskcomment',[ProjectController::class, 'addTaskcomment']);
     
-    
 
-    
-    
-
-    
-
-    
-    
     
 
 
@@ -413,6 +405,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /* Send FDR */
     Route::post('/senddrf',[PDFController::class, 'sendDrf']);
 
+    Route::get('/check/{project_id}',[PDFController::class, 'getInspectiondata']);
+
 
     //document section
     /*project docs zip API*/
@@ -421,6 +415,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/phasezip', [DocumentController::class, 'phaseDocszip']);
     /* All document docs zip API*/
     Route::post('/alldocumentszip', [DocumentController::class, 'alldocumentzip']);
+
+    Route::post('/testupload', [DocumentController::class, 'checking']);
 
 });
 

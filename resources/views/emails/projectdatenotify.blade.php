@@ -24,7 +24,7 @@
     </head>
     <body>
         <h3>Dear {{$tenant_name}} {{$tenant_last_name}},</h3>
-        <p>Milestone dates for {{$investor_brand}} on property {{$property_name}} revised.</p>
+        <p>Based on the new milestone dates submitted by your team, kindly find below the updated/agreed milestones for your reference, record and future use purpose:</p>
         <p>Listed below are the dates revised:</p>
         <table>
         <tr>
@@ -44,12 +44,14 @@
             <td>{{$fitout_completion}}</td>
         </tr>
         <tr>
-            <td>Opening Day: </td>
+            <td>Opening Date: </td>
             <td>{{$store_opening}}</td>
         </tr>
         </table>
+        <br/>
         <div>
-        Your main point of contact will be {{$mem_name}} {{$mem_last_name}}, {{$email}}
+         Regards,
+         <p>RDD Team</p>
         </div>
     </body>
 </html>

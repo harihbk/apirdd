@@ -293,4 +293,31 @@ class DocumentController extends Controller
         return (count(scandir($dir)) == 2);
       }
 
+    function checking(Request $request)
+    {
+        $validator = Validator::make($request->all(), [ 
+            'file' => 'required|mimes:pdf,docx,png,jpg,jpeg',
+            'docpath' => 'required'
+       ]);
+
+       if ($validator->fails()) { 
+           return response()->json(['error'=>$validator->errors()], 401);            
+       }
+
+       $orignalName = $request->file->getClientOriginalName();
+
+
+    //    $fileName = $orignalName.'.'.$request->file->extension();  
+
+       $fileName = $orignalName;  
+  
+       $request->file->move(trim($request->input('docpath'),'"'), $fileName);
+
+       $path = trim($request->input('docpath'),'"')."/".$orignalName;
+  
+       $data = array ("message" => 'File Uploaded successfully',"file_name"=>$orignalName,"file_path" => $path );
+       $response = Response::json($data,200);
+       return $response;
+    }
+
 }

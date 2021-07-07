@@ -256,6 +256,10 @@
             <section>
             <p><span class="header-value">Inspection Checklist</span> <span class="fs-11">(in strict compliance with the Investor Fitout & Design Guidelines and the approved Detailed Design drawings)</span></p>
             <table class="checklist-table  pt-10" style="width:100%;">
+            <!-- @foreach($inspection_data as $key => $inspection)
+                @foreach()
+                @endforeach
+            @endforeach -->
                     <tr>
                         <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">MEP</th>
                         <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Comments/defects</th>

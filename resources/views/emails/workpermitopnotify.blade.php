@@ -13,8 +13,8 @@
         </style>
     </head>
     <body>
-        <h3>Dear Operational Team,</h3>
-        <div>Kindly issue the work permit as requested in the attached file.</div><br/>
+        <h3>Dear {{$recipient}} Team,</h3>
+        <div>Kindly issue the {{$permit_type}} permit as requested in the attached file.</div><br/>
         <div>Many thanks.</div><br />
         <div>Regards,</div>
         <div>{{$mem_name}} {{$mem_last_name}}</div>

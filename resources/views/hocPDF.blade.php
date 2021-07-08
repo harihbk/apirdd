@@ -162,13 +162,13 @@
                     <td class="td-width">
                         <dl>
                         <dt>Premises Numbers : </dt>
-                        <dd class="header-value">Mercedes Benz002</dd>
+                        <dd class="header-value">{{$unit_name}}</dd>
                         </dl>
                     </td>
                     <td class="td-width">
                         <dl>
                         <dt>Premises location : </dt>
-                        <dd class="header-value">UNIT01UNIT01UNIT01UNIT02 </dd>
+                        <dd class="header-value">Main Level</dd>
                         </dl>
                     </td>
                 </tr>
@@ -176,7 +176,7 @@
                 <td class="td-width">
                         <dl>
                         <dt>Investor Brand Name  : </dt>
-                        <dd class="header-value">UNIT01UNIT01UNIT01UNIT02</dd>
+                        <dd class="header-value">{{$investor_brand}}</dd>
                         </dl>
                     </td>
                 <td class="td-width">
@@ -188,22 +188,22 @@
                 </tr>
             <tr>
                 <td class="td-width">
-                        <dl>
-                        <dt>Handover Inspection Date  : </dt>
-                        <dd class="header-value">UNIT01UNIT01UNIT01UNIT02</dd>
-                        </dl>
-                    </td>
+                <dl>
+                <dt>Investor Company Name  : </dt>
+                <dd class="header-value">{{$company_name}}</dd>
+                </dl>
+                </td>
                 <td class="td-width">
-                        <dl>
-                        <dt>Handover Date (Actual) : </dt>
-                        <dd class="header-value">-</dd>
-                        </dl>
+                    <dl>
+                    <dt>Handover Date (Actual) : </dt>
+                    <dd class="header-value">-</dd>
+                    </dl>
                 </td>
             </tr>
             <tr>
-                <td class="td-width">
+                    <td class="td-width">
                         <dl>
-                        <dt>Investor Company Name  : </dt>
+                        <dt>Handover Inspection Date  : </dt>
                         <dd class="header-value">UNIT01UNIT01UNIT01UNIT02</dd>
                         </dl>
                     </td>

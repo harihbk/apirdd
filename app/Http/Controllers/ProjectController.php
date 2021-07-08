@@ -2354,9 +2354,9 @@ class ProjectController extends Controller
 
         $permit_details = Projectworkpermit::join('tbl_workpermit_master','tbl_workpermit_master.permit_id','=','tbl_project_workpermits.work_permit_type')->select('tbl_project_workpermits.permit_id','tbl_project_workpermits.project_id','tbl_project_workpermits.work_permit_type','tbl_project_workpermits.file_path','tbl_project_workpermits.drawing_path','tbl_project_workpermits.start_date','tbl_project_workpermits.end_date','tbl_project_workpermits.description','tbl_project_workpermits.checklist_file_path','tbl_project_workpermits.request_status','tbl_project_workpermits.investor_id','tbl_workpermit_master.permit_type')->where('project_id',$projectid)->get();
 
-        $inspection_details = Projectinspections::select('inspection_id','project_id','inspection_type','requested_time','checklist_id','comments','inspection_status','report_status','investor_id')->where('project_id',$projectid)->get();
+        $inspection_details = Projectinspections::leftjoin('tbl_checklisttemplate_master','tbl_checklisttemplate_master.id','=','tbl_project_inspections.checklist_id')->select('inspection_id','project_id','tbl_checklisttemplate_master.template_name as inspection_type','requested_time','checklist_id','comments','inspection_status','report_status','investor_id')->where('tbl_project_inspections.project_id',$projectid)->get();
 
-        $actual_inspection_reports = Projectinspections::select('inspection_id','project_id','inspection_type','requested_time','checklist_id','comments','inspection_status','report_status','investor_id')->where('project_id',$projectid)->where('inspection_status',2)->get();
+        $actual_inspection_reports = Projectinspections::leftjoin('tbl_checklisttemplate_master','tbl_checklisttemplate_master.id','=','tbl_project_inspections.checklist_id')->select('inspection_id','project_id','tbl_checklisttemplate_master.template_name as inspection_type','requested_time','checklist_id','comments','inspection_status','report_status','investor_id')->where('project_id',$projectid)->where('inspection_status',2)->get();
 
         $milestone_dates = Projectmilestonedates::where('project_id',$projectid)->where('active_status',1)->select('date_id','org_id','project_id','concept_submission','detailed_design_submission','unit_handover','fitout_start','fitout_completion','store_opening')->get();
 
@@ -2594,7 +2594,8 @@ class ProjectController extends Controller
                     "end_date" => date('d-m-Y', strtotime($request->input('end_date'))),
                     "company_name"=> $request->input('company_name')!=''?$request->input('company_name'):'-',
                     "contact_name"=> $request->input('contact_name')!=''?$request->input('contact_name'):'-',
-                    "contact_no" => $request->input('contact_name')!=''?$request->input('contact_name'):'-'
+                    "contact_no" => $request->input('contact_name')!=''?$request->input('contact_name'):'-',
+                    "type" => 1
                 ];
                 $created_at = date('Y-m-d H:i:s');
                 $updated_at = date('Y-m-d H:i:s');
@@ -3175,7 +3176,62 @@ class ProjectController extends Controller
         
         if($permit->save())
         {
+            
+            $project_details = Project::leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')
+            ->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->select('users.mem_name','users.mem_last_name','users.email as mem_email','tbl_tenant_master.email as tenant_email','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_projects.project_name','tbl_projects.assigned_rdd_members','tbl_properties_master.property_id','tbl_properties_master.property_name','tbl_units_master.unit_name')->where('tbl_projects.project_id',$projectid)->where('tbl_project_contact_details.member_designation',13)->groupBy('tbl_projects.project_id')->get();
+
+            $operationalDetails = Operationsmntteam::where('property_id',$project_details[0]['property_id'])->where('isDeleted',0)->get();
+            $op_email = array();
+            for($t=0;$t<count($operationalDetails);$t++)
+            {
+                $op_email[] = $operationalDetails[$t]['email'];
+            }
+            
+            $permitType = Workpermit::where('permit_id',$request->input('work_permit_type'))->first();
             $returnData = $permit->find($permit->permit_id);
+            $data = array();
+            if(count($project_details)>0 && count($op_email)>0)
+            {
+                $data = [
+                    "tenant_name" => $project_details[0]['tenant_name'],
+                    "tenant_last_name" => $project_details[0]['tenant_last_name'],
+                    "mem_email" => $project_details[0]['mem_email'],
+                    "tenant_email" => $project_details[0]['tenant_email'],
+                    "unit_name" => $project_details[0]['unit_name'],
+                    "property_name" => $project_details[0]['property_name'],
+                    "rdd_manager" => $project_details[0]['mem_name']."".$project_details[0]['mem_last_name']!=''?$project_details[0]['mem_last_name']:'',
+                    "permit_type" => $permitType['permit_type'],
+                    "start_date" => date('d-m-Y', strtotime($request->input('start_date'))),
+                    "end_date" => date('d-m-Y', strtotime($request->input('end_date'))),
+                    "company_name"=> $request->input('company_name')!=''?$request->input('company_name'):'-',
+                    "contact_name"=> $request->input('contact_name')!=''?$request->input('contact_name'):'-',
+                    "contact_no" => $request->input('contact_name')!=''?$request->input('contact_name'):'-',
+                    "type" => 2,
+                    "op_email" => $op_email
+                ];
+                $drawing_paths=[];
+                $file_paths = [];
+                $drawing_paths = json_decode($returnData['drawing_path']);
+                $file_paths = json_decode($returnData['file_path']);
+                Mail::send('emails.projectworkpermits', $data, function($message)use($data,$drawing_paths,$file_paths) {
+                    $message->to($data['op_email'])
+                            ->cc($data['mem_email'])
+                            ->subject($data['unit_name']."-".$data['property_name']."-Work permit request");
+
+                            if($drawing_paths!=null && count($drawing_paths)>0)
+                            {
+                                foreach ($drawing_paths as $dp){
+                                    $message->attach($dp);
+                                }
+                            }
+                            if($file_paths!=null && count($file_paths)>0)
+                            {
+                                foreach ($file_paths as $fp){
+                                    $message->attach($fp);
+                                }
+                            }
+                    });
+            }
             $data = array ("message" => 'Work permit has been Created',"data" => $returnData );
             $response = Response::json($data,200);
             echo json_encode($response);
@@ -3918,7 +3974,7 @@ class ProjectController extends Controller
 
         $permit_details = Projectworkpermit::join('tbl_workpermit_master','tbl_workpermit_master.permit_id','=','tbl_project_workpermits.work_permit_type')->select('tbl_project_workpermits.permit_id','tbl_project_workpermits.project_id','tbl_project_workpermits.work_permit_type','tbl_project_workpermits.file_path','tbl_project_workpermits.drawing_path','tbl_project_workpermits.start_date','tbl_project_workpermits.end_date','tbl_project_workpermits.remarks','tbl_project_workpermits.description','tbl_project_workpermits.checklist_file_path','tbl_project_workpermits.request_status','tbl_project_workpermits.investor_id','tbl_workpermit_master.permit_type')->where('project_id',$projectid)->get();
 
-        $inspection_details = Projectinspections::select('inspection_id','project_id','inspection_type','requested_time','checklist_id','comments','inspection_status','investor_id')->where('project_id',$projectid)->get();
+        $inspection_details = Projectinspections::leftjoin('tbl_checklisttemplate_master','tbl_checklisttemplate_master.id','=','tbl_project_inspections.checklist_id')->select('inspection_id','project_id','tbl_checklisttemplate_master.template_name as inspection_type','requested_time','checklist_id','comments','inspection_status','investor_id')->where('tbl_project_inspections.project_id',$projectid)->get();
 
         $siteinspection = SiteInspectionReport::where('project_id',$projectid)->where('isDeleted',0)->get();
         $fitout_certificates = FitoutCompletionCertificates::where('project_id',$projectid)->where('isDeleted',0)->get();

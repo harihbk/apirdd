@@ -86,6 +86,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/properties/org/{id}',[PropertiesController::class, 'retrieve']);
     Route::get('/properties/members/{orgid}/{propid}',[PropertiesController::class, 'getMembers']);
     Route::post('/properties/members',[PropertiesController::class, 'addMembers']);
+    Route::get('/properties/user/{memid}',[PropertiesController::class, 'retrievememberProperties']);
 
     //units
     Route::get('/units', [UnitsController::class, 'index']);
@@ -404,9 +405,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/sendfcc',[PDFController::class, 'sendFcc']);
     /* Send FDR */
     Route::post('/senddrf',[PDFController::class, 'sendDrf']);
-
-    Route::get('/check/{project_id}',[PDFController::class, 'getInspectiondata']);
-
+    /* Send FCC */
+    Route::post('/sendhoc',[PDFController::class, 'sendHoc']);
 
     //document section
     /*project docs zip API*/
@@ -420,6 +420,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
 
 });
 
+
+Route::get('/check/{project_id}',[PDFController::class, 'checking']);
 
 
 Route::group(['middleware' => 'tenantauth:api'], function() {

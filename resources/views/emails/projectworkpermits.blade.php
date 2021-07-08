@@ -23,8 +23,14 @@
         </style>
     </head>
     <body>
+        @if($type==1)
         <h3>Dear {{$rdd_manager}},</h3>
         <div>Kindly review the {{$permit_type}} requuest for the above mentioned unit as detailed in the attached form/below.</div><br/>
+        @endif
+        @if($type==2)
+        <h3>Dear Operations Team,</h3>
+        Kindly issue a {{$permit_type}} for the above mentioned unit as detailed in the attached form/below
+        @endif
         <table>
         <tr>
             <td>Start Date: </td>
@@ -48,7 +54,13 @@
         </tr>
         </table><br/>
         <div>Many thanks.</div><br />
+        @if($type==1)
         <div>Regards,</div>
         <div>{{$tenant_name}} {{$tenant_last_name}}</div>
+        @endif
+        @if($type==2)
+        <div>Regards,</div>
+        <div>{{$rdd_manager}}</div>
+        @endif
     </body>
 </html>

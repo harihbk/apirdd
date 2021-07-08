@@ -9,6 +9,7 @@ use App\Models\Floor;
 use App\Models\Financeteam;
 use App\Models\Operationsmntteam;
 use App\Models\Maintainenceteam;
+use App\Models\Members;
 use Response;
 use Validator;
 
@@ -18,12 +19,10 @@ class PropertiesController extends Controller
     {
         $limit = 0;
         $offset = 0;
-        //$properties = Properties::offset($offset)->limit($limit)->get();
         $properties = Properties::all();
         if($properties!=null) {
             $data = array ("message" => 'Properties data',"data" => $properties );
             $response = Response::json($data,200);
-            // echo json_encode($response);
             return $response; 
         } 
     }
@@ -215,5 +214,11 @@ class PropertiesController extends Controller
         $maintainence_team = Maintainenceteam::where('org_id',$orgid)->where('property_id',$propid)->where('isdeleted',0)->select('email','property_id')->get();
 
         return response()->json(['finance_team'=>$finance_team,'operations_team'=>$operations_team,'maintainence_team'=>$maintainence_team], 200);
+    }
+    function retrievememberProperties($memid)
+    {
+        $memberdetails = Members::where('mem_id',$memid)->first();
+        $properties = Properties::whereIn('property_id',explode(',',json_decode($memberdetails['properties'], true)))->select('property_id','property_name')->get();
+        return $properties;
     }
 }

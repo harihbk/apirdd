@@ -155,19 +155,19 @@
                 </div>
         </header>
         <section class="page-1">
-        <table class="table-borderless pt-50" style="width:100%;">
+        <table class="table-borderless pt-50" style="width:100%; padding-bottom:10px;">
             <tbody>
                 <tr>
                     <td class="td-width">
                         <dl>
                         <dt>Premises Numbers : </dt>
-                        <dd class="header-value">Mercedes Benz002</dd>
+                        <dd class="header-value">{{$unit_name}}</dd>
                         </dl>
                     </td>
                     <td class="td-width">
                         <dl>
                         <dt>Premises location : </dt>
-                        <dd class="header-value">UNIT01UNIT01UNIT01UNIT02 </dd>
+                        <dd class="header-value">Main Level</dd>
                         </dl>
                     </td>
                 </tr>
@@ -175,7 +175,7 @@
                 <td class="td-width">
                         <dl>
                         <dt>Investor Brand Name  : </dt>
-                        <dd class="header-value">UNIT01UNIT01UNIT01UNIT02</dd>
+                        <dd class="header-value">{{$investor_brand}}</dd>
                         </dl>
                     </td>
                 <td class="td-width">
@@ -188,24 +188,24 @@
             <tr>
                 <td class="td-width">
                         <dl>
+                        <dt>Investor Company Name  : </dt>
+                        <dd class="header-value">{{$company_name}}</dd>
+                        </dl>
+                </td>
+                <td class="td-width">
+                        <dl>
                         <dt>Inspection Date  : </dt>
-                        <dd class="header-value">UNIT01UNIT01UNIT01UNIT02</dd>
+                        <dd class="header-value">{{$inspection_date}}</dd>
                         </dl>
                     </td>
+            </tr>
+			<tr>
                 <td class="td-width">
                         <dl>
                         <dt>Fitout Completion : </dt>
-                        <dd class="header-value">-</dd>
+                        <dd class="header-value"></dd>
                         </dl>
                 </td>
-            </tr>
-            <tr>
-                <td class="td-width">
-                        <dl>
-                        <dt>Investor Company Name  : </dt>
-                        <dd class="header-value">UNIT01UNIT01UNIT01UNIT02</dd>
-                        </dl>
-                    </td>
             </tr>
             </tbody>
             </table>
@@ -221,7 +221,7 @@
                             <td class="td-width">
                                 <dl>
                                 <dt>RDD Project Manager : </dt>
-                                <dd class="header-value">Mercedes Benz002</dd>
+                                <dd class="header-value">{{$rdd_manager}}</dd>
                                 </dl>
                             </td>
                         </tr>
@@ -237,7 +237,7 @@
                             <td class="td-width">
                                     <dl>
                                     <dt>Investor’s Authorized Signatory  : </dt>
-                                    <dd class="header-value">UNIT01UNIT01UNIT01UNIT02</dd>
+                                    <dd class="header-value">-</dd>
                                     </dl>
                                 </td>
                         </tr>
@@ -245,7 +245,7 @@
                             <td class="td-width">
                                     <dl>
                                     <dt>Investor’s Shop fitter  : </dt>
-                                    <dd class="header-value">UNIT01UNIT01UNIT01UNIT02</dd>
+                                    <dd class="header-value">-</dd>
                                     </dl>
                             </td>
                         </tr>
@@ -256,83 +256,24 @@
             <section>
             <p><span class="header-value">Inspection Checklist</span> <span class="fs-11">(in strict compliance with the Investor Fitout & Design Guidelines and the approved Detailed Design drawings)</span></p>
             <table class="checklist-table  pt-10" style="width:100%;">
-            <!-- @foreach($inspection_data as $key => $inspection)
-                @foreach()
+            @foreach($inspection_data as $master_key=>$master_value)
+					<tr>
+					<th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">{{$master_key}}</th>
+                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Comments/defects</th>
+                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Action</th>
+                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Finish Date (By Investor)</th>
+					</tr>
+                @foreach($master_value as $key=>$value)
+					<tr>
+                        <td style="width:40%;height:35px; font-size:12px;text-align:center">{{$value->checklist_desc}}</td>
+                        <td style="width:30%;height:35px; font-size:12px;text-align:center"></td>
+                        <td style="width:15%;height:35px; font-size:12px;text-align:center">{{$value->rdd_actuals==1?'Yes':'No'}}</td>
+                        <td style="width:15%;height:35px; font-size:12px;text-align:center"></td>
+						
+                    </tr>
                 @endforeach
-            @endforeach -->
-                    <tr>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">MEP</th>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Comments/defects</th>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Action</th>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Finish Date (By Investor)</th>
-                    </tr>
-                    <tr>
-                        <td style="width:25%;height:35px;"></td>
-                        <td style="width:50%;height:35px;"></td>
-                        <td style="width:10%;height:35px;"></td>
-                        <td style="width:15%;height:35px;"></td>
-                    </tr>
-                    <tr>
-                    <td style="width:25%;height:35px;"></td>
-                        <td style="width:50%;height:35px;"></td>
-                        <td style="width:10%;height:35px;"></td>
-                        <td style="width:15%;height:35px;"></td>
-                    </tr>
-                    <tr>
-                    <td style="width:25%;height:35px;"></td>
-                        <td style="width:50%;height:35px;"></td>
-                        <td style="width:10%;height:35px;"></td>
-                        <td style="width:15%;height:35px;"></td>
-                    </tr>
-                    <tr>
-                    <td style="width:25%;height:35px;"></td>
-                        <td style="width:50%;height:35px;"></td>
-                        <td style="width:10%;height:35px;"></td>
-                        <td style="width:15%;height:35px;"></td>
-                    </tr>
-                    <tr>
-                    <td style="width:25%;height:35px;"></td>
-                        <td style="width:50%;height:35px;"></td>
-                        <td style="width:10%;height:35px;"></td>
-                        <td style="width:15%;height:35px;"></td>
-                    </tr>
-                    <tr>
-                    <td style="width:25%;height:35px;"></td>
-                        <td style="width:50%;height:35px;"></td>
-                        <td style="width:10%;height:35px;"></td>
-                        <td style="width:15%;height:35px;"></td>
-                    </tr>
-                    <tr>
-                    <td style="width:25%;height:35px;"></td>
-                        <td style="width:50%;height:35px;"></td>
-                        <td style="width:10%;height:35px;"></td>
-                        <td style="width:15%;height:35px;"></td>
-                    </tr>
-                    <tr>
-                    <td style="width:25%;height:35px;"></td>
-                        <td style="width:50%;height:35px;"></td>
-                        <td style="width:10%;height:35px;"></td>
-                        <td style="width:15%;height:35px;"></td>
-                    </tr>
-                    <tr>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">MEP</th>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Comments/defects</th>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Action</th>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Finish Date (By Investor)</th>
-                    </tr>
-                    <tr>
-                    <td style="width:25%;height:35px;"></td>
-                        <td style="width:50%;height:35px;"></td>
-                        <td style="width:10%;height:35px;"></td>
-                        <td style="width:15%;height:35px;"></td>
-                    </tr>
-                    <tr>
-                    <td style="width:25%;height:35px;"></td>
-                        <td style="width:50%;height:35px;"></td>
-                        <td style="width:10%;height:35px;"></td>
-                        <td style="width:15%;height:35px;"></td>
-                    </tr>
-             </table>
+            @endforeach
+            </table>
             </section>
             <hr class="seperator">
             <section>

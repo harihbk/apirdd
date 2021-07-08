@@ -31,13 +31,12 @@ class MembersController extends Controller
             'mem_org_id' => 'required', 
             'mem_name' => 'required', 
             'email' => 'required', 
-            'password' => 'required', 
             'mobile_no' => 'required',
             'gender' => 'required',
             'mem_designation' => 'required',
-            'mem_signature_path' => 'required',
             'mem_designation' => 'required',
-            'mem_level' => 'required'
+            'mem_level' => 'required',
+            'properties.*' => 'required'
         ]);
 
         if ($validator->fails()) { 
@@ -57,6 +56,7 @@ class MembersController extends Controller
         $members->mem_signature_path = $request->input('mem_signature_path');
         $members->mem_level = $request->input('mem_level');
         $members->auth_grp = $request->input('auth_grp');
+        $members->properties = $request->input('properties');
         $members->created_at = date('Y-m-d H:i:s');
         $members->updated_at = date('Y-m-d H:i:s');
         $members->access_type = $request->input('access_type');
@@ -78,10 +78,9 @@ class MembersController extends Controller
             'mobile_no' => 'required',
             'gender' => 'required',
             'mem_designation' => 'required',
-            'mem_signature_path' => 'required',
-            'mem_designation' => 'required',
             'mem_level' => 'required', 
-            'active_status' => 'required'
+            'active_status' => 'required',
+            'properties.*' => 'required'
         ]);
 
         if ($validator->fails()) { 
@@ -101,7 +100,8 @@ class MembersController extends Controller
                              "auth_grp" => $request->input('auth_grp'),
                              "updated_at" => date('Y-m-d H:i:s'),
                              "access_type" => $request->input('access_type'),
-                             "active_status" => $request->input('active_status')
+                             "active_status" => $request->input('active_status'),
+                             "properties" => $request->input('properties')
                              ));
         if($members>0)
         {
@@ -123,7 +123,7 @@ class MembersController extends Controller
 
         $searchTerm = $request->input('searchkey');
 
-        $query = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.mem_org_id',$id)->select('users.mem_id','users.mem_org_id','users.mem_name','users.mem_signature_path','users.created_at','users.mem_last_name','users.email','users.mobile_no','users.mem_designation','tbl_designation_master.designation_name','users.gender','users.access_type','users.active_status','users.auth_grp');
+        $query = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.mem_org_id',$id)->select('users.mem_id','users.mem_org_id','users.mem_name','users.mem_signature_path','users.created_at','users.mem_last_name','users.email','users.mobile_no','users.mem_designation','tbl_designation_master.designation_name','users.gender','users.access_type','users.active_status','users.auth_grp','users.properties');
 
         if (!empty($request->input('searchkey')))
         {

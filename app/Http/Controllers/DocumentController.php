@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\Handovercertificate;
+use App\Models\FitoutCompletionCertificates;
+use App\Models\FitoutDepositrefund;
 use Response;
 use Validator;
 use File;
@@ -293,28 +296,89 @@ class DocumentController extends Controller
         return (count(scandir($dir)) == 2);
       }
 
-    function checking(Request $request)
+    function generateUpload(Request $request)
     {
         $validator = Validator::make($request->all(), [ 
+            'project_id' => 'required',
             'file' => 'required|mimes:pdf,docx,png,jpg,jpeg',
-            'docpath' => 'required'
+            'docpath' => 'required',
+            'type' => 'required'
        ]);
-
        if ($validator->fails()) { 
            return response()->json(['error'=>$validator->errors()], 401);            
        }
+       $updated_at = date('Y-m-d H:i:s');
+       $type=$request->input('type');
+       //type 1-HOC,2-FCC,3-FDR
+       if($type==1)
+       {
+        $destination_path = trim($request->input('docpath'))."/hoc/uploaded";
+        if(!File::isDirectory($destination_path)){
+            File::makeDirectory($destination_path, 0777, true, true);
+            }
+        $orignalName = $request->file->getClientOriginalName();  
 
-       $orignalName = $request->file->getClientOriginalName();
+        $fileName = $orignalName;  
+   
+        $request->file->move($destination_path, $fileName);
+ 
+        $path = $destination_path."/".$orignalName;
+        $hocEntrycount = Handovercertificate::where('project_id',$request->input('project_id'))->where('isDeleted',0)->count();
+        if($hocEntrycount==0)
+        {
+            $hoc = new Handovercertificate();
+            $hoc->project_id = $request->input('project_id');
+            $hoc->doc_type = 'Handover Certificate';
+            $hoc->created_at = $created_at;
+            $hoc->updated_at = $updated_at;
+            $hoc_entry = $hoc->save();
+        }
+        Handovercertificate::where('project_id',$request->input('project_id'))->where('isDeleted',0)->update(
+            array(
+                "updated_at"=>$updated_at,
+                "generated_path"=>$path
+            )
+        );
+       }
 
+       if($type==2)
+       {
+        $destination_path = trim($request->input('docpath'))."/uploaded";
+        if(!File::isDirectory($destination_path)){
+            File::makeDirectory($destination_path, 0777, true, true);
+            }
+        $orignalName = $request->file->getClientOriginalName();  
 
-    //    $fileName = $orignalName.'.'.$request->file->extension();  
+        $fileName = $orignalName;  
+   
+        $request->file->move($destination_path, $fileName);
+ 
+        $path = $destination_path."/".$orignalName;
 
-       $fileName = $orignalName;  
-  
-       $request->file->move(trim($request->input('docpath'),'"'), $fileName);
+        FitoutCompletionCertificates::where('project_id',$request->input('project_id'))->where('isDeleted',0)->update(
+            array(
+                "updated_at"=>$updated_at,
+                "generated_path"=>$path
+            )
+        );
+       }
 
-       $path = trim($request->input('docpath'),'"')."/".$orignalName;
-  
+       if($type==3)
+       {
+        $destination_path = trim($request->input('docpath'))."/uploaded";
+        if(!File::isDirectory($destination_path)){
+            File::makeDirectory($destination_path, 0777, true, true);
+            }
+        $orignalName = $request->file->getClientOriginalName();  
+        $fileName = $orignalName;  
+        $request->file->move($destination_path, $fileName);
+        $path = $destination_path."/".$orignalName;
+        FitoutDepositrefund::where('project_id',$request->input('project_id'))->where('isDeleted',0)->update(array(
+            "isdrfGenerated" => 1,
+            "generated_path"=>$path,
+            "updated_at" => $updated_at
+        ));
+       }
        $data = array ("message" => 'File Uploaded successfully',"file_name"=>$orignalName,"file_path" => $path );
        $response = Response::json($data,200);
        return $response;

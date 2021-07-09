@@ -196,7 +196,7 @@
                 <td class="td-width">
                     <dl>
                     <dt>Handover Date (Actual) : </dt>
-                    <dd class="header-value">-</dd>
+                    <dd class="header-value"></dd>
                     </dl>
                 </td>
             </tr>
@@ -204,7 +204,7 @@
                     <td class="td-width">
                         <dl>
                         <dt>Handover Inspection Date  : </dt>
-                        <dd class="header-value">UNIT01UNIT01UNIT01UNIT02</dd>
+                        <dd class="header-value">{{$inspection_date}}</dd>
                         </dl>
                     </td>
             </tr>

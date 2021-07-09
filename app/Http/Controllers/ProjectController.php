@@ -43,6 +43,8 @@ use App\Models\Financeteam;
 use App\Models\Operationsmntteam;
 use App\Models\Meetingemails;
 use App\Models\Maintainenceteam;
+use App\Models\Handovercertificate;
+use App\Models\Marketingteam;
 use Response;
 use Validator;
 use Illuminate\Support\Facades\Mail;
@@ -106,9 +108,9 @@ class ProjectController extends Controller
             ];
         if($type==1)
         {
+            // ->cc($contact_people)
             Mail::send('emails.projectcreation', $data, function($message)use($data,$investor_people,$contact_people) {
             $message->to($investor_people)
-                    ->cc($contact_people)
                     ->subject($data['unit_name']."-".$data['property_name']."- Welcome");
             });  
         }
@@ -438,6 +440,14 @@ class ProjectController extends Controller
             $fdeposit_refund->updated_at = $updated_at;
 
             $deposit_refund = $fdeposit_refund->save();
+
+            //make Handover certificate 
+            $hoc = new Handovercertificate();
+            $hoc->project_id = $project_id;
+            $hoc->doc_type = 'Handover Certificate';
+            $hoc->created_at = $created_at;
+            $hoc->updated_at = $updated_at;
+            $hoc_entry = $hoc->save();
 
             //map the template to project for tracking tasks
             for($r=0;$r<count($templatedetails);$r++)
@@ -2365,8 +2375,9 @@ class ProjectController extends Controller
         $fitout_certificates = FitoutCompletionCertificates::where('project_id',$projectid)->where('isDeleted',0)->get();
         $preopening_docs = Preopeningdocs::where('project_id',$projectid)->where('isDeleted',0)->get();
         $fitout_refund = FitoutDepositrefund::where('project_id',$projectid)->where('isDeleted',0)->get();
+        $hoc_certificates = Handovercertificate::where('project_id',$projectid)->where('isDeleted',0)->get();
 
-        return Response::json(array('project' => $project_details,'doc_details' => $docs_details,'requested_permits'=>$permit_details,'requested_inspections' => $inspection_details,'milestone_dates' => $milestone_dates,'investor_dates'=>$investor_dates,"actual_inspection_reports"=> $actual_inspection_reports,"site_inspection_reports"=> $siteinspection,"fitout_completion_certificates"=>$fitout_certificates,"pre_opening_docs"=>$preopening_docs,"fitout_deposit_refund"=> $fitout_refund,"doc_path"=>$doc_path,"image_path"=>$img_path,"workpermit_doc_path" => $workpermit_doc_path,"workpermit_image_path" =>$workpermit_img_path,"fcc_doc_path"=>$fcc_doc_path,"fcc_img_path"=>$fcc_img_path,"drf_doc_path"=>$drf_doc_path,"drf_img_path" => $drf_img_path ));
+        return Response::json(array('project' => $project_details,'doc_details' => $docs_details,'requested_permits'=>$permit_details,'requested_inspections' => $inspection_details,'milestone_dates' => $milestone_dates,'investor_dates'=>$investor_dates,"actual_inspection_reports"=> $actual_inspection_reports,"site_inspection_reports"=> $siteinspection,"fitout_completion_certificates"=>$fitout_certificates,"pre_opening_docs"=>$preopening_docs,"fitout_deposit_refund"=> $fitout_refund,"doc_path"=>$doc_path,"image_path"=>$img_path,"workpermit_doc_path" => $workpermit_doc_path,"workpermit_image_path" =>$workpermit_img_path,"fcc_doc_path"=>$fcc_doc_path,"fcc_img_path"=>$fcc_img_path,"drf_doc_path"=>$drf_doc_path,"drf_img_path" => $drf_img_path,"handover_certificates"=>$hoc_certificates ));
     }
     function updateFitoutdetails(Request $request,$project_id)
     {
@@ -2576,7 +2587,7 @@ class ProjectController extends Controller
 
 
             $permitType = Workpermit::where('permit_id',$request->input('work_permit_type'))->first();
-
+            $returnData = $permit->find($permit->permit_id);
             if(count($project_details)!=0)
             {
                 $data = array();
@@ -2609,12 +2620,29 @@ class ProjectController extends Controller
                     "updated_at" => $updated_at
                 ];
                 Notifications::insert($permitNotifications);
+                $drawing_paths=[];
+                $file_paths = [];
+                $drawing_paths = json_decode($returnData['drawing_path']);
+                $file_paths = json_decode($returnData['file_path']);
                 Mail::send('emails.projectworkpermits', $data, function($message)use($data) {
                 $message->to($data['mem_email'])
                         ->subject($data['unit_name']."-".$data['property_name']."-Work permit request");
+
+                        if($drawing_paths!=null && count($drawing_paths)>0)
+                            {
+                                foreach ($drawing_paths as $dp){
+                                    $message->attach($dp);
+                                }
+                            }
+                            if($file_paths!=null && count($file_paths)>0)
+                            {
+                                foreach ($file_paths as $fp){
+                                    $message->attach($fp);
+                                }
+                            }
                 });  
             }              
-            $returnData = $permit->find($permit->permit_id);
+            
             $data = array ("message" => 'Work permit has been requested',"data" => $returnData );
             $response = Response::json($data,200);
             echo json_encode($response);
@@ -3320,7 +3348,6 @@ class ProjectController extends Controller
             'datas.*.phase_id' => 'required',
             'datas.*.user_id' => 'required',
             'datas.*.docs.*.doc_id' => 'required',
-            // 'datas.*.docs.*.file_name' => 'required',
             'datas.*.docs.*.file_path' => 'required',
             'datas.*.docs.*.version' => 'required'
         ]);
@@ -3377,6 +3404,7 @@ class ProjectController extends Controller
         {
             $documents[] = $doc['doc_title'];
         }
+        Projectdocshistory::insert($docsHistory);
         if(count($tenant_details)>0)
         {
             $emaildata = array();
@@ -3411,9 +3439,50 @@ class ProjectController extends Controller
                     $message->to($emaildata['rdd_manager_email'])
                             ->subject($emaildata['unit_name'].'-'.$emaildata['property_name'].'-Design Submission');
                     });
+
+                //Marketing team mail after submission of Hoarding design
+                $attachments_paths = array();
+                if($taskdata['doc_header']=='Hoarding Design' || $taskdata['doc_header']=='Hoarding Graphics Design')
+                {
+                    $docVersion = Projectdocs::where('project_id',$datas[0]['project_id'])->where('doc_header',$taskdata['doc_header'])->get();
+                    for($r=0;$r<count($docVersion);$r++)
+                    {
+                        $doc = Projectdocshistory::where('project_id',$docVersion[$r]['project_id'])->where('doc_id',$docVersion[$r]['doc_id'])->where('version_no',$docVersion[$r]['version'])->first();
+                        $attachments_paths[] = $doc['file_path'];
+                    }
+
+                    //retrieve Marketing Team
+                    $property = Project::where('project_id',$datas[0]['project_id'])->first();
+                    $markertingTeam = Marketingteam::where('property_id',$property['property_id'])->get();
+                    $marketingEmails = array();
+                    for($e=0;$e<count($markertingTeam);$e++)
+                    {
+                        $marketingEmails[] = $markertingTeam[$e]['email'];
+                    }
+                    $marketingEmails[] =  $rdd_manager_details['email'];
+                    if(count($marketingEmails)>0)
+                    {
+                        $marketing_email_data = [
+                            "emails" => $marketingEmails,
+                            "property_name" => $taskdata['property_name'],
+                            "unit_name" => $taskdata['unit_name'],
+                            "rdd_manager_email" => $rdd_manager_details['email']
+                        ];
+                        Mail::send('emails.marketingemail', $marketing_email_data, function($message)use($marketing_email_data,$attachments_paths) {
+                            $message->to($marketing_email_data['emails'])
+                                    ->subject($marketing_email_data['unit_name'].'-'.$marketing_email_data['property_name'].'-Hoarding graphics design');
+
+                                    if(count($attachments_paths)>0)
+                                    {
+                                        foreach ($attachments_paths as $file){
+                                            $message->attach($file);
+                                        }
+                                    }
+                            });
+                    }
+                }
             }
         }   
-        Projectdocshistory::insert($docsHistory);
         return response()->json(['response'=>"Document Upload action has been registered"], 200);
     }
     function getDochistory($docid)
@@ -3541,6 +3610,25 @@ class ProjectController extends Controller
                                     //mail function to approvers level1
                                     $this->sendDocumentmail($taskdata['doc_header'],$approvers_array,$request->input('project_id'));
                                 }
+                                   $mep_memberCheck = Members::where('mem_id',$memid)->first();
+                                    if(($taskdata['doc_header']=='MEP Drawings List' || $taskdata['doc_header']=='IVR') && $mep_memberCheck['mem_designation']==28)
+                                    {
+                                        $rdd_manager_details = Project::leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->where('project_id',$request->input('project_id'))->select('tbl_projects.project_name','tbl_projects.assigned_rdd_members','users.email','users.mem_name','users.mem_last_name','tbl_properties_master.property_name','tbl_units_master.unit_name')->first();
+
+                                        $emaildata = array();
+                                        $emaildata = [
+                                            "doc_header" => $taskdata['doc_header'],
+                                            "approvers" => $approvers_array,
+                                            "rdd_manager_email" => $rdd_manager_details['email'],
+                                            "rdd_manager" => $rdd_manager_details['mem_name']." ".($rdd_manager_details['mem_last_name']!=null?$rdd_manager_details['mem_last_name']:""),
+                                            "unit_name" => $rdd_manager_details['unit_name'],
+                                            "property_name" => $rdd_manager_details['property_name']
+                                        ];
+                                        Mail::send('emails.mepdesignemail', $emaildata, function($message)use($emaildata) {
+                                            $message->to($emaildata['rdd_manager_email'])
+                                                    ->subject($emaildata['unit_name'].'-'.$emaildata['property_name'].'-MEP Design Submission');
+                                            });
+                                    }
                                 return response()->json(['response'=>"Document Approved Successfully"], 200);
                             }
                             else
@@ -4389,7 +4477,7 @@ class ProjectController extends Controller
             "investor_brand" => $tenant_details[0]['investor_brand'],
             "tenant_email" => $tenant_details[0]['email'],
             "doc_header" => $doc_header,
-            "property_name"=>$tenant_details[0]['investor_brand'],
+            "property_name"=>$tenant_details[0]['property_name'],
             "unit_name" => $tenant_details[0]['unit_name'],
             "type" => 3,
             "cc_members" => $cc_members
@@ -4427,19 +4515,23 @@ class ProjectController extends Controller
         }
 
         $doc_header = $request->input('doc_header');
-        $tenant_details = Project::leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->where('tbl_projects.project_id',$request->input('project_id'))->select('users.mem_name','users.mem_last_name','users.email','tbl_projects.*')->get();
+        $tenant_details = Project::leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->where('tbl_projects.project_id',$request->input('project_id'))->where('tbl_project_contact_details.member_designation',13)->select('tbl_tenant_master.*','tbl_projects.investor_brand','tbl_properties_master.property_name','tbl_units_master.unit_name','users.email as rdd_manager_email','users.mem_name','users.mem_last_name')->get();
 
         $emaildata = [
             "tenant_name" => $tenant_details[0]['mem_name'],
             "tenant_last_name" => $tenant_details[0]['mem_last_name'],
             "investor_brand" => $tenant_details[0]['investor_brand'],
-            "tenant_email" => $tenant_details[0]['email'],
-            "doc_header" => $doc_header
+            "tenant_email" => $tenant_details[0]['rdd_manager_email'],
+            "doc_header" => $doc_header,
+            "type" => 2,
+            "property_name"=>$tenant_details[0]['property_name'],
+            "unit_name" => $tenant_details[0]['unit_name'],
+            "rdd_manager_name" => $tenant_details[0]['mem_name']." ".($tenant_details[0]['mem_last_name']!=null?$tenant_details[0]['mem_last_name']:"")
         ];
 
-        Mail::send('emails.drawingsubmission', $emaildata, function($message)use($emaildata,$doc_header) {
+        Mail::send('emails.drawingsubmission', $emaildata, function($message)use($emaildata) {
             $message->to($emaildata['tenant_email'])
-                    ->subject('RDD - '.$doc_header.' Drawings Submission');
+                    ->subject($emaildata['unit_name']."-".$emaildata['property_name'].'-Drawings Submission');
             });
         if(Mail::failures())
         {

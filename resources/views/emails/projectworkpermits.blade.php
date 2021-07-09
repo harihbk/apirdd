@@ -25,7 +25,8 @@
     <body>
         @if($type==1)
         <h3>Dear {{$rdd_manager}},</h3>
-        <div>Kindly review the {{$permit_type}} requuest for the above mentioned unit as detailed in the attached form/below.</div><br/>
+        <div>Kindly review the {{$permit_type}} requuest for the above mentioned unit as detailed in the attached form/below.</div>
+        <p><a target="_blank" href="http://rdd.octasite.com/rdd_portal/login">click here to Follow!</a></p><br/>
         @endif
         @if($type==2)
         <h3>Dear Operations Team,</h3>

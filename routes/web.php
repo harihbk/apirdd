@@ -71,6 +71,8 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /* Upload documents */
     Route::post('/uploadfile',[DocumentController::class, 'docUpload']);
     Route::post('/multipleuploadfile',[DocumentController::class, 'multipledocUpload']);
+    Route::post('/generateupload', [DocumentController::class, 'generateUpload']);
+
     
      //organisations
      Route::get('/org', [OrganisationsController::class, 'index']);
@@ -415,9 +417,6 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/phasezip', [DocumentController::class, 'phaseDocszip']);
     /* All document docs zip API*/
     Route::post('/alldocumentszip', [DocumentController::class, 'alldocumentzip']);
-
-    Route::post('/testupload', [DocumentController::class, 'checking']);
-
 });
 
 

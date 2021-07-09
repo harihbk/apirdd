@@ -10,6 +10,7 @@ use App\Models\FitoutDepositrefund;
 use App\Models\Financeteam;
 use App\Models\Projectinspections;
 use App\Models\Projectinspectionitems;
+use App\Models\Handovercertificate;
 use Validator;
 use PDF;
 use File;
@@ -21,26 +22,64 @@ class PDFController extends Controller
     public function generateHOC(Request $request)
     {
         $validator = Validator::make($request->all(), [  
-            'project_id' => 'required'
+            'project_id' => 'required',
+            'doc_path'=>'required'
         ]);
 
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
         }
-
-        $projectDetails = project::leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->where('tbl_projects.project_id',$request->input('project_id'))->where('tbl_project_contact_details.member_designation',13)->select('tbl_projects.project_id','tbl_projects.project_name','tbl_units_master.unit_id','tbl_units_master.unit_name','tbl_projects.investor_brand','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name')->get();
-
+        $created_at = date('Y-m-d H:i:s');
+        $updated_at = date('Y-m-d H:i:s');
+        $projectDetails = $this->getProjectDetails($request->input('project_id'));
+        $inspectionData = $this->getInspectiondata($request->input('project_id'),2);
+        if(count($inspectionData['inspection_items'])==0 || $inspectionData['inspection_data']=='')
+        {
+            return response()->json(['response'=>"No Inspections data for this Project"], 410);
+        }
+        $data = array();
         $data = [
             'unit_name' => $projectDetails[0]['unit_name'],
             'investor_brand' => $projectDetails[0]['investor_brand'],
-            "investor_name" => $projectDetails[0]['tenant_name']." ".$projectDetails[0]['tenant_last_name']
+            "investor_name" => $projectDetails[0]['tenant_name']." ".$projectDetails[0]['tenant_last_name'],
+            "inspection_data" => $inspectionData['inspection_items'],
+            "company_name" => $projectDetails[0]['company_name'],
+            "rdd_manager" => $projectDetails[0]['mem_name']." ".($projectDetails[0]['mem_last_name']!=null?$projectDetails[0]['mem_last_name']:""),
+            "inspection_date" => date('d-m-Y',strtotime($inspectionData['inspection_data']['requested_time']))
         ];
+       
 
         try
         {
             $pdf = PDF::loadView('hocPDF', $data);
-    
-            return $pdf->download('testing.pdf');
+            $destination_path = $request->input('doc_path')."/hoc/generated/HOC_".$projectDetails[0]['project_id']."_".$projectDetails[0]['project_name'].".pdf";
+            if(!File::isDirectory($request->input('doc_path')."/hoc/generated")){
+                File::makeDirectory($request->input('doc_path')."/hoc/generated", 0777, true, true);
+            }
+            $fileMove = file_put_contents($destination_path, $pdf->output());
+            if($fileMove==false)
+            {
+                return response()->json(['response'=>"Cannot generate HOC document"], 410);
+            }
+            $generated_path = $request->input('doc_path')."/hoc/generated/HOC_".$projectDetails[0]['project_id']."_".$projectDetails[0]['project_name'].".pdf";
+            $hocEntrycount = Handovercertificate::where('project_id',$request->input('project_id'))->where('isDeleted',0)->count();
+            if($hocEntrycount==0)
+            {
+                $hoc = new Handovercertificate();
+                $hoc->project_id = $request->input('project_id');
+                $hoc->doc_type = 'Handover Certificate';
+                $hoc->created_at = $created_at;
+                $hoc->updated_at = $updated_at;
+                $hoc_entry = $hoc->save();
+            }
+            Handovercertificate::where('project_id',$request->input('project_id'))->where('isDeleted',0)->update(
+                array(
+                    "isGenerated"=>1,
+                    "updated_at"=>$updated_at,
+                    "generated_path"=>$generated_path
+                )
+            );
+            return response()->json(['generated_path'=>$generated_path], 200);
         }
         catch (\Exception $e) {
              return $e->getMessage();
@@ -49,13 +88,14 @@ class PDFController extends Controller
     public function generateFCC(Request $request)
     {
         $validator = Validator::make($request->all(), [  
-            'project_id' => 'required'
+            'project_id' => 'required',
+            'doc_path'=>'required'
         ]);
 
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
         }
-
+        $updated_at = date('Y-m-d H:i:s');
         $projectDetails = $this->getProjectDetails($request->input('project_id'));
         $inspectionData = $this->getInspectiondata($request->input('project_id'));
         if(count($inspectionData['inspection_items'])==0 || $inspectionData['inspection_data']=='')
@@ -77,8 +117,24 @@ class PDFController extends Controller
         try
         {
             $pdf = PDF::loadView('fccPDF', $data);
-    
-            return  $pdf->download('fcc.pdf');
+            $destination_path = $request->input('doc_path')."/generated/FCC_".$projectDetails[0]['project_id']."_".$projectDetails[0]['project_name'].".pdf";
+            if(!File::isDirectory($request->input('doc_path')."/generated")){
+                File::makeDirectory($request->input('doc_path')."/generated", 0777, true, true);
+            }
+            $fileMove = file_put_contents($destination_path, $pdf->output());
+            if($fileMove==false)
+            {
+                return response()->json(['response'=>"Cannot generate FCC document"], 410);
+            }
+            $generated_path = $request->input('doc_path')."/generated/FCC_".$projectDetails[0]['project_id']."_".$projectDetails[0]['project_name'].".pdf";
+            FitoutCompletionCertificates::where('project_id',$request->input('project_id'))->where('isDeleted',0)->update(
+                array(
+                    "isGenerated"=>1,
+                    "updated_at"=>$updated_at,
+                    "generated_path"=>$generated_path
+                )
+            );
+            return response()->json(['generated_path'=>$generated_path], 200); 
         }
         catch (\Exception $e) {
              return $e->getMessage();
@@ -96,18 +152,34 @@ class PDFController extends Controller
         }
 
         $projectDetails = $this->getProjectDetails($request->input('project_id'));
-
+        $memberDetails = $this->getProjectMembers($request->input('project_id'));
+        $updated_at = date('Y-m-d H:i:s');
         $data = [
             'unit_name' => $projectDetails[0]['unit_name'],
+            'property_name' => $projectDetails[0]['property_name'],
             'investor_brand' => $projectDetails[0]['investor_brand'],
-            "investor_name" => $projectDetails[0]['tenant_name']." ".$projectDetails[0]['tenant_last_name']
+            "pre_date" => date('d-m-Y'),
+            "rdd_manager" => $memberDetails[0]["mem_name"]." ".($memberDetails[0]["mem_last_name"]!=''?$memberDetails[0]["mem_last_name"]:""),
         ];
-
         try
         {
             $pdf = PDF::loadView('fdrPDF', $data);
-    
-            return $pdf->download('testing.pdf');
+            $destination_path = $request->input('doc_path')."/generated/FDR_".$projectDetails[0]['project_id']."_".$projectDetails[0]['project_name'].".pdf";
+            if(!File::isDirectory($request->input('doc_path')."/generated")){
+                File::makeDirectory($request->input('doc_path')."/generated", 0777, true, true);
+            }
+            $fileMove = file_put_contents($destination_path, $pdf->output());
+            if($fileMove==false)
+            {
+                return response()->json(['response'=>"Cannot generate FDR document"], 410);
+            }
+            $generated_path = $request->input('doc_path')."/generated/FDR_".$projectDetails[0]['project_id']."_".$projectDetails[0]['project_name'].".pdf";
+            FitoutDepositrefund::where('project_id',$request->input('project_id'))->where('isDeleted',0)->update(array(
+                "isdrfGenerated" => 1,
+                "generated_path"=>$generated_path,
+                "updated_at" => $updated_at
+            ));
+            return response()->json(['generated_path'=>$generated_path], 200);    
         }
         catch (\Exception $e) {
              return $e->getMessage();
@@ -146,15 +218,15 @@ class PDFController extends Controller
             "actual_date" => $actual_date,
             "updated_at" => $updated_at
         ));
-        $data = [
-            'unit_name' => $projectDetails[0]['unit_name'],
-            'investor_brand' => $projectDetails[0]['investor_brand'],
-            "investor_name" => $projectDetails[0]['tenant_name']." ".$projectDetails[0]['tenant_last_name'],
-            "inspection_data" => $inspectionData['inspection_items'],
-            "company_name" => $projectDetails[0]['company_name'],
-            "rdd_manager" => $projectDetails[0]['mem_name']." ".($projectDetails[0]['mem_last_name']!=null?$projectDetails[0]['mem_last_name']:""),
-            "inspection_date" => date('d-m-Y',strtotime($inspectionData['inspection_data']['requested_time']))
-        ];
+        // $data = [
+        //     'unit_name' => $projectDetails[0]['unit_name'],
+        //     'investor_brand' => $projectDetails[0]['investor_brand'],
+        //     "investor_name" => $projectDetails[0]['tenant_name']." ".$projectDetails[0]['tenant_last_name'],
+        //     "inspection_data" => $inspectionData['inspection_items'],
+        //     "company_name" => $projectDetails[0]['company_name'],
+        //     "rdd_manager" => $projectDetails[0]['mem_name']." ".($projectDetails[0]['mem_last_name']!=null?$projectDetails[0]['mem_last_name']:""),
+        //     "inspection_date" => date('d-m-Y',strtotime($inspectionData['inspection_data']['requested_time']))
+        // ];
         
         $emailData = [
             "investor" => $memberDetails[0]["investor"],
@@ -168,36 +240,44 @@ class PDFController extends Controller
         ];
         try
         {
-            $pdf = PDF::loadView('fccPDF', $data);
-            $pre_date = date('d-m-Y H:i:s');
-            $destination_path = $request->input('fcc_doc_path')."/sent/FCC_".$pre_date.".pdf";
-            if(!File::isDirectory($request->input('fcc_doc_path')."/sent")){
-                File::makeDirectory($request->input('fcc_doc_path')."/sent", 0777, true, true);
-            }
-            $fileMove = file_put_contents($destination_path, $pdf->output());
-            if($fileMove==false)
+            // $pdf = PDF::loadView('fccPDF', $data);
+            // $pre_date = date('d-m-Y H:i:s');
+            // $destination_path = $request->input('fcc_doc_path')."/sent/FCC_".$pre_date.".pdf";
+            // if(!File::isDirectory($request->input('fcc_doc_path')."/sent")){
+            //     File::makeDirectory($request->input('fcc_doc_path')."/sent", 0777, true, true);
+            // }
+            // $fileMove = file_put_contents($destination_path, $pdf->output());
+            // if($fileMove==false)
+            // {
+            //     return response()->json(['response'=>"Cannot generate FCC document"], 410);
+            // }
+            $fcc = FitoutCompletionCertificates::where('project_id',$request->input('project_id'))->where('isDeleted',0)->first();
+            if($fcc==''|| $fcc['generated_path']==null)
             {
-                return response()->json(['response'=>"Cannot generate FCC document"], 410);
-            }
-            $files = [
-                $request->input('fcc_doc_path')."/sent/FCC_".$pre_date.".pdf"            
-            ];
-            Mail::send('emails.sendFcc', $emailData, function($message)use($emailData, $files) {
-                $message->to($emailData["investor"])
-                        ->cc($emailData["rdd_manager"])
-                        ->subject($emailData["unit_name"]."-".$emailData["property_name"]."-FCC & Final inspection report");
-     
-                forEach ($files as $file){
-                    $message->attach($file,['as'=>'FCC_'.$emailData['project_name'].".pdf",'mime'=> "application/pdf"]);
-                }      
-            });
-            if(Mail::failures())
-            {
-                return response()->json(['response'=>"FCC Mail Not Sent"], 410);
+                return response()->json(['response'=>"FCC document not yet generated"], 410);
             }
             else
             {
-                return response()->json(['response'=>"FCC Mail Sent"], 200);
+                $files = [
+                    $fcc['generated_path']
+                ];
+                Mail::send('emails.sendFcc', $emailData, function($message)use($emailData, $files) {
+                    $message->to($emailData["investor"])
+                    ->cc($emailData["rdd_manager"])
+                     ->subject($emailData["unit_name"]."-".$emailData["property_name"]."-FCC & Final inspection report");
+        
+                    forEach ($files as $file){
+                        $message->attach($file,['as'=>'FCC_'.$emailData['project_name'].".pdf",'mime'=> "application/pdf"]);
+                    }      
+                });
+                if(Mail::failures())
+                {
+                    return response()->json(['response'=>"FCC Mail Not Sent"], 410);
+                }
+                else
+                {
+                    return response()->json(['response'=>"FCC Mail Sent"], 200);
+                }
             }
         }
         catch (\Exception $e) {
@@ -230,16 +310,20 @@ class PDFController extends Controller
         {
             return response()->json(['response'=>"No Inspections data for this Project"], 410);
         }
-
-        $data = [
-            'unit_name' => $projectDetails[0]['unit_name'],
-            'investor_brand' => $projectDetails[0]['investor_brand'],
-            "investor_name" => $projectDetails[0]['tenant_name']." ".$projectDetails[0]['tenant_last_name'],
-            "inspection_data" => $inspectionData['inspection_items'],
-            "company_name" => $projectDetails[0]['company_name'],
-            "rdd_manager" => $projectDetails[0]['mem_name']." ".($projectDetails[0]['mem_last_name']!=null?$projectDetails[0]['mem_last_name']:""),
-            "inspection_date" => date('d-m-Y',strtotime($inspectionData['inspection_data']['requested_time']))
-        ];
+        $hoc = Handovercertificate::where('project_id',$request->input('project_id'))->where('isDeleted',0)->first();
+        if($hoc==''|| $hoc['generated_path']==null)
+        {
+            return response()->json(['response'=>"HOC document not yet generated"], 410);
+        }
+        // $data = [
+        //     'unit_name' => $projectDetails[0]['unit_name'],
+        //     'investor_brand' => $projectDetails[0]['investor_brand'],
+        //     "investor_name" => $projectDetails[0]['tenant_name']." ".$projectDetails[0]['tenant_last_name'],
+        //     "inspection_data" => $inspectionData['inspection_items'],
+        //     "company_name" => $projectDetails[0]['company_name'],
+        //     "rdd_manager" => $projectDetails[0]['mem_name']." ".($projectDetails[0]['mem_last_name']!=null?$projectDetails[0]['mem_last_name']:""),
+        //     "inspection_date" => date('d-m-Y',strtotime($inspectionData['inspection_data']['requested_time']))
+        // ];
         
         $emailData = [
             "investor" => $memberDetails[0]["investor"],
@@ -253,19 +337,19 @@ class PDFController extends Controller
         ];
         try
         {
-            $pdf = PDF::loadView('hocPDF', $data);
-            $pre_date = date('d-m-Y H:i:s');
-            $destination_path = $request->input('hoc_doc_path')."hoc/sent/HOC_".$pre_date.".pdf";
-            if(!File::isDirectory($request->input('hoc_doc_path')."hoc/sent")){
-                File::makeDirectory($request->input('hoc_doc_path')."hoc/sent", 0777, true, true);
-            }
-            $fileMove = file_put_contents($destination_path, $pdf->output());
-            if($fileMove==false)
-            {
-                return response()->json(['response'=>"Cannot generate HOC document"], 410);
-            }
+            // $pdf = PDF::loadView('hocPDF', $data);
+            // $pre_date = date('d-m-Y H:i:s');
+            // $destination_path = $request->input('hoc_doc_path')."hoc/sent/HOC_".$pre_date.".pdf";
+            // if(!File::isDirectory($request->input('hoc_doc_path')."hoc/sent")){
+            //     File::makeDirectory($request->input('hoc_doc_path')."hoc/sent", 0777, true, true);
+            // }
+            // $fileMove = file_put_contents($destination_path, $pdf->output());
+            // if($fileMove==false)
+            // {
+            //     return response()->json(['response'=>"Cannot generate HOC document"], 410);
+            // }
             $files = [
-                $request->input('hoc_doc_path')."hoc/sent/HOC_".$pre_date.".pdf"            
+                $hoc['generated_path']            
             ];
             Mail::send('emails.sendHoc', $emailData, function($message)use($emailData, $files) {
                 $message->to($emailData["investor"])
@@ -316,12 +400,12 @@ class PDFController extends Controller
         {
             $finance_email[] = $finance_details[$i]['email'];
         }
-        $data = [
-            'unit_name' => $projectDetails[0]['unit_name'],
-            'investor_brand' => $projectDetails[0]['investor_brand'],
-            "investor_name" => $projectDetails[0]['tenant_name']." ".$projectDetails[0]['tenant_last_name'],
-            "property_name"=> $projectDetails[0]['property_name']
-        ];
+        // $data = [
+        //     'unit_name' => $projectDetails[0]['unit_name'],
+        //     'investor_brand' => $projectDetails[0]['investor_brand'],
+        //     "investor_name" => $projectDetails[0]['tenant_name']." ".$projectDetails[0]['tenant_last_name'],
+        //     "property_name"=> $projectDetails[0]['property_name']
+        // ];
 
         $emailData = [
             "investor" => $memberDetails[0]["investor"],
@@ -333,21 +417,26 @@ class PDFController extends Controller
             "finance_email" => $finance_email
         ];
 
+        $fdr = FitoutDepositrefund::where('project_id',$request->input('project_id'))->where('isDeleted',0)->first();
+        if($fdr==''|| $fdr['generated_path']==null)
+        {
+            return response()->json(['response'=>"FDR document not yet generated"], 410);
+        }
         try
         {
-            $pdf = PDF::loadView('fdrPDF', $data);
-            $pre_date = date('d-m-Y H:i:s');
-            $destination_path = $request->input('drf_doc_path')."/sent/FDR_".$pre_date.".pdf";
-            if(!File::isDirectory($request->input('drf_doc_path')."/sent")){
-                File::makeDirectory($request->input('drf_doc_path')."/sent", 0777, true, true);
-            }
-            $fileMove = file_put_contents($destination_path, $pdf->output());
-            if($fileMove==false)
-            {
-                return response()->json(['response'=>"Cannot generate FDR document"], 410);
-            }
+            // $pdf = PDF::loadView('fdrPDF', $data);
+            // $pre_date = date('d-m-Y H:i:s');
+            // $destination_path = $request->input('drf_doc_path')."/sent/FDR_".$pre_date.".pdf";
+            // if(!File::isDirectory($request->input('drf_doc_path')."/sent")){
+            //     File::makeDirectory($request->input('drf_doc_path')."/sent", 0777, true, true);
+            // }
+            // $fileMove = file_put_contents($destination_path, $pdf->output());
+            // if($fileMove==false)
+            // {
+            //     return response()->json(['response'=>"Cannot generate FDR document"], 410);
+            // }
             $files = [
-                $request->input('drf_doc_path')."/sent/FDR_".$pre_date.".pdf"            
+                $fdr['generated_path']            
             ];
             if(count($finance_email)==0)
             {
@@ -425,11 +514,14 @@ class PDFController extends Controller
             "inspection_data" => $inspectionData['inspection_items'],
             "company_name" => $projectDetails[0]['company_name'],
             "rdd_manager" => $projectDetails[0]['mem_name']." ".($projectDetails[0]['mem_last_name']!=null?$projectDetails[0]['mem_last_name']:""),
-            "inspection_date" => date('d-m-Y',strtotime($inspectionData['inspection_data']['requested_time']))
+            "inspection_date" => date('d-m-Y',strtotime($inspectionData['inspection_data']['requested_time'])),
+            "pre_date" => date('d-m-Y'),
+            "rdd_manager_name" => $memberDetails[0]["mem_name"]." ".($memberDetails[0]["mem_last_name"]!=''?$memberDetails[0]["mem_last_name"]:""),
+            'property_name' => $projectDetails[0]['property_name']
         ];
         try
         {
-            $pdf = PDF::loadView('hocPDF', $data);
+            $pdf = PDF::loadView('fdrPDF', $data);
             return $pdf->stream();
            
         }

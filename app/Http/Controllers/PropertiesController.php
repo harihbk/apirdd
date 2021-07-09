@@ -9,6 +9,7 @@ use App\Models\Floor;
 use App\Models\Financeteam;
 use App\Models\Operationsmntteam;
 use App\Models\Maintainenceteam;
+use App\Models\Marketingteam;
 use App\Models\Members;
 use Response;
 use Validator;
@@ -196,11 +197,29 @@ class PropertiesController extends Controller
                         "created_by" => $request->input('user_id')
                     ];
                 }
-
                 Maintainenceteam::where('org_id',$request->input('org_id'))->where('property_id',$request->input('property_id'))->update(array("isDeleted"=>1,"updated_at" => $updated_at));
                 if(count($mt_team_data)>0)
                 {
                     Maintainenceteam::insert($mt_team_data);
+                }
+                $marketing_team = $request->input('marketing_team');
+                $marketing_team_data = array();
+                 //marketing team
+                for($l=0;$l<count($marketing_team);$l++)
+                {
+                    $marketing_team_data[] = [
+                        "org_id" => $request->input('org_id'),
+                        "property_id" => $request->input('property_id'),
+                        "email" => $marketing_team[$l],
+                        "created_at" => $created_at,
+                        "updated_at" => $updated_at,
+                        "created_by" => $request->input('user_id')
+                    ];
+                }
+                Marketingteam::where('org_id',$request->input('org_id'))->where('property_id',$request->input('property_id'))->update(array("isDeleted"=>1,"updated_at" => $updated_at));
+                if(count($marketing_team_data)>0)
+                {
+                    Marketingteam::insert($marketing_team_data);
                 }
 
                 $data = array ("message" => 'Members updated successfully');
@@ -212,13 +231,14 @@ class PropertiesController extends Controller
         $finance_team = Financeteam::where('org_id',$orgid)->where('property_id',$propid)->where('isdeleted',0)->select('email','property_id')->get();
         $operations_team = Operationsmntteam::where('org_id',$orgid)->where('property_id',$propid)->where('isdeleted',0)->select('email','property_id')->get();
         $maintainence_team = Maintainenceteam::where('org_id',$orgid)->where('property_id',$propid)->where('isdeleted',0)->select('email','property_id')->get();
+        $marketing_team = Marketingteam::where('org_id',$orgid)->where('property_id',$propid)->where('isdeleted',0)->select('email','property_id')->get();
 
-        return response()->json(['finance_team'=>$finance_team,'operations_team'=>$operations_team,'maintainence_team'=>$maintainence_team], 200);
+        return response()->json(['finance_team'=>$finance_team,'operations_team'=>$operations_team,'maintainence_team'=>$maintainence_team,'marketing_team'=>$marketing_team], 200);
     }
     function retrievememberProperties($memid)
     {
         $memberdetails = Members::where('mem_id',$memid)->first();
-        $properties = Properties::whereIn('property_id',explode(',',json_decode($memberdetails['properties'], true)))->select('property_id','property_name')->get();
+        $properties = Properties::whereIn('property_id',json_decode($memberdetails['properties']))->select('property_id','property_name')->get();
         return $properties;
     }
 }

@@ -124,7 +124,10 @@
         </script>
         <header>
                 <div style="clear:both; position:relative;">
-                    <div style="position:absolute; right:-40pt; width:192pt;">
+                    <div style="position:absolute; left:0pt;top:15pt; width:192pt;">
+                        <h2>{{$property_name}}</h2>
+                    </div>
+                    <div style="position:absolute; right:-60pt; width:192pt;">
                         <img class="logo-img" src = "images/tamdeen-logo.png" alt="">
                     </div>
                 </div>
@@ -139,16 +142,16 @@
             <table class="table-borderless" style="width:100%; padding:15px;">
                 <tbody>
                     <tr>
-                        <td style="width:50%; padding:5px;" class="td-width">Date: <span class="header-value"> Mercedes Benz002</span></td>
-                        <td style="width:50%; padding:5px;" class="td-width">Unit No: <span class="header-value"> Mercedes Benz002</span></td>
+                        <td style="width:50%; padding:5px;" class="td-width">Date: <span class="header-value">{{$pre_date}}</span></td>
+                        <td style="width:50%; padding:5px;" class="td-width">Unit No: <span class="header-value">{{$unit_name}}</span></td>
                     </tr>
                     <tr>
                     <td style="width:50%; padding:5px;" class="td-width">Brand Name : <span class="header-value"> Mercedes Benz002</span></td>
-                    <td style="width:50%; padding:5px;" class="td-width">Location/Level : <span class="header-value"> Mercedes Benz002</span></td>
+                    <td style="width:50%; padding:5px;" class="td-width">Location/Level : <span class="header-value">{{$investor_brand}}</span></td>
                     </tr>
                     <tr>
-                    <td style="width:50%; padding:5px;" class="td-width">Company Name : <span class="header-value"> Mercedes Benz002</span></td>
-                    <td style="width:50%; padding:5px;" class="td-width">Mall : <span class="header-value"> 360 mall</span></td>
+                    <td style="width:50%; padding:5px;" class="td-width">Company Name : <span class="header-value"> </span></td>
+                    <td style="width:50%; padding:5px;" class="td-width">Mall : <span class="header-value">{{$property_name}}</span></td>
                     </tr>
                 </tbody>
                 </table>
@@ -159,15 +162,15 @@
                         <th colspan="2" style="width:100%; height:20px; text-align:left" class="fs-11"><span class="header-value">Fitout Department</span></th>
                     </tr>
                     <tr>
-                        <td style="width:85%; height:60px; text-align:left" class="fs-11"><span class="header-value"></span></td>
-                        <td style="width:15%; height:60px; text-align:left" class="fs-11"><span class="header-value"></span></td>
+                        <td style="width:85%; height:60px; text-align:left; vertical-align: top;" class="fs-11"><span class="header-value"></span>As agreed, kindly deduct te IVR amount from the fit-out deposit</td>
+                        <td style="width:15%; height:60px; text-align:center; vertical-align: top;" class="fs-11"><span class="header-value">{{$rdd_manager}}</span></td>
                     </tr>
                 </table>
                 </section>
                 <section>
                     <table class="centre-table  pt-10" style="width:100%; padding:15px;">
                     <tr>
-                        <th colspan="2" style="width:100%; height:20px; text-align:left" class="fs-11"><span class="header-value">Centre Management</span></th>
+                        <th colspan="2" style="width:100%; height:20px; text-align:left" class="fs-11"><span class="header-value">Property Management</span></th>
                     </tr>
                     <tr>
                         <td style="width:85%; height:60px; text-align:left" class="fs-11"><span class="header-value"></span></td>
@@ -190,7 +193,7 @@
                     <table class="deposit-table  pt-10" style="width:50%; padding:15px;">
                         <tr>
                             <td style="width:30%; height:20px; text-align:left" class="fs-11"><span class="header-value">Fitout Deposit Received</span></td>
-                            <td style="width:20%; height:20px; text-align:right" class="fs-11"><span class="header-value">KWD 5,000,000</span></td>
+                            <td style="width:20%; height:20px; text-align:right" class="fs-11"><span class="header-value"></span></td>
                         </tr>
                         <tr>
                             <td style="width:30%; height:20px; text-align:left" class="fs-11"><span class="header-value">Deductions</span></td>
@@ -210,7 +213,7 @@
                         </tr>
                         <tr class="deposit-last">
                             <td style="width:30%; height:20px; text-align:left" class="fs-11"><span class="header-value">Net Refund</span></td>
-                            <td style="width:20%; height:20px; text-align:right" class="fs-11"><span class="header-value">KWD 5,000,000</span></td>
+                            <td style="width:20%; height:20px; text-align:right" class="fs-11"><span class="header-value"></span></td>
                         </tr>
                     </table>
                 </section>

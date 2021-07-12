@@ -238,7 +238,11 @@ class PropertiesController extends Controller
     function retrievememberProperties($memid)
     {
         $memberdetails = Members::where('mem_id',$memid)->first();
-        $properties = Properties::whereIn('property_id',json_decode($memberdetails['properties']))->select('property_id','property_name')->get();
+        $properties=[];
+        if($memberdetails['properties']!=null)
+        {
+            $properties = Properties::whereIn('property_id',json_decode($memberdetails['properties']))->select('property_id','property_name')->get();
+        }
         return $properties;
     }
 }

@@ -32,20 +32,14 @@ class PDFController extends Controller
         $created_at = date('Y-m-d H:i:s');
         $updated_at = date('Y-m-d H:i:s');
         $projectDetails = $this->getProjectDetails($request->input('project_id'));
-        $inspectionData = $this->getInspectiondata($request->input('project_id'),2);
-        if(count($inspectionData['inspection_items'])==0 || $inspectionData['inspection_data']=='')
-        {
-            return response()->json(['response'=>"No Inspections data for this Project"], 410);
-        }
         $data = array();
         $data = [
             'unit_name' => $projectDetails[0]['unit_name'],
+            'property_name' => $projectDetails[0]['property_name'],
             'investor_brand' => $projectDetails[0]['investor_brand'],
             "investor_name" => $projectDetails[0]['tenant_name']." ".$projectDetails[0]['tenant_last_name'],
-            "inspection_data" => $inspectionData['inspection_items'],
             "company_name" => $projectDetails[0]['company_name'],
-            "rdd_manager" => $projectDetails[0]['mem_name']." ".($projectDetails[0]['mem_last_name']!=null?$projectDetails[0]['mem_last_name']:""),
-            "inspection_date" => date('d-m-Y',strtotime($inspectionData['inspection_data']['requested_time']))
+            "rdd_manager" => $projectDetails[0]['mem_name']." ".($projectDetails[0]['mem_last_name']!=null?$projectDetails[0]['mem_last_name']:"")
         ];
        
 
@@ -105,6 +99,7 @@ class PDFController extends Controller
         $data = array();
         $data = [
             'unit_name' => $projectDetails[0]['unit_name'],
+            'property_name' => $projectDetails[0]['property_name'],
             'investor_brand' => $projectDetails[0]['investor_brand'],
             "investor_name" => $projectDetails[0]['tenant_name']." ".$projectDetails[0]['tenant_last_name'],
             "inspection_data" => $inspectionData['inspection_items'],
@@ -298,7 +293,6 @@ class PDFController extends Controller
 
         $memberDetails = $this->getProjectMembers($request->input('project_id'));
         $projectDetails = $this->getProjectDetails($request->input('project_id'));
-        $inspectionData = $this->getInspectiondata($request->input('project_id'),2);
         $Mep = Projectcontact::where('project_id',$request->input('project_id'))->where('isDeleted',0)->where('member_designation',5)->get();
         $ccMembers = array();
         for($a=0;$a<count($Mep);$a++)
@@ -306,10 +300,6 @@ class PDFController extends Controller
             $ccMembers[] = $Mep[$a]['email'];
         }
         $ccMembers[] = $memberDetails[0]["rdd_manager"];
-        if(count($inspectionData['inspection_items'])==0 || $inspectionData['inspection_data']=='')
-        {
-            return response()->json(['response'=>"No Inspections data for this Project"], 410);
-        }
         $hoc = Handovercertificate::where('project_id',$request->input('project_id'))->where('isDeleted',0)->first();
         if($hoc==''|| $hoc['generated_path']==null)
         {
@@ -333,7 +323,6 @@ class PDFController extends Controller
             'unit_name' => $projectDetails[0]['unit_name'],
             'property_name' => $projectDetails[0]['property_name'],
             'tenant_name'=> $projectDetails[0]['tenant_name']."-".($projectDetails[0]['tenant_last_name']!=null?$projectDetails[0]['tenant_last_name']:""),
-            "inspection_date" => date('d-m-Y',strtotime($inspectionData['inspection_data']['requested_time']))
         ];
         try
         {
@@ -502,7 +491,7 @@ class PDFController extends Controller
     {
         $memberDetails = $this->getProjectMembers($project_id);
         $projectDetails = $this->getProjectDetails($project_id);
-        $inspectionData = $this->getInspectiondata($project_id,2);
+        $inspectionData = $this->getInspectiondata($project_id);
         if(count($inspectionData['inspection_items'])==0)
         {
             return response()->json(['response'=>"No Inspections data for this Project"], 410);
@@ -521,7 +510,7 @@ class PDFController extends Controller
         ];
         try
         {
-            $pdf = PDF::loadView('fdrPDF', $data);
+            $pdf = PDF::loadView('hocPDF', $data);
             return $pdf->stream();
            
         }

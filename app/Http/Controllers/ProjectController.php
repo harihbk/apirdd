@@ -343,6 +343,9 @@ class ProjectController extends Controller
 
         for($i=0;$i<count($contact);$i++) 
         {
+            if(isset($contact[$i]['member_id']))
+            {
+
             $contactData[]=[
                 'project_id' => $project_id,
                 'member_id' => $contact[$i]['member_id'],
@@ -364,6 +367,7 @@ class ProjectController extends Controller
                 "created_at" => $created_at,
                 "updated_at" => $updated_at
             ];
+          }
         }
         
         //project document mapping from template
@@ -390,16 +394,19 @@ class ProjectController extends Controller
         $task_members = $request->get('task_members');
         for($n=0;$n<count($contact);$n++) 
         {
-            $membersData[] = [
-                "org_id" => $projectdata[0]['org_id'],
-                "project_id" => $project_id,
-                "designation" => $contact[$n]['member_designation'],
-                "members" => $contact[$n]['member_id'],
-                "members_designation" => $contact[$n]['designation_user'],
-                "created_by" => $projectdata[0]['user_id'],
-                "created_at" => $created_at,
-                "updated_at" => $updated_at                
-            ];
+            if(isset($contact[$n]['member_id']))
+            {
+                $membersData[] = [
+                    "org_id" => $projectdata[0]['org_id'],
+                    "project_id" => $project_id,
+                    "designation" => $contact[$n]['member_designation'],
+                    "members" => $contact[$n]['member_id'],
+                    "members_designation" => $contact[$n]['designation_user'],
+                    "created_by" => $projectdata[0]['user_id'],
+                    "created_at" => $created_at,
+                    "updated_at" => $updated_at                
+                ];
+           }
         }
 
         $validator4 = Validator::make($request->all(), [ 
@@ -2275,7 +2282,35 @@ class ProjectController extends Controller
          });
          $docs_details = $docs_details->groupBy('tbl_projecttasks_docs.doc_id')->get()->groupBy('doc_header');
 
-        if($phase_id!=2)
+         if($phase_id==4)
+         {
+             $completion_path_details = Project::join('tbl_docpath_config_master','tbl_docpath_config_master.org_id','=','tbl_projects.org_id')->where('project_id',$projectid)->select('tbl_projects.project_id','tbl_projects.project_name','tbl_docpath_config_master.doc_path','tbl_docpath_config_master.image_path')->get();
+             $completion_phase = 'Completion phase';
+
+             $doc_path = public_path()."".$completion_path_details[0]['doc_path']."".$completion_path_details[0]['project_id']."_".$completion_path_details[0]['project_name']."/".$completion_phase;
+             $img_path = public_path()."".$completion_path_details[0]['image_path']."".$completion_path_details[0]['project_id']."_".$completion_path_details[0]['project_name']."/".$completion_phase;
+
+             $fcc_doc_path =  public_path()."".$completion_path_details[0]['doc_path']."".$completion_path_details[0]['project_id']."_".$completion_path_details[0]['project_name']."/".$completion_phase."/fcc";
+             $fcc_img_path =  public_path()."".$completion_path_details[0]['image_path']."".$completion_path_details[0]['project_id']."_".$completion_path_details[0]['project_name']."/".$completion_phase."/fcc";
+             $drf_doc_path =  public_path()."".$completion_path_details[0]['doc_path']."".$completion_path_details[0]['project_id']."_".$completion_path_details[0]['project_name']."/".$completion_phase."/drf";
+             $drf_img_path =  public_path()."".$completion_path_details[0]['image_path']."".$completion_path_details[0]['project_id']."_".$completion_path_details[0]['project_name']."/".$completion_phase."/drf";
+
+
+             if(!File::isDirectory($fcc_doc_path)){
+                 File::makeDirectory($fcc_doc_path, 0777, true, true);
+             }
+             if(!File::isDirectory($fcc_img_path)){
+                 File::makeDirectory($fcc_img_path, 0777, true, true);
+             }
+             if(!File::isDirectory($drf_doc_path)){
+                 File::makeDirectory($drf_doc_path, 0777, true, true);
+             }
+             if(!File::isDirectory($drf_img_path)){
+                 File::makeDirectory($drf_img_path, 0777, true, true);
+             }
+         }
+
+        if($phase_id==1 || $phase_id==3)
         {
             $project_details = Projecttemplate::join('tbl_projects','tbl_projects.project_id','=','tbl_project_template.project_id')->join('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_project_template.phase_id')->select('tbl_project_template.id','tbl_project_template.project_id','tbl_project_template.template_id','tbl_project_template.task_type','activity_desc','meeting_date','meeting_start_time','meeting_end_time','attendees','attendees_designation','approvers','approvers_designation','tbl_project_template.phase_id','mem_responsible','mem_responsible_designation','fre_id','duration','seq_status','seq_no','planned_date','actual_date','tbl_project_template.fif_upload_path','tbl_project_template.fif_upload_path as fif_upload_path_input','task_status',DB::raw("GROUP_CONCAT(DISTINCT a.mem_name) as member_responsible_person"),DB::raw("GROUP_CONCAT(DISTINCT b.mem_name) as approvers_person"),'tbl_phase_master.phase_name','tbl_project_template.org_id','tbl_projects.project_name','tbl_projects.investor_company as company_id')->leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,tbl_project_template.mem_responsible)"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_project_template.approvers)"),">",\DB::raw("'0'"))->where('tbl_project_template.project_id',$projectid)->where('tbl_project_template.phase_id',$phase_id)->where('tbl_project_template.isDeleted',0)->groupBy('tbl_project_template.id')->get();
 
@@ -2293,33 +2328,6 @@ class ProjectController extends Controller
                     File::makeDirectory($workpermit_img_path, 0777, true, true);
                 }
             }
-            if($phase_id==4)
-            {
-                $completion_path_details = Project::join('tbl_docpath_config_master','tbl_docpath_config_master.org_id','=','tbl_projects.org_id')->where('project_id',$projectid)->select('tbl_projects.project_id','tbl_projects.project_name','tbl_docpath_config_master.doc_path','tbl_docpath_config_master.image_path')->get();
-                $completion_phase = 'Completion phase';
-
-                $doc_path = public_path()."".$completion_path_details[0]['doc_path']."".$completion_path_details[0]['project_id']."_".$completion_path_details[0]['project_name']."/".$completion_phase;
-                $img_path = public_path()."".$completion_path_details[0]['image_path']."".$completion_path_details[0]['project_id']."_".$completion_path_details[0]['project_name']."/".$completion_phase;
-
-                $fcc_doc_path =  public_path()."".$completion_path_details[0]['doc_path']."".$completion_path_details[0]['project_id']."_".$completion_path_details[0]['project_name']."/".$completion_phase."/fcc";
-                $fcc_img_path =  public_path()."".$completion_path_details[0]['image_path']."".$completion_path_details[0]['project_id']."_".$completion_path_details[0]['project_name']."/".$completion_phase."/fcc";
-                $drf_doc_path =  public_path()."".$completion_path_details[0]['doc_path']."".$completion_path_details[0]['project_id']."_".$completion_path_details[0]['project_name']."/".$completion_phase."/drf";
-                $drf_img_path =  public_path()."".$completion_path_details[0]['image_path']."".$completion_path_details[0]['project_id']."_".$completion_path_details[0]['project_name']."/".$completion_phase."/drf";
-
-
-                if(!File::isDirectory($fcc_doc_path)){
-                    File::makeDirectory($fcc_doc_path, 0777, true, true);
-                }
-                if(!File::isDirectory($fcc_img_path)){
-                    File::makeDirectory($fcc_img_path, 0777, true, true);
-                }
-                if(!File::isDirectory($drf_doc_path)){
-                    File::makeDirectory($drf_doc_path, 0777, true, true);
-                }
-                if(!File::isDirectory($drf_img_path)){
-                    File::makeDirectory($drf_img_path, 0777, true, true);
-                }
-            }
             if(!File::isDirectory($doc_path)){
                 File::makeDirectory($doc_path, 0777, true, true);
             }
@@ -2327,7 +2335,7 @@ class ProjectController extends Controller
                 File::makeDirectory($img_path, 0777, true, true);
             }
         }
-        else
+        if($phase_id==2)
         {
             $path_details = Projectdocs::leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_projecttasks_docs.project_id')->leftjoin('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_projecttasks_docs.phase_id')->where('tbl_projecttasks_docs.project_id',$projectid)->where('tbl_projecttasks_docs.phase_id',$phase_id)->where('tbl_projecttasks_docs.isDeleted',0)->select('tbl_projects.org_id','tbl_projecttasks_docs.project_id','tbl_projects.project_name','tbl_phase_master.phase_name')->get();
 
@@ -2349,16 +2357,6 @@ class ProjectController extends Controller
 
                 }
             }
-
-            
-            // $doc_path = public_path()."".$paths[0]['doc_path']."".$path_details[0]['project_id']."_".$path_details[0]['project_name']."/".$path_details[0]['phase_name'];
-            // $img_path = public_path()."".$paths[0]['image_path']."".$path_details[0]['project_id']."_".$path_details[0]['project_name']."/".$path_details[0]['phase_name'];
-            // if(!File::isDirectory($doc_path)){
-            //     File::makeDirectory($doc_path, 0777, true, true);
-            // }
-            // if(!File::isDirectory($img_path)){
-            //     File::makeDirectory($img_path, 0777, true, true);
-            // }
 
         }
 

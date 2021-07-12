@@ -19,6 +19,7 @@ use Response;
 use Validator;
 use DB;
 use File;
+use PDF;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\Projectinspection;
 
@@ -358,6 +359,7 @@ class InspectionrequestController extends Controller
         $datas = $request->get('datas');
         $validator = Validator::make($request->all(), [ 
             'datas.*.project_id' => 'required',
+            // 'datas.*.doc_path' => 'required',
             'datas.*.inspection_id' => 'required',
             'datas.*.user_id' => 'required',
             'datas.*.entries.*.id' => 'required',
@@ -367,6 +369,11 @@ class InspectionrequestController extends Controller
         $attachmentData = array();
         if ($validator->fails()) { 
             return response()->json(['error'=>$validator->errors()], 401);            
+        }
+        $ins_data = Projectinspections::where('tbl_project_inspections.project_id',$datas[0]['project_id'])->where('tbl_project_inspections.report_status',2)->where('tbl_project_inspections.isDeleted',0)->where('tbl_project_inspections.inspection_id',$datas[0]['inspection_id'])->first();
+        if($ins_data==null || $ins_data=='')
+        {
+            return response()->json(['response'=>"Kindly Approve before Sending report"], 410);
         }
         //check whether inspection is approved
         $inspectionCount = Projectinspections::where('project_id',$datas[0]['project_id'])->where('inspection_id',$datas[0]['inspection_id'])->where('inspection_status',2)->count();
@@ -406,9 +413,88 @@ class InspectionrequestController extends Controller
                 }
             }
             Projectinspectionattachments::insert($attachmentData);
+
+
             //send mail to rdd manager
             $memberDetails = Project::join('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->select('users.email')->where('project_id',$datas[0]['project_id'])->get();
-            $rddManager = $memberDetails[0]['email'];
+            $ccMembers = array();
+            $inv_members = array();
+            $ccMembers[] =  $memberDetails[0]['email'];
+            $Mep = Projectcontact::where('project_id',$datas[0]['project_id'])->where('isDeleted',0)->where('member_designation',5)->get();
+            for($a=0;$a<count($Mep);$a++)
+            {
+                $ccMembers[] = $Mep[$a]['email'];
+            }
+            $investors = Projectcontact::where('project_id',$datas[0]['project_id'])->where('isDeleted',0)->where('member_designation',13)->get();
+            for($b=0;$b<count($investors);$b++)
+            {
+                $inv_members[] = $investors[$b]['email'];
+            }
+            $projectDetails = $this->getProjectDetails($datas[0]['project_id']);
+            //get inspection data
+            $inspectionData = Projectinspections::join('tbl_project_inspection_items','tbl_project_inspection_items.inspection_id','=','tbl_project_inspections.inspection_id')->join('tbl_inspection_root_categories','tbl_inspection_root_categories.root_id','=','tbl_project_inspection_items.root_id')->where('tbl_project_inspections.project_id',$datas[0]['project_id'])->leftjoin('tbl_checklisttemplate_master','tbl_checklisttemplate_master.id','=','tbl_project_inspections.checklist_id')->where('tbl_project_inspections.report_status',2)->where('tbl_project_inspections.isDeleted',0)->where('tbl_project_inspections.inspection_id',$datas[0]['inspection_id'])->select('tbl_project_inspection_items.checklist_desc','tbl_inspection_root_categories.root_name','tbl_project_inspections.inspection_id','tbl_project_inspection_items.rdd_snags','tbl_project_inspection_items.rdd_actuals','tbl_project_inspection_items.created_at as investor_finished_date','tbl_checklisttemplate_master.template_name')->get()->groupBy('root_name');
+
+            $checklistdata = Checklisttemplate::leftjoin('tbl_project_inspections','tbl_project_inspections.checklist_id','=','tbl_checklisttemplate_master.id')->where('tbl_project_inspections.inspection_id',$datas[0]['inspection_id'])->first();
+           
+
+            $data = array();
+            $data = [
+                'unit_name' => $projectDetails[0]['unit_name'],
+                'investor_brand' => $projectDetails[0]['investor_brand'],
+                "investor_name" => $projectDetails[0]['tenant_name']." ".$projectDetails[0]['tenant_last_name'],
+                "inspection_data" => $inspectionData,
+                "company_name" => $projectDetails[0]['company_name'],
+                "rdd_manager" => $projectDetails[0]['mem_name']." ".($projectDetails[0]['mem_last_name']!=null?$projectDetails[0]['mem_last_name']:""),
+                "inspection_date" => date('d-m-Y',strtotime($ins_data['requested_time'])),
+                "pre_date" => date('d-m-Y'),
+                "rdd_manager_name" => $memberDetails[0]["mem_name"]." ".($memberDetails[0]["mem_last_name"]!=''?$memberDetails[0]["mem_last_name"]:""),
+                'property_name' => $projectDetails[0]['property_name']
+            ];
+
+            $emailData = array();
+            $emailData = [
+                "cc_members" => $ccMembers,
+                "investors" => $inv_members,
+                "unit_name" => $projectDetails[0]['unit_name'],
+                "property_name" => $projectDetails[0]['property_name'],
+                "template_name" => $checklistdata['template_name'],
+                "inspection_date" => date('d-m-Y',strtotime($ins_data['requested_time'])),
+                'investor_brand' => $projectDetails[0]['investor_brand'],
+                "investor_name" => $projectDetails[0]['tenant_name']." ".($projectDetails[0]['tenant_last_name']!=null?$projectDetails[0]['tenant_last_name']:""),
+                "inspection_date" => date('d-m-Y',strtotime($ins_data['requested_time']))
+            ];
+
+            try
+            {
+                $pdf = PDF::loadView('inspection', $data);
+                $pre_date = date('d-m-Y H:i:s');
+                $destination_path = "/home/rdd.octasite.com/public_html/rdd_server/public/uploads/ORG00001/documents/".$datas[0]['project_id']."_".$projectDetails[0]['project_name']."/Fitout phase/inspections/".$datas[0]['inspection_id']."_".$checklistdata['template_name']."/sent/".$datas[0]['inspection_id']."_".$checklistdata['template_name'].".pdf";
+                $path = "/home/rdd.octasite.com/public_html/rdd_server/public/uploads/ORG00001/documents/".$datas[0]['project_id']."_".$projectDetails[0]['project_name']."/Fitout phase/inspections/".$datas[0]['inspection_id']."_".$checklistdata['template_name']."/sent/";
+                if(!File::isDirectory($path)){
+                    File::makeDirectory($path, 0777, true, true);
+                }
+                $fileMove = file_put_contents($destination_path, $pdf->output());
+                if($fileMove==false)
+                {
+                    return response()->json(['response'=>"Cannot Send Inspection Report"], 410);
+                }
+                $files = [
+                    "/home/rdd.octasite.com/public_html/rdd_server/public/uploads/ORG00001/documents/".$datas[0]['project_id']."_".$projectDetails[0]['project_name']."/Fitout phase/inspections/".$datas[0]['inspection_id']."_".$checklistdata['template_name']."/sent/".$datas[0]['inspection_id']."_".$checklistdata['template_name'].".pdf"           
+                ];
+                Mail::send('emails.inspection', $emailData, function($message)use($emailData, $files) {
+                    $message->to($emailData["investors"])
+                            ->cc($emailData["cc_members"])
+                            ->subject($emailData["unit_name"]."-".$emailData["property_name"]."-Inspection Report");
+        
+                    forEach ($files as $file){
+                        $message->attach($file,['as'=>$emailData["unit_name"]."-".$emailData["property_name"].". Inspection Report pdf",'mime'=> "application/pdf"]);
+                    }      
+                });
+                }
+            catch (\Exception $e) {
+                return $e->getMessage();
+            }
+
             return response()->json(['response'=>"Inspection Report data Saved and sent"], 200);
         }
         else
@@ -430,8 +516,11 @@ class InspectionrequestController extends Controller
         //send mail to rdd manager
         $memberDetails = Project::join('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->select('users.email')->where('project_id',$request->input('project_id'))->get();
         $rddManager = $memberDetails[0]['email'];
-        Mail::to($rddManager)->send(new Projectinspection());
-
+        $ins_data = Projectinspections::where('tbl_project_inspections.project_id',$request->input('project_id'))->where('tbl_project_inspections.report_status',2)->where('tbl_project_inspections.isDeleted',0)->where('tbl_project_inspections.inspection_id',$request->input('inspection_id'))->first();
+        if($ins_data==null || $ins_data=='')
+        {
+            return response()->json(['response'=>"Kindly Approve before Generating report"], 410);
+        }
         return response()->json(['response'=>"Inspection Report generated"], 200);
     }
     /* RDD Member - Create Site Inspection Report */
@@ -721,7 +810,87 @@ class InspectionrequestController extends Controller
                 }
             }
             Siteinspectionattachments::insert($attachmentData);
+            //Mail to Investor
+            $projectDetails = $this->getProjectDetails($datas[0]['project_id']);
+            //get inspection data
+            $inspectionData = SiteInspectionReport::join('tbl_site_inspection_items','tbl_site_inspection_items.inspection_id','=','tbl_site_inspection_report.id')->join('tbl_inspection_root_categories','tbl_inspection_root_categories.root_id','=','tbl_site_inspection_items.root_id')->where('tbl_site_inspection_report.project_id',$datas[0]['project_id'])->leftjoin('tbl_checklisttemplate_master','tbl_checklisttemplate_master.id','=','tbl_site_inspection_report.checklist_id')->where('tbl_site_inspection_report.isDeleted',0)->where('tbl_site_inspection_report.id',$datas[0]['inspection_id'])->select('tbl_site_inspection_items.checklist_desc','tbl_inspection_root_categories.root_name','tbl_site_inspection_report.id as inspection_id','tbl_site_inspection_items.remarks','tbl_site_inspection_items.rdd_actuals','tbl_checklisttemplate_master.template_name')->get()->groupBy('root_name');
+
+            $checklistdata = Checklisttemplate::leftjoin('tbl_site_inspection_report','tbl_site_inspection_report.checklist_id','=','tbl_checklisttemplate_master.id')->where('tbl_site_inspection_report.id',$datas[0]['inspection_id'])->first();
+
+            $ccMembers = array();
+            $inv_members = array();
+            $investors = Projectcontact::where('project_id',$datas[0]['project_id'])->where('isDeleted',0)->where('member_designation',13)->get();
+            for($b=0;$b<count($investors);$b++)
+            {
+                $inv_members[] = $investors[$b]['email'];
+            }
+            $memberDetails = Project::join('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->select('users.email')->where('project_id',$datas[0]['project_id'])->get();
+            $ccMembers[] =  $memberDetails[0]['email'];
+
+            $ins_data = SiteInspectionReport::where('tbl_site_inspection_report.project_id',$datas[0]['project_id'])->where('tbl_site_inspection_report.isDeleted',0)->where('tbl_site_inspection_report.id',$datas[0]['inspection_id'])->first();
+
+            $data = array();
+            $data = [
+                'unit_name' => $projectDetails[0]['unit_name'],
+                'investor_brand' => $projectDetails[0]['investor_brand'],
+                "investor_name" => $projectDetails[0]['tenant_name']." ".$projectDetails[0]['tenant_last_name'],
+                "inspection_data" => $inspectionData,
+                "company_name" => $projectDetails[0]['company_name'],
+                "rdd_manager" => $projectDetails[0]['mem_name']." ".($projectDetails[0]['mem_last_name']!=null?$projectDetails[0]['mem_last_name']:""),
+                "inspection_date" => date('d-m-Y',strtotime($ins_data['inspection_date'])),
+                "pre_date" => date('d-m-Y'),
+                "rdd_manager_name" => $memberDetails[0]["mem_name"]." ".($memberDetails[0]["mem_last_name"]!=''?$memberDetails[0]["mem_last_name"]:""),
+                'property_name' => $projectDetails[0]['property_name']
+            ];
+
+            $emailData = array();
+            $emailData = [
+                "cc_members" => $ccMembers,
+                "investors" => $inv_members,
+                "unit_name" => $projectDetails[0]['unit_name'],
+                "property_name" => $projectDetails[0]['property_name'],
+                "template_name" => $projectDetails[0]['template_name'],
+                "inspection_date" => date('d-m-Y',strtotime($ins_data['inspection_date'])),
+                'investor_brand' => $projectDetails[0]['investor_brand'],
+                "investor_name" => $projectDetails[0]['tenant_name']." ".($projectDetails[0]['tenant_last_name']!=null?$projectDetails[0]['tenant_last_name']:"")
+            ];
+
+            try
+            {
+                $pdf = PDF::loadView('siteinspection', $data);
+                $pre_date = date('d-m-Y H:i:s');
+                $destination_path = "/home/rdd.octasite.com/public_html/rdd_server/public/uploads/ORG00001/documents/".$datas[0]['project_id']."_".$projectDetails[0]['project_name']."/Fitout phase/site_inspections/".$datas[0]['inspection_id']."_".$checklistdata['template_name']."/sent/".$datas[0]['inspection_id']."_".$checklistdata['template_name'].".pdf";
+                $path = "/home/rdd.octasite.com/public_html/rdd_server/public/uploads/ORG00001/documents/".$datas[0]['project_id']."_".$projectDetails[0]['project_name']."/Fitout phase/site_inspections/".$datas[0]['inspection_id']."_".$checklistdata['template_name']."/sent/";
+                if(!File::isDirectory($path)){
+                    File::makeDirectory($path, 0777, true, true);
+                }
+                $fileMove = file_put_contents($destination_path, $pdf->output());
+                if($fileMove==false)
+                {
+                    return response()->json(['response'=>"Cannot Send Site Inspection Report"], 410);
+                }
+                $files = [
+                    "/home/rdd.octasite.com/public_html/rdd_server/public/uploads/ORG00001/documents/".$datas[0]['project_id']."_".$projectDetails[0]['project_name']."/Fitout phase/site_inspections/".$datas[0]['inspection_id']."_".$checklistdata['template_name']."/sent/".$datas[0]['inspection_id']."_".$checklistdata['template_name'].".pdf"           
+                ];
+                Mail::send('emails.inspection', $emailData, function($message)use($emailData, $files) {
+                    $message->to($emailData["investors"])
+                            ->cc($emailData["cc_members"])
+                            ->subject($emailData["unit_name"]."-".$emailData["property_name"]."-Fitout progress/report");
+        
+                    forEach ($files as $file){
+                        $message->attach($file,['as'=>$emailData["unit_name"]."-".$emailData["property_name"].". Site Inspection Report pdf",'mime'=> "application/pdf"]);
+                    }      
+                });
+                }
+            catch (\Exception $e) {
+                return $e->getMessage();
+            }
+           
             return response()->json(['response'=>"Site Inspection Data Updated"], 200);
+    }
+    public function getProjectDetails($project_id)
+    {
+        return project::leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->where('tbl_projects.project_id',$project_id)->where('tbl_project_contact_details.member_designation',13)->leftjoin('tbl_company_master','tbl_company_master.company_id','=','tbl_tenant_master.company_id')->leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->select('tbl_projects.project_id','tbl_projects.project_name','tbl_units_master.unit_id','tbl_units_master.unit_name','tbl_projects.investor_brand','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_properties_master.property_name','tbl_properties_master.property_id','tbl_company_master.company_name','users.mem_name','users.mem_last_name')->get();
     }
    
 }

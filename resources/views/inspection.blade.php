@@ -150,11 +150,8 @@
                 </div>
                 <div style="margin-left:170pt; width:192pt;" class="pt-30">
                     <div class="header-sec">
-                        <p class="text-danger header-content">Fitout Completion Certificate</p>
+                        <p class="text-danger header-content">Inspection Report</p>
                     </div>
-                </div>
-                <div style="position:absolute; right:-50pt;top:15pt; width:172pt;">
-                        <h2>{{$property_name}}</h2>
                 </div>
         </header>
         <section class="page-1">

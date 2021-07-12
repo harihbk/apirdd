@@ -79,6 +79,7 @@ class DesignationController extends Controller
              "designation_user_type" => $request->input('designation_name'),
              "level_id" => $request->input('level_id'),
              "updated_at" => date('Y-m-d H:i:s'),
+             "designation_user_type" => 1,
              "active_status" => $request->input('active_status')
              ));
         

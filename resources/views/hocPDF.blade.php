@@ -154,6 +154,9 @@
                         <p class="text-danger header-content">Handover Certificate</p>
                     </div>
                 </div>
+                <div style="position:absolute; right:-50pt;top:15pt; width:172pt;">
+                        <h2>{{$property_name}}</h2>
+                </div>
         </header>
         <section class="page-1">
         <table class="table-borderless pt-50" style="width:100%;">
@@ -204,7 +207,7 @@
                     <td class="td-width">
                         <dl>
                         <dt>Handover Inspection Date  : </dt>
-                        <dd class="header-value">{{$inspection_date}}</dd>
+                        <dd class="header-value">-</dd>
                         </dl>
                     </td>
             </tr>

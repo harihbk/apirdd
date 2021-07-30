@@ -251,7 +251,7 @@ class InspectionrequestController extends Controller
         $comments="";
         $query = Projectinspectionitems::leftjoin('tbl_project_inspections','tbl_project_inspections.inspection_id','=','tbl_project_inspection_items.inspection_id')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_inspections.project_id')->leftjoin('tbl_project_inspection_attachments','tbl_project_inspection_attachments.inspection_item_id','=','tbl_project_inspection_items.id')->join('tbl_inspection_root_categories','tbl_inspection_root_categories.root_id','=','tbl_project_inspection_items.root_id')->select('tbl_inspection_root_categories.root_name','tbl_project_inspection_items.id','tbl_project_inspection_items.checklist_desc','tbl_project_inspection_items.rdd_actuals','tbl_project_inspection_items.remarks',DB::raw("GROUP_CONCAT(tbl_project_inspection_attachments.investor_file_name) as investor_file_name"),DB::raw("GROUP_CONCAT(tbl_project_inspection_attachments.investor_file_path) as investor_file_path"),DB::raw("GROUP_CONCAT(tbl_project_inspection_attachments.rdd_file_path) as rdd_file_path"),DB::raw("GROUP_CONCAT(tbl_project_inspection_attachments.rdd_file_name) as rdd_file_name"),'tbl_project_inspection_items.investor_declarations','tbl_project_inspection_items.rdd_snags','tbl_project_inspection_items.snag_type','tbl_project_inspection_items.remarks')->where('tbl_project_inspection_items.project_id',$request->input('project_id'))->where('tbl_project_inspection_items.inspection_id',$request->input('inspection_id'))->where('tbl_project_inspection_items.isDeleted',0)->where('tbl_project_inspection_items.isRescheduled',0)->groupBy('tbl_project_inspection_items.id')->get()->groupBy('root_name');
         
-        $path_details = ProjectInspections::leftjoin('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_project_inspections.phase_id')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_inspections.project_id')->leftjoin('tbl_checklisttemplate_master','tbl_checklisttemplate_master.id','=','tbl_project_inspections.checklist_id')->select('tbl_checklisttemplate_master.template_name as inspection_type','tbl_phase_master.phase_name','tbl_phase_master.phase_id','tbl_projects.project_name','tbl_project_inspections.requested_time','tbl_project_inspections.comments')->where('tbl_project_inspections.project_id',$request->input('project_id'))->where('tbl_project_inspections.inspection_id',$request->input('inspection_id'))->get();
+        $path_details = ProjectInspections::leftjoin('tbl_phase_master','tbl_phase_master.phase_id','=','tbl_project_inspections.phase_id')->leftjoin('tbl_projects','tbl_projects.project_id','=','tbl_project_inspections.project_id')->leftjoin('tbl_checklisttemplate_master','tbl_checklisttemplate_master.id','=','tbl_project_inspections.checklist_id')->select('tbl_checklisttemplate_master.template_name as inspection_type','tbl_phase_master.phase_name','tbl_phase_master.phase_id','tbl_projects.project_name','tbl_project_inspections.requested_time','tbl_project_inspections.file_paths','tbl_project_inspections.comments')->where('tbl_project_inspections.project_id',$request->input('project_id'))->where('tbl_project_inspections.inspection_id',$request->input('inspection_id'))->get();
 
         if(count($path_details)>0)
         {
@@ -261,6 +261,7 @@ class InspectionrequestController extends Controller
             $inspection_type = $path_details[0]['inspection_type'];
             $requested_time = $path_details[0]['requested_time'];
             $comments = $path_details[0]['comments'];
+            $file_paths = $path_details[0]['file_paths'];
 
             $doc_path = public_path()."".$request->input('doc_path')."".$request->input('project_id')."_".$project_name."/".$phase_name."/inspections/".$request->input('inspection_id')."_".$path_details[0]['inspection_type'];
             $img_path = public_path()."".$request->input('img_path')."".$request->input('project_id')."_".$project_name."/".$phase_name."/inspections/".$request->input('inspection_id')."_".$path_details[0]['inspection_type'];
@@ -273,7 +274,7 @@ class InspectionrequestController extends Controller
         }
 
         
-        return Response::json(array('comments'=>$comments,'inspection_type'=>$inspection_type,'inspection_items' => $query,'phase_id'=>$phase_id,'requested_time'=>$requested_time,'doc_path'=>$doc_path,'image_path' =>$img_path));
+        return Response::json(array('comments'=>$comments,'inspection_type'=>$inspection_type,'inspection_items' => $query,'phase_id'=>$phase_id,'requested_time'=>$requested_time,'doc_path'=>$doc_path,'image_path' =>$img_path,"file_paths"=>$file_paths));
     }
     /* RDD member rescheduling Inspection Request */
     function rddperforminspectionreschedule(Request $request)
@@ -375,13 +376,15 @@ class InspectionrequestController extends Controller
         {
             return response()->json(['response'=>"Kindly Approve before Sending report"], 410);
         }
+        $file_paths = count($datas[0]['file_paths'])>0?$datas[0]['file_paths']:null;
         //check whether inspection is approved
         $inspectionCount = Projectinspections::where('project_id',$datas[0]['project_id'])->where('inspection_id',$datas[0]['inspection_id'])->where('inspection_status',2)->count();
         if($inspectionCount>0)
         {
             Projectinspections::where('project_id',$datas[0]['project_id'])->where('inspection_id',$datas[0]['inspection_id'])->update(
                 array(
-                    "comments" => $datas[0]['comments']
+                    "comments" => $datas[0]['comments'],
+                    "file_paths" => $file_paths
                 )
             );
             for($i=0;$i<count($datas);$i++)

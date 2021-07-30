@@ -717,28 +717,41 @@ class ProjectController extends Controller
     {
         $limit = 10;
         $offset = 0;
-
+        $brand = $request->input('unit');
+        $project = $request->input('project');
+        $brand = $request->input('brand');
         $user = $request->input('user_id');
-
         $projects = Project::join('tbl_units_master','tbl_projects.unit_id','=','tbl_units_master.unit_id')->join('tbl_company_master','tbl_projects.investor_company','=','tbl_company_master.company_id')->join('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->join('tbl_project_template','tbl_project_template.project_id','=','tbl_projects.project_id')->select('tbl_projects.*','tbl_units_master.unit_name','tbl_company_master.company_name','tbl_company_master.brand_name');
-
-        if ($request->input('project_name')!=null)
-        {
-            $projects->whereLike(['tbl_projects.project_name'], $request->input('project_name'));
-        }
         if ($request->input('unit')!=null)
         {
-            $projects->whereLike(['tbl_units_master.unit_name'], $request->input('unit'));
+            $projects = $projects->whereLike(['tbl_units_master.unit_name'], $request->input('unit'))->where('tbl_projects.org_id',$request->input('org_id'))->where('tbl_projects.property_id',$request->input('property'))->where(function($query) use ($user){
+                $query->orwhereRaw("find_in_set($user,assigned_rdd_members)")
+                        ->orWhereRaw("find_in_set($user,tbl_project_contact_details.member_id)")
+                        ->orWhereRaw("find_in_set($user,tbl_projects.created_by)");
+                })->groupBy('tbl_projects.project_id');
         }
-
+        if($brand!=null)
+        {
+            $projects = $projects->orWhere('tbl_projects.investor_brand', 'LIKE', '%'.$request->input('unit').'%')->where('tbl_projects.org_id',$request->input('org_id'))->where('tbl_projects.property_id',$request->input('property'))->where(function($query) use ($user){
+                $query->orwhereRaw("find_in_set($user,assigned_rdd_members)")
+                        ->orWhereRaw("find_in_set($user,tbl_project_contact_details.member_id)")
+                        ->orWhereRaw("find_in_set($user,tbl_projects.created_by)");
+                })->groupBy('tbl_projects.project_id');
+        }
+        if($project!=null)
+        {
+            $projects = $projects->orWhere('tbl_projects.project_name', 'LIKE', '%'.$request->input('unit').'%')->where('tbl_projects.org_id',$request->input('org_id'))->where('tbl_projects.property_id',$request->input('property'))->where(function($query) use ($user){
+                $query->orwhereRaw("find_in_set($user,assigned_rdd_members)")
+                        ->orWhereRaw("find_in_set($user,tbl_project_contact_details.member_id)")
+                        ->orWhereRaw("find_in_set($user,tbl_projects.created_by)");
+                })->groupBy('tbl_projects.project_id');
+        }
 
         $projects = $projects->where('tbl_projects.org_id',$request->input('org_id'))->where('tbl_projects.property_id',$request->input('property'))->where(function($query) use ($user){
             $query->orwhereRaw("find_in_set($user,assigned_rdd_members)")
-                  ->orWhereRaw("find_in_set($user,tbl_project_contact_details.member_id)")
-                //   ->orWhereRaw("find_in_set($user,tbl_project_template.approvers)")
-                //   ->orWhereRaw("find_in_set($user,tbl_project_template.mem_responsible)")
-                  ->orWhereRaw("find_in_set($user,tbl_projects.created_by)");
-           })->groupBy('tbl_projects.project_id')->get();
+                    ->orWhereRaw("find_in_set($user,tbl_project_contact_details.member_id)")
+                    ->orWhereRaw("find_in_set($user,tbl_projects.created_by)");
+            })->groupBy('tbl_projects.project_id')->get();
         return $projects;
     }
 
@@ -2277,7 +2290,7 @@ class ProjectController extends Controller
         $doc_path = "";
         $img_path = "";
 
-        $docs_details = Projectdocs::leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,tbl_projecttasks_docs.reviewers)"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_projecttasks_docs.approvers_level1)"),">",\DB::raw("'0'"))->leftjoin('users as c',\DB::raw("FIND_IN_SET(c.mem_id,tbl_projecttasks_docs.approvers_level2)"),">",\DB::raw("'0'"))->leftjoin('tbl_projectdocs_history','tbl_projectdocs_history.doc_id','=','tbl_projecttasks_docs.doc_id')->select('tbl_projecttasks_docs.doc_id','tbl_projecttasks_docs.project_id','phase_id','doc_header','doc_title','reviewers','approvers_level1','approvers_level2','tbl_projecttasks_docs.file_path','comment','actual_date','due_date','doc_status','action','tbl_projectdocs_history.created_at as investor_submitted_date','tbl_projectdocs_history.version_no')->where('tbl_projecttasks_docs.isDeleted',0)->where('tbl_projecttasks_docs.project_id',$projectid)->where('tbl_projecttasks_docs.phase_id',$phase_id)->when(!is_null('tbl_projectdocs_history') , function ($query) use($projectid){
+        $docs_details = Projectdocs::leftjoin('users as a',\DB::raw("FIND_IN_SET(a.mem_id,tbl_projecttasks_docs.reviewers)"),">",\DB::raw("'0'"))->leftjoin('users as b',\DB::raw("FIND_IN_SET(b.mem_id,tbl_projecttasks_docs.approvers_level1)"),">",\DB::raw("'0'"))->leftjoin('users as c',\DB::raw("FIND_IN_SET(c.mem_id,tbl_projecttasks_docs.approvers_level2)"),">",\DB::raw("'0'"))->leftjoin('tbl_projectdocs_history','tbl_projectdocs_history.doc_id','=','tbl_projecttasks_docs.doc_id')->select('tbl_projecttasks_docs.doc_id','tbl_projecttasks_docs.project_id','phase_id','doc_header','doc_title','reviewers','approvers_level1','approvers_level2','tbl_projecttasks_docs.file_path','comment','actual_date','due_date','doc_status','action','tbl_projectdocs_history.created_at as investor_submitted_date','tbl_projectdocs_history.version_no','tbl_projecttasks_docs.isApplicable')->where('tbl_projecttasks_docs.isDeleted',0)->where('tbl_projecttasks_docs.project_id',$projectid)->where('tbl_projecttasks_docs.phase_id',$phase_id)->when(!is_null('tbl_projectdocs_history') , function ($query) use($projectid){
             $query->orWhere('tbl_projectdocs_history.version_no',1)->where('tbl_projectdocs_history.project_id',$projectid);
          });
          $docs_details = $docs_details->groupBy('tbl_projecttasks_docs.doc_id')->get()->groupBy('doc_header');
@@ -2622,17 +2635,17 @@ class ProjectController extends Controller
                 $file_paths = [];
                 $drawing_paths = json_decode($returnData['drawing_path']);
                 $file_paths = json_decode($returnData['file_path']);
-                Mail::send('emails.projectworkpermits', $data, function($message)use($data) {
+                Mail::send('emails.projectworkpermits', $data, function($message)use($data,$drawing_paths,$file_paths) {
                 $message->to($data['mem_email'])
                         ->subject($data['unit_name']."-".$data['property_name']."-Work permit request");
 
-                        if($drawing_paths!=null && count($drawing_paths)>0)
+                        if(count($drawing_paths)>0)
                             {
                                 foreach ($drawing_paths as $dp){
                                     $message->attach($dp);
                                 }
                             }
-                            if($file_paths!=null && count($file_paths)>0)
+                            if(count($file_paths)>0)
                             {
                                 foreach ($file_paths as $fp){
                                     $message->attach($fp);
@@ -2656,8 +2669,7 @@ class ProjectController extends Controller
         $investor_dates = $request->get('investor_dates');
 
         for($i=0;$i<count($template);$i++) 
-        {
-            
+        {   
             $project = Projecttemplate::where("project_id",$projectid)->where("phase_id",$phaseid)->where("org_id",$template[$i]['org_id'])->where("id",$template[$i]['id'])->update(
                 array(
                     "activity_desc" => $template[$i]['activity_desc'],
@@ -2695,7 +2707,7 @@ class ProjectController extends Controller
         {
             $project = Projectdocs::where("project_id",$projectid)->where("phase_id",$phaseid)->where("doc_id",$docs[$n]['doc_id'])->update(
                 array(
-                    "actual_date"=>$docs[$n]['actual_date'],
+                    "isApplicable"=> $docs[$n]['isApplicable'],
                     "updated_at" =>$updated_at
                 )
             );
@@ -2705,7 +2717,7 @@ class ProjectController extends Controller
         $permit = $request->get('permits');
         for($q=0;$q<count($permit);$q++)
         {
-            $checkQuery = Projectworkpermit::leftjoin('tbl_workpermit_master','tbl_workpermit_master.permit_id','=','tbl_project_workpermits.work_permit_type')->where("tbl_project_workpermits.project_id",$projectid)->where("tbl_project_workpermits.permit_id",$permit[$q]['permit_id'])->where('tbl_project_workpermits.request_status',0)->select('tbl_workpermit_master.permit_type','tbl_project_workpermits.*')->first();
+            $checkQuery = Projectworkpermit::leftjoin('tbl_workpermit_master','tbl_workpermit_master.permit_id','=','tbl_project_workpermits.work_permit_type')->where("tbl_project_workpermits.project_id",$projectid)->where("tbl_project_workpermits.permit_id",$permit[$q]['permit_id'])->where('tbl_project_workpermits.request_status',0)->select('tbl_workpermit_master.permit_type','tbl_project_workpermits.*','tbl_workpermit_master.department')->first();
             Projectworkpermit::where("project_id",$projectid)->where("permit_id",$permit[$q]['permit_id'])->update(
                 array(
                     "request_status" => $permit[$q]['request_status']
@@ -2714,26 +2726,19 @@ class ProjectController extends Controller
             if($permit[$q]['request_status']==1 && $checkQuery!=null && $checkQuery!='')
             {
                $mailDetails = Project::leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->where("project_id",$projectid)->select('users.email as rdd_manager','users.mem_name','users.mem_last_name','tbl_projects.property_id','tbl_properties_master.property_name','tbl_units_master.unit_name')->first();
-
-               $operationalDetails = Operationsmntteam::where('property_id',$mailDetails['property_id'])->where('isDeleted',0)->get();
                $op_email = array();
+               $mt_email = array();
+               $operationalDetails = Operationsmntteam::where('property_id',$mailDetails['property_id'])->where('isDeleted',0)->get();
+               $mtDetails = Maintainenceteam::where('property_id',$mailDetails['property_id'])->where('isDeleted',0)->get();
                for($t=0;$t<count($operationalDetails);$t++)
                {
                     $op_email[] = $operationalDetails[$t]['email'];
                }
-
-               $mtDetails = Maintainenceteam::where('property_id',$mailDetails['property_id'])->where('isDeleted',0)->get();
-               $mt_email = array();
                for($u=0;$u<count($mtDetails);$u++)
                {
                     $mt_email[] = $mtDetails[$u]['email'];
                }
-
-               if(count($op_email)==0)
-               {}   
-               else
-               {
-                   $emaildata = array();
+               $emaildata = array();
                    $emaildata = [
                        "op_email" => $op_email,
                        "rdd_manager" => $mailDetails['rdd_manager'],
@@ -2745,25 +2750,71 @@ class ProjectController extends Controller
                        "recipient" => "Operational",
                        "mt_email" => $mt_email
                    ];
-                   try
-                   {
-                        Mail::send('emails.workpermitopnotify', $emaildata, function($message)use($emaildata) {
-                            $message->to($emaildata['op_email'])
-                                    ->cc($emaildata['rdd_manager'])
-                                    ->subject($emaildata['unit_name']."-".$emaildata['property_name']."-Work permit request");
-                            });
-                        $emaildata['recipient'] = "Maintainence";
-                        if(count($mt_email)>0)
+                //Operational Team
+               if($checkQuery['department']==1)
+               {
+                    if(count($op_email)==0)
+                    {} 
+                    else
+                    {
+                        try
                         {
+                            $emaildata['recipient'] = 'Operational';
+                            Mail::send('emails.workpermitopnotify', $emaildata, function($message)use($emaildata) {
+                                $message->to($emaildata['op_email'])
+                                        ->cc($emaildata['rdd_manager'])
+                                        ->subject($emaildata['unit_name']."-".$emaildata['property_name']."-Work permit request");
+                                });
+                        }
+                        catch (\Exception $e) {}
+                    }
+
+               }
+               //Maintainence Team
+               if($checkQuery['department']==2)
+               {
+                    if(count($mt_email)>0)
+                    {
+                        try
+                        {
+                            $emaildata['recipient'] = "Maintainence";
                             Mail::send('emails.workpermitopnotify', $emaildata, function($message)use($emaildata) {
                                 $message->to($emaildata['mt_email'])
                                         ->cc($emaildata['rdd_manager'])
                                         ->subject($emaildata['unit_name']."-".$emaildata['property_name']."-Work permit request");
                                 });
                         }
-                   }
-                   catch (\Exception $e) {
-                    return $e->getMessage();
+                        catch (\Exception $e) {}
+                    }
+               }
+               //both Operational & Maintainence Team
+               if($checkQuery['department']==3)
+               {
+                    if(count($op_email)==0)
+                    {}   
+                    else
+                    {
+                        try
+                        {
+                            $emaildata['recipient'] = 'Operational';
+                            Mail::send('emails.workpermitopnotify', $emaildata, function($message)use($emaildata) {
+                                $message->to($emaildata['op_email'])
+                                        ->cc($emaildata['rdd_manager'])
+                                        ->subject($emaildata['unit_name']."-".$emaildata['property_name']."-Work permit request");
+                                });
+                            $emaildata['recipient'] = "Maintainence";
+                            if(count($mt_email)>0)
+                            {
+                                Mail::send('emails.workpermitopnotify', $emaildata, function($message)use($emaildata) {
+                                    $message->to($emaildata['mt_email'])
+                                            ->cc($emaildata['rdd_manager'])
+                                            ->subject($emaildata['unit_name']."-".$emaildata['property_name']."-Work permit request");
+                                    });
+                            }
+                        }
+                        catch (\Exception $e) {
+                        return $e->getMessage();
+                        }
                     }
                }
             }

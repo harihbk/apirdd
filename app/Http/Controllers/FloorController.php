@@ -83,6 +83,7 @@ class FloorController extends Controller
             array(
              "property_id" => $request->input('property_id'), 
              "floor_no" => $request->input('floor_no'),
+             "floor_name" => $request->input('floor_name'),
              "floor_code" => $request->input('floor_code'),
              "floor_details" => $request->input('floor_details'),
              "pod_image_path" => $request->input('pod_image_path'),

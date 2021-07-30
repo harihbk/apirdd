@@ -25,7 +25,8 @@ class WorkpermitController extends Controller
     {
         $validator = Validator::make($request->all(), [ 
             'org_id' => 'required', 
-            'permit_type' => 'required', 
+            'permit_type' => 'required',
+            'department' => 'required', 
             'user_id' => 'required'
         ]);
 
@@ -43,6 +44,7 @@ class WorkpermitController extends Controller
 
         $types->org_id = $request->input('org_id');
         $types->permit_type = $request->input('permit_type');
+        $types->department = $request->input('department');
         if($request->has('permit_desc')) {
             $types->permit_desc = $request->input('permit_desc');
         }
@@ -61,7 +63,8 @@ class WorkpermitController extends Controller
     {
         $validator = Validator::make($request->all(), [ 
             'permit_id' => 'required', 
-            'permit_type' => 'required', 
+            'permit_type' => 'required',
+            'department' => 'required', 
             'user_id' => 'required',
             'active_status' => 'required',
         ]);
@@ -78,7 +81,8 @@ class WorkpermitController extends Controller
 
         $types = Workpermit::where("permit_id",$request->input('permit_id'))->update( 
             array(
-             "permit_type" => $request->input('permit_type'), 
+             "permit_type" => $request->input('permit_type'),
+             "department" => $request->input('department'), 
              "permit_desc" => $request->input('permit_desc'),
              "updated_at" => date('Y-m-d H:i:s'),
              "active_status" => $request->input('active_status'),

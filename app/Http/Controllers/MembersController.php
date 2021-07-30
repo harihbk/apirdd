@@ -108,7 +108,8 @@ class MembersController extends Controller
             $returnData = Members::find($request->input('mem_id'));
             $data = array ("message" => 'Member Updated successfully',"data" => $returnData );
             $response = Response::json($data,200);
-            echo json_encode($response); 
+            // echo json_encode($response); 
+            return $response;
         }
     }
     function retrieveByOrg(Request $request,$id)
@@ -234,5 +235,10 @@ class MembersController extends Controller
             $designationDetails = Members::leftjoin('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('mem_id',$request->input('mem_id'))->select('users.mem_id','users.mem_name','users.mem_last_name','tbl_designation_master.designation_id','tbl_designation_master.designation_name')->first();
             return response()->json(['designation_details'=>$designationDetails], 200);
         }
+    }
+    function getallMembersForProject($org_id)
+    {
+        $members = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.active_status',1)->where('users.mem_org_id',$org_id)->select('users.mem_id','users.mem_name','users.mem_last_name','users.mem_designation','tbl_designation_master.designation_name','users.email','users.mobile_no')->orderBy('users.mem_name', 'ASC')->get();
+        return response()->json($members, 200);
     }
 }

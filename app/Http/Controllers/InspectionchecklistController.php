@@ -104,6 +104,12 @@ class InspectionchecklistController extends Controller
                         'created_by' => $datas['user_id']
                         ];
             }
+            else
+            {
+                Inspectionchecklistmaster::where('template_id',$datas['template_id'])->where('ch_id',$datas['entries'][$k]['ch_id'])->update(array(
+                    "isDeleted" => $datas['entries'][$k]['isDeleted']
+                ));
+            }
         }
 
             Inspectionchecklistmaster::insert($data);

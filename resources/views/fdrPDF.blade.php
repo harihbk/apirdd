@@ -147,11 +147,11 @@
                     </tr>
                     <tr>
                     <td style="width:50%; padding:5px;" class="td-width">Brand Name : <span class="header-value"> Mercedes Benz002</span></td>
-                    <td style="width:50%; padding:5px;" class="td-width">Location/Level : <span class="header-value">{{$investor_brand}}</span></td>
+                    <td style="width:50%; padding:5px;" class="td-width">Location/Level : <span class="header-value">{{$floor_name}}</span></td>
                     </tr>
                     <tr>
-                    <td style="width:50%; padding:5px;" class="td-width">Company Name : <span class="header-value"> </span></td>
-                    <td style="width:50%; padding:5px;" class="td-width">Mall : <span class="header-value">{{$property_name}}</span></td>
+                    <td style="width:50%; padding:5px;" class="td-width">Company Name : <span class="header-value">{{$company_name}}</span></td>
+                    <td style="width:50%; padding:5px;" class="td-width">Center : <span class="header-value">{{$property_name}}</span></td>
                     </tr>
                 </tbody>
                 </table>
@@ -162,30 +162,48 @@
                         <th colspan="2" style="width:100%; height:20px; text-align:left" class="fs-11"><span class="header-value">Fitout Department</span></th>
                     </tr>
                     <tr>
-                        <td style="width:85%; height:60px; text-align:left; vertical-align: top;" class="fs-11"><span class="header-value"></span>As agreed, kindly deduct te IVR amount from the fit-out deposit</td>
-                        <td style="width:15%; height:60px; text-align:center; vertical-align: top;" class="fs-11"><span class="header-value">{{$rdd_manager}}</span></td>
+                        <td rowspan="3" style="width:85%; height:60px; text-align:left; vertical-align: top;" class="fs-11"><span class="header-value"></span></td>
+                        <td rowspan="1" style="width:15%; height:10px; text-align:center; vertical-align: top; border-bottom:1px solid black;" class="fs-11"><span class="header-value">{{$rdd_manager}}</span></td>
+                    </tr>
+                    <tr>
+                        <td rowspan="1" style="width:15%; height:20px; text-align:center; vertical-align: top; border-bottom:1px solid black;" class="fs-11"><span class="header-value"></span></td>
+                    </tr>
+                    <tr>
+                        <td rowspan="1" style="width:15%; height:30px; text-align:center; vertical-align: top;" class="fs-11"><span class="header-value"></span></td>
                     </tr>
                 </table>
                 </section>
                 <section>
                     <table class="centre-table  pt-10" style="width:100%; padding:15px;">
-                    <tr>
-                        <th colspan="2" style="width:100%; height:20px; text-align:left" class="fs-11"><span class="header-value">Property Management</span></th>
-                    </tr>
-                    <tr>
-                        <td style="width:85%; height:60px; text-align:left" class="fs-11"><span class="header-value"></span></td>
-                        <td style="width:15%; height:60px; text-align:left" class="fs-11"><span class="header-value"></span></td>
-                    </tr>
-                </table>
+                        <tr>
+                            <th colspan="2" style="width:100%; height:20px; text-align:left" class="fs-11"><span class="header-value">Property Management</span></th>
+                        </tr>
+                        <tr>
+                            <td rowspan="3" style="width:85%; height:60px; text-align:left; vertical-align: top;" class="fs-11"><span class="header-value"></span></td>
+                            <td rowspan="1" style="width:15%; height:10px; text-align:center; vertical-align: top; border-bottom:1px solid black;" class="fs-11"><span class="header-value"></span></td>
+                        </tr>
+                        <tr>
+                            <td rowspan="1" style="width:15%; height:20px; text-align:center; vertical-align: top; border-bottom:1px solid black;" class="fs-11"><span class="header-value"></span></td>
+                        </tr>
+                        <tr>
+                            <td rowspan="1" style="width:15%; height:30px; text-align:center; vertical-align: top;" class="fs-11"><span class="header-value"></span></td>
+                        </tr>
+                     </table>
                 </section>
                 <section>
                     <table class="finance-table  pt-10" style="width:100%; padding:15px;">
-                        <tr>
+                    <tr>
                             <th colspan="2" style="width:100%; height:20px; text-align:left" class="fs-11"><span class="header-value">Finance Management</span></th>
                         </tr>
                         <tr>
-                            <td style="width:85%; height:60px; text-align:left" class="fs-11"><span class="header-value"></span></td>
-                            <td style="width:15%; height:60px; text-align:left" class="fs-11"><span class="header-value"></span></td>
+                            <td rowspan="3" style="width:85%; height:60px; text-align:left; vertical-align: top;" class="fs-11"><span class="header-value"></span></td>
+                            <td rowspan="1" style="width:15%; height:10px; text-align:center; vertical-align: top; border-bottom:1px solid black;" class="fs-11"><span class="header-value"></span></td>
+                        </tr>
+                        <tr>
+                            <td rowspan="1" style="width:15%; height:20px; text-align:center; vertical-align: top; border-bottom:1px solid black;" class="fs-11"><span class="header-value"></span></td>
+                        </tr>
+                        <tr>
+                            <td rowspan="1" style="width:15%; height:30px; text-align:center; vertical-align: top;" class="fs-11"><span class="header-value"></span></td>
                         </tr>
                     </table>
                 </section>

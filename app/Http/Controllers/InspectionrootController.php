@@ -37,7 +37,11 @@ class InspectionrootController extends Controller
         $types->created_at = date('Y-m-d H:i:s');
         $types->updated_at = date('Y-m-d H:i:s');
         $types->created_by = $request->input('user_id');        
-        
+        $rootCheck = Inspectionroot::where('root_name', $request->input('root_name'))->where('org_id',$request->input('org_id'))->count();
+        if($rootCheck!=0)
+        {
+            return response()->json(['response'=>"Root name already exists"], 410); 
+        }
         if($types->save()) {
             $returnData = $types->find($types->root_id);
             $data = array ("message" => 'Inspection root added successfully',"data" => $returnData );

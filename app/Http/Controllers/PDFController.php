@@ -11,6 +11,7 @@ use App\Models\Financeteam;
 use App\Models\Projectinspections;
 use App\Models\Projectinspectionitems;
 use App\Models\Handovercertificate;
+use App\Models\Centermanager;
 use Validator;
 use PDF;
 use File;
@@ -155,6 +156,8 @@ class PDFController extends Controller
             'investor_brand' => $projectDetails[0]['investor_brand'],
             "pre_date" => date('d-m-Y'),
             "rdd_manager" => $memberDetails[0]["mem_name"]." ".($memberDetails[0]["mem_last_name"]!=''?$memberDetails[0]["mem_last_name"]:""),
+            "floor_name" => $projectDetails[0]['floor_name']!=null?$projectDetails[0]['floor_name']:"-",
+            'company_name' => $projectDetails[0]['company_name']
         ];
         try
         {
@@ -389,6 +392,11 @@ class PDFController extends Controller
         {
             $finance_email[] = $finance_details[$i]['email'];
         }
+        $center_manager_details = Centermanager::where('property_id',$projectDetails[0]['property_id'])->where('isDeleted',0)->get();
+        for($e=0;$e<count($center_manager_details);$e++)
+        {
+            $finance_email[] = $center_manager_details[$e]['email'];
+        }
         // $data = [
         //     'unit_name' => $projectDetails[0]['unit_name'],
         //     'investor_brand' => $projectDetails[0]['investor_brand'],
@@ -403,7 +411,8 @@ class PDFController extends Controller
             "rdd_manager_name" => $memberDetails[0]["mem_name"]." ".($memberDetails[0]["mem_last_name"]!=''?$memberDetails[0]["mem_last_name"]:""),
             "property_name"=> $projectDetails[0]['property_name'],
             'unit_name' => $projectDetails[0]['unit_name'],
-            "finance_email" => $finance_email
+            "finance_email" => $finance_email,
+            "floor_name" => $projectDetails[0]['floor_name']!=null?$projectDetails[0]['floor_name']:"-"
         ];
 
         $fdr = FitoutDepositrefund::where('project_id',$request->input('project_id'))->where('isDeleted',0)->first();
@@ -462,7 +471,7 @@ class PDFController extends Controller
     }
     public function getProjectDetails($project_id)
     {
-        return project::leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->where('tbl_projects.project_id',$project_id)->where('tbl_project_contact_details.member_designation',13)->leftjoin('tbl_company_master','tbl_company_master.company_id','=','tbl_tenant_master.company_id')->leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->select('tbl_projects.project_id','tbl_projects.project_name','tbl_units_master.unit_id','tbl_units_master.unit_name','tbl_projects.investor_brand','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_properties_master.property_name','tbl_properties_master.property_id','tbl_company_master.company_name','users.mem_name','users.mem_last_name')->get();
+        return project::leftjoin('tbl_project_contact_details','tbl_project_contact_details.project_id','=','tbl_projects.project_id')->leftjoin('tbl_tenant_master','tbl_tenant_master.tenant_id','=','tbl_project_contact_details.member_id')->leftjoin('tbl_units_master','tbl_units_master.unit_id','=','tbl_projects.unit_id')->leftjoin('tbl_properties_master','tbl_properties_master.property_id','=','tbl_projects.property_id')->where('tbl_projects.project_id',$project_id)->where('tbl_project_contact_details.member_designation',13)->leftjoin('tbl_company_master','tbl_company_master.company_id','=','tbl_tenant_master.company_id')->leftjoin('tbl_floor_master','tbl_floor_master.floor_id','=','tbl_units_master.floor_id')->leftjoin('users','users.mem_id','=','tbl_projects.assigned_rdd_members')->select('tbl_projects.project_id','tbl_projects.project_name','tbl_units_master.unit_id','tbl_units_master.unit_name','tbl_projects.investor_brand','tbl_tenant_master.tenant_name','tbl_tenant_master.tenant_last_name','tbl_properties_master.property_name','tbl_properties_master.property_id','tbl_company_master.company_name','users.mem_name','users.mem_last_name','tbl_floor_master.floor_name')->get();
     }
     public function getInspectiondata($project_id,$type='')
     {
@@ -492,10 +501,10 @@ class PDFController extends Controller
         $memberDetails = $this->getProjectMembers($project_id);
         $projectDetails = $this->getProjectDetails($project_id);
         $inspectionData = $this->getInspectiondata($project_id);
-        if(count($inspectionData['inspection_items'])==0)
-        {
-            return response()->json(['response'=>"No Inspections data for this Project"], 410);
-        }
+        // if(count($inspectionData['inspection_items'])==0)
+        // {
+        //     return response()->json(['response'=>"No Inspections data for this Project"], 410);
+        // }
         $data = [
             'unit_name' => $projectDetails[0]['unit_name'],
             'investor_brand' => $projectDetails[0]['investor_brand'],
@@ -503,14 +512,17 @@ class PDFController extends Controller
             "inspection_data" => $inspectionData['inspection_items'],
             "company_name" => $projectDetails[0]['company_name'],
             "rdd_manager" => $projectDetails[0]['mem_name']." ".($projectDetails[0]['mem_last_name']!=null?$projectDetails[0]['mem_last_name']:""),
-            "inspection_date" => date('d-m-Y',strtotime($inspectionData['inspection_data']['requested_time'])),
-            "pre_date" => date('d-m-Y'),
+            // "inspection_date" => date('d-m-Y',strtotime($inspectionData['inspection_data']['requested_time'])),
+            // "pre_date" => date('d-m-Y'),
             "rdd_manager_name" => $memberDetails[0]["mem_name"]." ".($memberDetails[0]["mem_last_name"]!=''?$memberDetails[0]["mem_last_name"]:""),
-            'property_name' => $projectDetails[0]['property_name']
+            'property_name' => $projectDetails[0]['property_name'],
+            'pre_date'=>date('d-m-Y'),
+            "floor_name" => $projectDetails[0]['floor_name']!=null?$projectDetails[0]['floor_name']:"-",
+            'company_name' => $projectDetails[0]['company_name']
         ];
         try
         {
-            $pdf = PDF::loadView('hocPDF', $data);
+            $pdf = PDF::loadView('fdrPDF', $data);
             return $pdf->stream();
            
         }

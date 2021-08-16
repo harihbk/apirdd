@@ -18,7 +18,7 @@ class DocumentController extends Controller
     function docUpload(Request $request)
     {
         $validator = Validator::make($request->all(), [ 
-            'file' => 'required|mimes:pdf,docx,png,jpg,jpeg',
+            'file' => 'required|mimes:pdf,docx,png,jpg,jpeg,dwg',
             'docpath' => 'required'
        ]);
 

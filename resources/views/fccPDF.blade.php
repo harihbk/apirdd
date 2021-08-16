@@ -270,7 +270,7 @@
 					<tr>
                         <td style="width:40%;height:35px; font-size:12px;text-align:center">{{$value->checklist_desc}}</td>
                         <td style="width:30%;height:35px; font-size:12px;text-align:center"></td>
-                        <td style="width:15%;height:35px; font-size:12px;text-align:center">{{$value->rdd_actuals==1?'Yes':'No'}}</td>
+                        <td style="width:15%;height:35px; font-size:12px;text-align:center"></td>
                         <td style="width:15%;height:35px; font-size:12px;text-align:center"></td>
 						
                     </tr>

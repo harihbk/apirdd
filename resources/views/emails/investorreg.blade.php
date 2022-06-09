@@ -7,8 +7,8 @@
     </head>
     <body>
         <h3>Dear {{$tenant_name}} {{$tenant_last_name}},</h3>
-        <p>Your details has been registered as Investor.Kindly find below the details and crendentials for your Investor login.</p>
-        <table>
+        <p>{{ $body }}</p>
+        {{-- <table>
         <tr>
             <td>Name: </td>
             <td>{{$tenant_name}}</td>
@@ -29,11 +29,11 @@
             <td>End Date: </td>
             <td>{{$end_date}}</td>
         </tr>
-        </table><br/>
-        <p>Your system generated Password</p>
-        <p>Password: <b>{{ $temp_pass }}</b></p><br/>
-         <p>For Logging in as Investor <a target="_blank" href="http://rdd.octasite.com/rdd_portal/login">click here</a></p>
+        </table><br/> --}}
+        <p>Your system generated Password</p>  
+        <p>Password: <b>{{ $temp_pass }}</b></p><br/> 
+         <p>For Logging in as {{ $t_type }} <a target="_blank" href="https://rdd.tamdeenmalls.com">click here</a></p>
         <p>Regards,</p>
-        <p>RDD Team</p>
+        {{-- <p>RDD Team</p> --}}
     </body>
 </html>

@@ -92,7 +92,7 @@ class MailfrequencyController extends Controller
         $offset = 1;
         //$types = Mailfrequency::where("org_id",$id)->offset($offset)->limit($limit)->get();
         $types = Mailfrequency::where("org_id",$id)->get();
-        return Response::json(["response"=>$types],200);
+        echo json_encode($types);
     }
     function updateDeletion(Request $request,$id)
     {

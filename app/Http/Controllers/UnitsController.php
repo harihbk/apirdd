@@ -147,7 +147,9 @@ class UnitsController extends Controller
                File::makeDirectory($img_path, 0777, true, true);
            }
 
-        $units = $query->orderBy('unit_name','ASC')->get();
+       // $units = $query->orderBy('unit_name','ASC')->get();
+        $units = $query->orderBy('unit_id','ASC')->get();
+
         return Response::json(array('img_path' => $img_path,'units' => $units));
     }
     function retrieveUnitsforprojectcreation(Request $request)
@@ -166,7 +168,7 @@ class UnitsController extends Controller
 
         $unit_details = Units::leftjoin('tbl_projects','tbl_projects.unit_id','=','tbl_units_master.unit_id')->select('tbl_units_master.unit_id','tbl_units_master.unit_name','tbl_units_master.zone','tbl_units_master.property_id','tbl_units_master.unit_area','tbl_units_master.floor_id','tbl_units_master.pod_image_path')->where("tbl_units_master.org_id",$request->input('org_id'))->where("tbl_units_master.property_id",$request->input('property_id'))->where(function($query){
             $query->orWhereNull('tbl_projects.project_id')->orWhere('tbl_projects.project_status',1);
-           })->orderBy('tbl_units_master.unit_name', 'ASC')->get();
+           })->orderBy('tbl_units_master.unit_id', 'ASC')->get();
 
 
         

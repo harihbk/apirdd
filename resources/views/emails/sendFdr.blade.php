@@ -16,8 +16,9 @@
         <h3>Dear Team,</h3>
         <div>Kindly find the attached fitout refund form for your refence and action please.
         </div><br/>
-        <div>Many thanks.</div><br/>
         <div>Regards,</div>
         <div>{{$rdd_manager_name}}</div>
+        <div>This is system generated mail, Please do not reply.</div>
+
     </body>
 </html>

@@ -87,6 +87,7 @@ class MembersController extends Controller
             return response()->json(['error'=>$validator->errors()], 401);            
         }
 
+
         $members = Members::where("mem_id",$request->input('mem_id'))->update( 
                             array( 
                              "mem_name" => $request->input('mem_name'),
@@ -135,7 +136,10 @@ class MembersController extends Controller
             $query->where('mem_designation',$request->input('member_role'));
         }
 
-        $members = $query->orderBy('users.mem_name', 'ASC')->get();
+        $members = $query->whereNotIn('mem_id',[36,35])->orderBy('users.mem_name', 'ASC')->get();
+      //  $members = $query->orderBy('users.mem_name', 'ASC')->get();
+
+       
         $image_path = public_path()."".$request->input('image_path')."settings/users";
         if(!File::isDirectory($image_path)){
                File::makeDirectory($image_path, 0777, true, true);
@@ -153,6 +157,13 @@ class MembersController extends Controller
         $members = Members::select('mem_org_id','mem_name','mem_last_name','email','mobile_no','mem_designation','mem_signature_path')->where("mem_org_id",$id)->where("access_type",$tid)->get();
         echo json_encode($members); 
     }
+
+    function getMembersByDesignationTypes(Request $request)
+    {
+        $members = Members::join('tbl_designation_master','users.mem_designation','=','tbl_designation_master.designation_id')->select('mem_org_id','mem_id','mem_name','mem_last_name','email','mobile_no','mem_designation','mem_signature_path','tbl_designation_master.designation_name')->where("mem_org_id",$request->input('org_id'))->whereNotIn('mem_id',[36,35])->whereIn("mem_designation",$request->input('designations'))->where("users.active_status",1)->get();
+        echo json_encode($members);
+    }
+
     function getMemberByDesignation(Request $request,$org_id,$designation_id)
     {
         $members='';
@@ -241,4 +252,38 @@ class MembersController extends Controller
         $members = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.active_status',1)->where('users.mem_org_id',$org_id)->select('users.mem_id','users.mem_name','users.mem_last_name','users.mem_designation','tbl_designation_master.designation_name','users.email','users.mobile_no')->orderBy('users.mem_name', 'ASC')->get();
         return response()->json($members, 200);
     }
+
+    function getallMembersForProjectdes($org_id,$des_id,$companyID_id)
+    {
+
+        if($des_id == 13 || $des_id == 14) {
+
+            // $members = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')
+            // ->where('users.active_status',1)
+            // ->where('users.mem_org_id',$org_id)
+            // ->where('tbl_designation_master.designation_id' , $des_id)
+            // ->select('users.mem_id','users.mem_name','users.mem_last_name','users.mem_designation','tbl_designation_master.designation_name','users.email','users.mobile_no')
+            // ->orderBy('users.mem_name', 'ASC')->get();
+            // return response()->json($members, 200);
+
+            $query = Tenant::select('tenant_id','company_id','tenant_name','tenant_last_name','tbl_tenant_master.email','tenant_mobile','tenant_address','tenant_gender','tenant_type','active_status','brand_name','tenant_designation')->where('company_id',$companyID_id)->where('active_status',1)->orderBy('tbl_tenant_master.tenant_name', 'ASC')->get();
+            return $query;
+
+
+        } else {
+
+
+            $members = Members::join('tbl_designation_master','tbl_designation_master.designation_id','=','users.mem_designation')->where('users.active_status',1)->where('users.mem_org_id',$org_id)->select('users.mem_id','users.mem_name','users.mem_last_name','users.mem_designation','tbl_designation_master.designation_name','users.email','users.mobile_no')->orderBy('users.mem_name', 'ASC')->get();
+            return response()->json($members, 200);
+        }
+
+
+
+    }
+
+    function getprojectcontacts($project_id){
+        return Projectcontact::where("project_id",$project_id)->get();
+ 
+     }
+
 }

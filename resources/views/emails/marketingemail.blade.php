@@ -24,8 +24,7 @@
     </head>
     <body>
         <h3>Dear Marketing Team,</h3>
-        <p>Kindly find the attached hoarding graphics design for the above mentioned unit for your review and approval please</p>
+        <p>Kindly find the attached hoarding graphics design for the above mentioned unit for your review and approval</p>
         <p>Regards,</p>
-        <p>RDD Team</p>
     </body>
 </html>

@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers;
-
 use App\Models\User;
 use App\Models\ForgotPassword; 
 use App\Models\Members;
@@ -22,7 +21,6 @@ use Microsoft\Graph\Model;
 class AuthController extends Controller
 {
     public $successStatus = 200;
-
     public function login(Request $request) {
         $updated_at = date('Y-m-d H:i:s'); 
         if (Auth::attempt(['email' => request('email'), 'password' => request('password')])) { 
@@ -38,9 +36,10 @@ class AuthController extends Controller
             if($members>0)
             {
                 $returnData = Members::join('tbl_docpath_config_master','users.mem_org_id','=','tbl_docpath_config_master.org_id')->where("users.email",request('email'))->where('tbl_docpath_config_master.isDeleted',0)->first();
-                $user_response = array('token_type' =>  $finalres->getData()->token_type,
-                            'access_token' => $finalres->getData()->access_token,
-                            'refresh_token' => $finalres->getData()->refresh_token,
+                $user_response = array(
+                            'token_type' =>  $finalres->getData()->token_type,
+                            "access_token" => $finalres->getData()->access_token,
+                            "refresh_token" => $finalres->getData()->refresh_token,
                             'user_id' => $returnData->mem_id,
                             'first_name' => $returnData->mem_name,
                             'last_name' => $returnData->mem_last_name,
@@ -91,18 +90,19 @@ class AuthController extends Controller
     }
     public function getTokenAndRefreshToken(OClient $oClient, $email, $password,$usertype) { 
          $oClient = OClient::where('password_client', 1)->where('id',$usertype)->first();
-        $http = new Client;
-        $response = $http->request('POST', 'https://rdd.octasite.com/rdd_server/public/oauth/token', [
+        $http = new Client;    
+      //  $response = $http->request('POST', 'https://rdd-qa.tamdeenmalls.com/api/public/index.php/oauth/token', [
+
+        $response = $http->request('POST', 'https://rdd.tamdeenmalls.com/api/public/index.php/oauth/token', [
             'form_params' => [
                 'grant_type' => 'password',
                 'client_id' => $oClient->id,
                 'client_secret' => $oClient->secret,
                 'username' => $email,
                 'password' => $password,
-                'scope' => '*',
+                'scope' => '*'
             ],
         ]);
-
         $result = json_decode((string) $response->getBody(), true);
         return response()->json($result, $this->successStatus);
     }
@@ -110,7 +110,7 @@ class AuthController extends Controller
     public function getnewToken(Request $request) {
         $oClient = OClient::where('password_client', 1)->where('id',2)->first();
        $http = new Client;
-       $response = $http->request('POST', 'http://192.168.221.30/rdd_server/public/oauth/token', [
+       $response = $http->request('POST', 'https://rdd.tamdeenmalls.com/api/public/index.php/oauth/token', [
            'form_params' => [
                'grant_type' => 'refresh_token',
                'refresh_token' => $request->input('refresh_token'),
@@ -276,11 +276,10 @@ class AuthController extends Controller
                 $graph->setAccessToken($request->input('access_token'));
                 $user = $graph->createRequest('GET', '/me')->setReturnType(Model\User::class)->execute();
                 $userCount = Members::where('email',$user->getMail())->first();
-
                 //Login integration with the system
                 if ($userCount!=null) { 
                     $user = $graph->createRequest('GET', '/me')->setReturnType(Model\User::class)->execute();
-                    $passwordString = env('PASSWORD_STRING');
+                    $passwordString = 'Q23fr8';
                     $passwordUpdate = Members::where("email",$user->getMail())->update( 
                         array( 
                         "password" => Hash::make($passwordString),
@@ -290,6 +289,8 @@ class AuthController extends Controller
                     {
                         $oClient = OClient::where('password_client', 1)->where('id',2)->first();
                         $finalres = $this->getoutlookTokenAndRefreshToken($oClient, $user->getMail(), $passwordString,2);
+
+
                         $members = Members::where("email",$user->getMail())->update( 
                             array( 
                             "access_token" => $finalres->getData()->access_token,
@@ -302,7 +303,8 @@ class AuthController extends Controller
                         if($members>0)
                         {
                             $returnData = Members::join('tbl_docpath_config_master','users.mem_org_id','=','tbl_docpath_config_master.org_id')->where("users.email",$user->getMail())->where('tbl_docpath_config_master.isDeleted',0)->first();
-                            $user_response = array('token_type' =>  $finalres->getData()->token_type,
+                            $user_response = array(
+                                        'token_type' =>  $finalres->getData()->token_type,
                                         'access_token' => $finalres->getData()->access_token,
                                         'refresh_token' => $finalres->getData()->refresh_token,
                                         'user_id' => $returnData->mem_id,
@@ -337,7 +339,7 @@ class AuthController extends Controller
     public function getoutlookTokenAndRefreshToken(OClient $oClient, $email, $password,$usertype) {  
         $oClient = OClient::where('password_client', 1)->where('id',$usertype)->first();
         $http = new Client;
-        $response = $http->request('POST', 'https://rdd.octasite.com/rdd_server/public/oauth/token', [
+        $response = $http->request('POST', 'https://rdd.tamdeenmalls.com/api/public/index.php/oauth/token', [
             'form_params' => [
                 'grant_type' => 'password',
                 'client_id' => $oClient->id,
@@ -347,7 +349,7 @@ class AuthController extends Controller
                 'scope' => '*',
             ],
         ]);
-
+     
        $result = json_decode((string) $response->getBody(), true);
        return response()->json($result, $this->successStatus);
    }

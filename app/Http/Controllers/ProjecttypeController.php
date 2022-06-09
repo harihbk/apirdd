@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Projecttype;
+use App\Models\Templatenamemaster;
 use Response;
 use Validator;
 use File;
@@ -103,7 +104,7 @@ class ProjecttypeController extends Controller
         if(!File::isDirectory($doc_path)){
                File::makeDirectory($doc_path, 0777, true, true);
            }
-
+      //  $types = Templatenamemaster::where('active_status',1)->get();
         $types = Projecttype::join('tbl_templatename_master','tbl_templatename_master.template_id','=','tbl_projecttype_master.template_id')->select('tbl_projecttype_master.*','tbl_templatename_master.template_name')->where("tbl_projecttype_master.org_id",$id)->orderBy('tbl_projecttype_master.type_name', 'ASC')->get();
         
         return Response::json(array('doc_path' => $doc_path,'project_types' => $types));

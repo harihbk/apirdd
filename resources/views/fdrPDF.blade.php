@@ -146,7 +146,7 @@
                         <td style="width:50%; padding:5px;" class="td-width">Unit No: <span class="header-value">{{$unit_name}}</span></td>
                     </tr>
                     <tr>
-                    <td style="width:50%; padding:5px;" class="td-width">Brand Name : <span class="header-value"> Mercedes Benz002</span></td>
+                    <td style="width:50%; padding:5px;" class="td-width">Brand Name : <span class="header-value"> {{ $investor_brand }}</span></td>
                     <td style="width:50%; padding:5px;" class="td-width">Location/Level : <span class="header-value">{{$floor_name}}</span></td>
                     </tr>
                     <tr>
@@ -163,7 +163,7 @@
                     </tr>
                     <tr>
                         <td rowspan="3" style="width:85%; height:60px; text-align:left; vertical-align: top;" class="fs-11"><span class="header-value"></span></td>
-                        <td rowspan="1" style="width:15%; height:10px; text-align:center; vertical-align: top; border-bottom:1px solid black;" class="fs-11"><span class="header-value">{{$rdd_manager}}</span></td>
+                        <td rowspan="1" style="width:15%; height:10px; text-align:center; vertical-align: top; border-bottom:1px solid black;" class="fs-11"><span class="header-value"> {{$rdd_manager}}</span></td>
                     </tr>
                     <tr>
                         <td rowspan="1" style="width:15%; height:20px; text-align:center; vertical-align: top; border-bottom:1px solid black;" class="fs-11"><span class="header-value"></span></td>

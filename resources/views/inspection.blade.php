@@ -255,18 +255,21 @@
             <hr class="seperator">
             <section>
             <p><span class="header-value">Inspection Checklist</span> <span class="fs-11">(in strict compliance with the Investor Fitout & Design Guidelines and the approved Detailed Design drawings)</span></p>
+           
+           
             <table class="checklist-table  pt-10" style="width:100%;">
-            @foreach($inspection_data as $master_key=>$master_value)
-					<tr>
-					<th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">{{$master_key}}</th>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Comments/defects</th>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Action</th>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Finish Date (By Investor)</th>
+                    <tr>
+					    <th style="font-size:12px; padding:2px; height:20px;" class="header-content">Title</th>
+                        <th style="font-size:12px; padding:2px; height:20px;" class="header-content">Comments/defects</th>
+                        <th style="font-size:12px; padding:2px; height:20px;" class="header-content">Action</th>
+                        <th style="font-size:12px; padding:2px; height:20px;" class="header-content">Finish Date (By Investor)</th>
 					</tr>
+            @foreach($inspection_data as $master_key=>$master_value)
+				
                 @foreach($master_value as $key=>$value)
 					<tr>
+                        <td style="width:40%;height:35px; font-size:12px;text-align:center">{{$value->root_name}}</td>
                         <td style="width:40%;height:35px; font-size:12px;text-align:center">{{$value->checklist_desc}}</td>
-                        <td style="width:30%;height:35px; font-size:12px;text-align:center"></td>
                         <td style="width:15%;height:35px; font-size:12px;text-align:center">{{$value->rdd_actuals==1?'Yes':'No'}}</td>
                         <td style="width:15%;height:35px; font-size:12px;text-align:center"></td>
 						
@@ -275,7 +278,7 @@
             @endforeach
             </table>
             </section>
-            <hr class="seperator">
+            <!--<hr class="seperator">
             <section>
             <table class="compliance-table  pt-10" style="width:100%;">
                     <tr>
@@ -299,7 +302,7 @@
                         <td style="width:20%;height:30px; font-size:10px;"></td>
                     </tr>
             </table>
-            </section>
+            </section>-->
             <hr class="seperator">
             <section>
                 <table class="authorization-table  pt-10" style="width:100%;">

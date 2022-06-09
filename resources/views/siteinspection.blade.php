@@ -155,7 +155,7 @@
                 </div>
         </header>
         <section class="page-1">
-        <table class="table-borderless pt-50" style="width:100%; padding-bottom:10px;">
+        <table class="table-borderless pt-50" style="width:100%; padding-bottom:10px;table-layout: fixed">
             <tbody>
                 <tr>
                     <td class="td-width">
@@ -253,6 +253,7 @@
              </table>
             </section>
             <hr class="seperator">
+            <!--commented on 25-11-2021 
             <section>
             <p><span class="header-value">Inspection Checklist</span> <span class="fs-11">(in strict compliance with the Investor Fitout & Design Guidelines and the approved Detailed Design drawings)</span></p>
             <table class="checklist-table  pt-10" style="width:100%;">
@@ -275,8 +276,39 @@
             @endforeach
             </table>
             </section>
+        -->
+        <section>
+            <p><span class="header-value">Inspection Checklist</span> <span class="fs-11">(in strict compliance with the Investor Fitout & Design Guidelines and the approved Detailed Design drawings)</span></p>
+            <table class="checklist-table  pt-10" style="width:100%;">
+            <tr>
+                        <th style="font-size:12px; padding:2px; height:20px;" class="header-content">Title</th>
+                        <th style="font-size:12px; padding:2px; height:20px;" class="header-content">Comments/defects</th>
+                        <th style="font-size:12px; padding:2px; height:20px;" class="header-content">Action</th>
+                        <th style="font-size:12px; padding:2px; height:20px;" class="header-content">Finish Date (By Investor)</th>
+            </tr>
+            @foreach($inspection_data as $master_key=>$master_value)
+              @foreach($master_value as $key=>$value)
+					<tr>
+                        <td style="width:40%;height:35px; font-size:12px;text-align:center">{{$master_key}}</td>
+                        <td style="width:30%;height:35px; font-size:12px;text-align:center;word-wrap: break-word">{{ $value->remarks ?? ''}}</td>
+                        <td style="width:15%;height:35px; font-size:12px;text-align:center">{{$value->rdd_actuals==1?'Yes':'No'}}</td>
+                        <td style="width:15%;height:35px; font-size:12px;text-align:center"></td>
+						
+                    </tr>
+               @endforeach
+            @endforeach
+            </table>
+            </section>
             <hr class="seperator">
             <section>
+                 <table>
+                    <tr>
+                        <td>Comments: </td>
+                        <td>{{$comments}}</td>
+                    </tr>
+                </table>
+            </section>
+            <!--<section>
             <table class="compliance-table  pt-10" style="width:100%;">
                     <tr>
                         <th style="width:80%; height:20px; text-align:left" class="header-content"><span class="header-value">Fitout Completion Date Compliance </span> <span class="fs-11">(by Investor)</span></th>
@@ -300,8 +332,8 @@
                     </tr>
             </table>
             </section>
-            <hr class="seperator">
-            <section>
+            <hr class="seperator">-->
+            <!--<section>
                 <table class="authorization-table  pt-10" style="width:100%;">
                         <tr>
                             <th style="width:30%; font-size:12px; height:20px;" class="header-content"><span class="header-value">Authorization</span></th>
@@ -328,8 +360,8 @@
                             <td style="width:15%;height:30px;"></td>
                         </tr>
                 </table>
-            </section>
-            <section class="pt-50">
+            </section>-->
+            <!--<section class="pt-50">
                 <ul class="copy-lists">
                     <li>Copy to</li>
                     <li>Chief Operating Office</li>
@@ -338,7 +370,7 @@
                     <li>General Manager – Retail Design & Delivery</li>
                     <li>Centre Manager</li>
                 </ul>
-            </section>
+            </section>-->
         <footer>
              <p class="page"> </p>
         </footer>

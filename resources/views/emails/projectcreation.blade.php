@@ -22,12 +22,14 @@
 		}
         </style>
     </head>
+
+
     <body>
         <h3>Dear {{$tenant_name}} {{$tenant_last_name}},</h3>
         <p>Retail Design and Delivery team welcomes {{$investor_brand}} to {{$property_name}}</p>
-        <div>
+
         <p>Our aim is to work closely with you and your team to ensure a smooth approval process of the design submissions and provide the full support and coordination throughout the fitout phase to ensure the delivery of a high quality store.</p>
-        </div>
+
         <p>Listed below are the dates agreed in the Investment Agreement:</p>
         <table>
         <tr>
@@ -54,8 +56,23 @@
         <div>
         Your main point of contact will be {{$mem_name}} {{$mem_last_name}}, {{$email}}, who will lead and discuss in detail the Design & Fitout process and clarify any queries you may have along the way.
         </div>
-        <div>
+            <div>
+            Kindly login to investor portal to view the User Manual and property related documents under <q><i>Documents section -> Property documents</i></q>. The User Manual provides an overview of the Software's features and gives step-by-step instructions.
+            We look forward to working with you and your team to ensure a successful opening of the store.
+            </div>
+
+
+
+        <!--<div>
+            Property files link : {{$property_links}}
+        </div>-->
+        {{-- <div>
         We look forward to working with you and your team to ensure a successful opening of the store.
-        </div>
+        </div> --}}
+        <br>
+        <div><i>This is system generated mail, Please do not reply.</i> </div><br>
+
+        <div><p>Regards,</p></div>
+
     </body>
 </html>

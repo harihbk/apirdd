@@ -109,7 +109,235 @@ class TemplateController extends Controller
             echo json_encode($response);
           }
     }
-    function update(Request $request,$template_id)
+
+
+    function deleteemplate(Request $request){
+        $temp_id = $request->get('template_id');
+        $UpdateDetails = Templatenamemaster::where('template_id', '=',  $temp_id)->first();
+        $UpdateDetails->active_status = 0;
+        $UpdateDetails->save();
+
+        Projecttype::where('template_id', '=',  $temp_id)->delete();
+
+
+        $response = Response::json("deleted",200);
+        echo json_encode($response);
+
+    }
+
+
+   function copystore(Request $request){
+       // get previous template
+        $temp_id = $request->get('template_id');
+        $temp_name = $request->get('templatename');
+        $user_id  = $request->get('user_id');
+        $org_id = $request->get('org_id');
+        $prevtemplatename =  Templatenamemaster::find($temp_id)->first();
+
+        $templatename = new Templatenamemaster();
+        $templatename->org_id = $org_id;
+        $templatename->template_name = $temp_name;
+        $templatename->created_at = date('Y-m-d H:i:s');
+        $templatename->updated_at = date('Y-m-d H:i:s');
+        $templatename->created_by = $user_id;
+        if($templatename->save())
+        {
+
+            $pt = new Projecttype();
+            $pt->org_id = $org_id;
+            $pt->template_id = $templatename->template_id;
+            $pt->type_name = $temp_name;
+            $pt->created_at = date('Y-m-d H:i:s');
+            $pt->updated_at = date('Y-m-d H:i:s');
+            $pt->created_by = $user_id;
+            $pt->active_status = 1;
+            $pt->save();
+
+
+            $created_at =  date('Y-m-d H:i:s');
+            $updated_at =  date('Y-m-d H:i:s');
+            $template = $templatename->find($templatename->template_id);
+            $tempmaster = Templatemaster::where('template_id',$temp_id)->get()->toArray();
+            for($k=0;$k<count($tempmaster);$k++)
+            {
+                $data[] = [
+                            'template_id' => $template->template_id,
+                            'org_id' => $org_id,
+                            "task_type" => $tempmaster[$k]['task_type'],
+                            'phase_id' => $tempmaster[$k]['phase_id'],
+                            'created_by' => $user_id,
+                            "activity_desc" =>$tempmaster[$k]['activity_desc'],
+                            "person" => $tempmaster[$k]['person'],
+                            "approvers" => $tempmaster[$k]['approvers'],
+                            "attendees" => $tempmaster[$k]['attendees'],
+                            "fre_id" => $tempmaster[$k]['fre_id'],
+                            "seq_status" => $tempmaster[$k]['seq_status'],
+                            "seq_no" => $tempmaster[$k]['seq_no'],
+                            "file_upload_path" => $tempmaster[$k]['file_upload_path'],
+                            "created_at" => $created_at,
+                            "updated_at" => $updated_at,
+                            "duration" => $tempmaster[$k]['duration']
+                            ];
+            }
+
+            $tempdocs = Templatedocs::where('template_id',$temp_id)->get()->toArray();
+            for($j=0;$j<count($tempdocs);$j++)
+            {
+                $doc_data[] = [
+                    'template_id' => $template->template_id,
+                    'org_id' => $org_id,
+                    'phase_id' => $tempdocs[$j]['phase_id'],
+                    'doc_header' => $tempdocs[$j]['doc_header'],
+                    'doc_title' => $tempdocs[$j]['doc_title'],
+                    'reviewers' => $tempdocs[$j]['reviewers'],
+                    'approvers_level1' => $tempdocs[$j]['approvers_level1'],
+                    'approvers_level2' => $tempdocs[$j]['approvers_level2'],
+                   ];
+            }
+
+
+            if(Templatemaster::insert($data) && Templatedocs::insert($doc_data))
+            {
+              //get template tasks designations
+              $this->storeDesignations($template->template_id,$org_id,$user_id);
+              $data = array ("message" => 'Template added successfully');
+              $response = Response::json($data,200);
+              echo json_encode($response);
+            }
+        }
+   }
+
+   function update(Request $request,$template_id)
+   {
+       $datas = $request->get('datas');
+       $data=[];
+       $doc_data =[];
+       $types = new Templatemaster();
+
+       $created_at =  date('Y-m-d H:i:s');
+       $updated_at =  date('Y-m-d H:i:s');
+
+        $update_count = 0;
+
+
+        for($i=0;$i<count($datas);$i++)
+        {
+           for($k=0;$k<count($datas[$i]['tasks']);$k++)
+           {
+               if($datas[$i]['tasks'][$k]['master_id']!=0)
+               {
+                   $templates = Templatemaster::where("master_id",$datas[$i]['tasks'][$k]['master_id'])->where("org_id",$datas[$i]['org_id'])->where("template_id",$datas[$i]['template_id'])->update(
+                               array(
+                                "activity_desc" => $datas[$i]['tasks'][$k]['activity_desc'],
+                                "person" => $datas[$i]['tasks'][$k]['person'],
+                                "approvers" => $datas[$i]['tasks'][$k]['approvers'],
+                                "attendees" => $datas[$i]['tasks'][$k]['attendees'],
+                                "fre_id" => $datas[$i]['tasks'][$k]['fre_id'],
+                                "seq_status" => $datas[$i]['tasks'][$k]['seq_status'],
+                                "seq_no" => $datas[$i]['tasks'][$k]['seq_no'],
+                                "file_upload_path" => $datas[$i]['tasks'][$k]['file_upload_path'],
+                                "task_type" => $datas[$i]['tasks'][$k]['task_type'],
+                                "duration" =>$datas[$i]['tasks'][$k]['duration'],
+                                "updated_at" => date('Y-m-d H:i:s'),
+                                "created_by" => $datas[$i]['user_id'],
+                                "active_status" =>$datas[$i]['tasks'][$k]['active_status'],
+                                "isDeleted" =>$datas[$i]['tasks'][$k]['isDeleted'],
+                                ));
+               }
+               else
+               {
+                   $data[] = [
+                       'template_id' => $template_id,
+                       'org_id' => $datas[$i]['org_id'],
+                       "task_type" => $datas[$i]['tasks'][$k]['task_type'],
+                       'phase_id' => $datas[$i]['phase_id'],
+                       'created_by' => $datas[$i]['user_id'],
+                       "activity_desc" =>$datas[$i]['tasks'][$k]['activity_desc'],
+                       "person" => $datas[$i]['tasks'][$k]['person'],
+                       "approvers" => $datas[$i]['tasks'][$k]['approvers'],
+                       "attendees" => $datas[$i]['tasks'][$k]['attendees'],
+                       "fre_id" => $datas[$i]['tasks'][$k]['fre_id'],
+                       "seq_status" => $datas[$i]['tasks'][$k]['seq_status'],
+                       "seq_no" => $datas[$i]['tasks'][$k]['seq_no'],
+                       "file_upload_path" => $datas[$i]['tasks'][$k]['file_upload_path'],
+                       "created_at" => $created_at,
+                       "updated_at" => $updated_at,
+                       "duration" => $datas[$i]['tasks'][$k]['duration']
+                       ];
+               }
+           }
+           for($j=0;$j<count($datas[$i]['docs']);$j++)
+           {
+               if($datas[$i]['docs'][$j]['doc_id']!=0)
+               {
+                   //update existing doc data
+                   $templates_doc = Templatedocs::where("doc_id",$datas[$i]['docs'][$j]['doc_id'])->where("org_id",$datas[$i]['org_id'])->where("template_id",$datas[$i]['template_id'])->update(
+                       array(
+                        "doc_header" => $datas[$i]['docs'][$j]['doc_header'],
+                        "doc_title" => $datas[$i]['docs'][$j]['doc_title'],
+                        "reviewers" => $datas[$i]['docs'][$j]['reviewers'],
+                        "approvers_level1" => $datas[$i]['docs'][$j]['approvers_level1'],
+                        "approvers_level2" => $datas[$i]['docs'][$j]['approvers_level2'],
+                        "isDeleted" => $datas[$i]['docs'][$j]['isDeleted'],
+                        ));
+               }
+               else
+               {
+                   //insert new doc data
+                   $doc_data[] = [
+                       'template_id' => $template_id,
+                       'org_id' => $datas[$i]['org_id'],
+                       'phase_id' => $datas[$i]['phase_id'],
+                       'doc_header' => $datas[$i]['docs'][$j]['doc_header'],
+                       'doc_title' => $datas[$i]['docs'][$j]['doc_title'],
+                       'reviewers' => $datas[$i]['docs'][$j]['reviewers'],
+                       'approvers_level1' => $datas[$i]['docs'][$j]['approvers_level1'],
+                       'approvers_level2' => $datas[$i]['docs'][$j]['approvers_level2'],
+                      ];
+               }
+           }
+        }
+        $validator = Validator::make($request->all(), [
+           'datas.*.phase_id' => 'required',
+           'datas.*.org_id' => 'required',
+           'datas.*.user_id' => 'required',
+           'datas.*.tasks.*.person' => 'required',
+           'datas.*.tasks.*.activity_desc' => 'required',
+           'datas.*.tasks.*.approvers' => 'required',
+           'datas.*.tasks.*.attendees' => 'required',
+           'datas.*.tasks.*.duration' => 'required',
+           'datas.*.tasks.*.task_type' => 'required',
+       ]);
+
+       // if ($validator->fails()) {
+       //     return response()->json(['error'=>$validator->errors()], 401);
+       // }
+
+       $doc_validator = Validator::make($request->all(), [
+           'datas.*.docs.*.doc_id' => 'required',
+           'datas.*.docs.*.doc_header' => 'required',
+           'datas.*.docs.*.doc_title' => 'required',
+           'datas.*.docs.*.reviewers' => 'required',
+           'datas.*.docs.*.approvers_level1' => 'required'
+       ]);
+
+       // if ($doc_validator->fails()) {
+       //     return response()->json(['error'=>$doc_validator->errors()], 401);
+       // }
+
+       if((Templatemaster::insert($data) || $template>0) && (Templatedocs::insert($doc_data) || $templates_doc>0))
+           {
+           //update template tasks designations
+           $a = $this->updateDesignations($template_id,$datas[0]['org_id'],$datas[0]['user_id']);
+           $returnData = Templatemaster::find($types->template_id);
+           $data = array ("message" => 'Template Edited successfully',"data" => $returnData );
+           $response = Response::json($data,200);
+           echo json_encode($response);
+          }
+   }
+
+   
+    function update123(Request $request,$template_id)
     {
         $datas = $request->get('datas');
         $data=[];

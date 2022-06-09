@@ -22,7 +22,7 @@ class TenantController extends Controller
     public $successStatus = 200;
     public function login(Request $request) { 
         if (Auth::guard('tenant-api')->attempt(['email' => request('email'), 'password' => request('password')])) { 
-            $oClient = OClient::where('password_client', 1)->where('id',5)->first();
+            $oClient = OClient::where('password_client', 1)->where('id',4)->first();
             $finalres = $this->getTokenAndRefreshToken($oClient, request('email'), request('password'));
 
             $members = Tenant::where("email",request('email'))->update( 
@@ -59,9 +59,9 @@ class TenantController extends Controller
         } 
     }
     public function getTokenAndRefreshToken(OClient $oClient, $email, $password) { 
-        $oClient = OClient::where('password_client', 1)->where('id',5)->first();
+        $oClient = OClient::where('password_client', 1)->where('id',4)->first();
        $http = new Client;
-       $response = $http->request('POST', 'https://rdd.octasite.com/rdd_server/public/oauth/token', [
+       $response = $http->request('POST', 'https://rdd.tamdeenmalls.com/api/public/index.php/oauth/token', [
            'form_params' => [
                'grant_type' => 'password',
                'client_id' => $oClient->id,
@@ -78,7 +78,7 @@ class TenantController extends Controller
    public function getnewToken(Request $request) {
         $oClient = OClient::where('password_client', 1)->where('id',5)->first();
         $http = new Client;
-        $response = $http->request('POST', 'http://192.168.221.30/rdd_server/public/oauth/token', [
+        $response = $http->request('POST', 'https://rdd.tamdeenmalls.com/api/public/index.php/oauth/token', [
             'form_params' => [
                 'grant_type' => 'refresh_token',
                 'refresh_token' => $request->input('refresh_token'),
@@ -147,7 +147,7 @@ class TenantController extends Controller
         $tenantCheck = Tenant::where('email', $request->input('email'))->count();
         if($tenantCheck!=0)
         {
-            return response()->json(['response'=>"Tenant already exists"], 410); 
+         //   return response()->json(['response'=>"Tenant already exists"], 410); 
         }
 
         $tenants = new Tenant();
@@ -181,11 +181,24 @@ class TenantController extends Controller
                     "end_date" => date("d-m-Y", strtotime($returnData[0]['end_date'])),
                     "temp_pass" => $temp_pass
                 ];
-                $to =  $returnData[0]['email'];
-                Mail::send('emails.investorreg', $tenantData, function($message)use($tenantData,$to) {
-                    $message->to($to)
-                            ->subject('RDD - Investor Registration Credentials');
-                    }); 
+                if($request->input('tenant_type') == 1){
+                    $subject = "RDD -Tamdeen Malls- Investor Registeration Credentials";
+                    $body = "Your details has been registered as Investor.";
+                    $tenantData['body'] = $body;
+                    $tenantData['t_type'] = 'Investor';
+                   } else {
+                    $subject = "RDD -Tamdeen Malls- Contractor Registeration Credentials";
+                    $body = "Your details has been registered as Contractor.";
+                    $tenantData['body'] = $body;
+                    $tenantData['t_type'] = 'Contractor';
+                   }
+                   $to =  $returnData[0]['email'];
+                  // $to =  'hari95nn@gmail.com';
+                  
+                   Mail::send('emails.investorreg', $tenantData, function($message)use($tenantData,$to,$subject) {
+                       $message->to($to)
+                               ->subject($subject);
+                       });
                 if(Mail::failures())
                 {
                     return response()->json(['response'=>"Credentials not sent to Investor"], 410);

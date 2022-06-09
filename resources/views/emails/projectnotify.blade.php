@@ -48,8 +48,14 @@
             <td>{{$store_opening}}</td>
         </tr>
         </table>
-        <div>
+        {{-- <div>
         Your main point of contact will be {{$mem_name}} {{$mem_last_name}}, {{$email}}
-        </div>
+        </div> --}}
+        <div>
+            Regards,
+            <br>
+            <p>RDD</p>
+            <div>This is system generated mail, Please do not reply.  </div>
+           </div>
     </body>
 </html>

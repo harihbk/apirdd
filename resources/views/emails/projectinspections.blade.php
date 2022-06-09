@@ -7,10 +7,16 @@
     </head>
     <body>
         <h3>Dear {{$rdd_manager_name}}</h3>
-        <div><p>Kindly review the {{$inspection_type}} request submitted by the unit mentioned above</p></div>
-        <p><a target="_blank" href="http://rdd.octasite.com/rdd_portal/login">click here to Follow!</a></p>
+        {{-- <div><p>Kindly review the {{$inspection_type}} request submitted by the unit mentioned above</p></div> --}}
+        <div><p>Kindly review the {{$inspection_type}} request submitted by the above mentioned unit</p></div>
+
+        <p><a target="_blank" href="https://rdd.tamdeenmalls.com">click Here</a></p>
         <br/>
-        <div><p>Regards</p></div>
-        <div><p>RDD Team.</p></div>
+        {{-- <div><p>Regards</p></div>
+        <div><p>RDD Team.</p></div> --}}
+        <p>Regards,</p>
+        <br>
+        <p>RDD Team</p>
+        <div>This is system generated mail, Please do not reply.  </div>
     </body>
 </html>

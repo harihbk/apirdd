@@ -51,7 +51,9 @@
         <br/>
         <div>
          Regards,
-         <p>RDD Team</p>
+         <br>
+         <p>RDD</p>
+         <div>This is system generated mail, Please do not reply.  </div>
         </div>
     </body>
 </html>

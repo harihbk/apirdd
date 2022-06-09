@@ -1,5 +1,4 @@
 <?php
-
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -30,8 +29,11 @@ use App\Http\Controllers\InspectionrequestController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\TemplatePreOpeningdocsController;
+use App\Http\Controllers\ReportController;
 
- 
+
+
 
 /*
 |--------------------------------------------------------------------------
@@ -43,6 +45,8 @@ use App\Http\Controllers\DashboardController;
 | contains the "web" middleware group. Now create something great!
 |
 */
+
+
 
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/outlooklogin', [AuthController::class, 'outlookresponse']);
@@ -58,10 +62,12 @@ Route::post('/investorpasswordreset', [TenantController::class, 'passwordReset']
 // Route::post('/superuser', [MembersController::class, 'createSuperuser']);
 
 /*Super User routes */
-Route::group(['prefix' => '/superuser','middleware' => 'superuserauth:api'], function() {
-    
+// Route::group(['prefix' => '/superuser','middleware' => 'superuserauth:api'], function() {
 
-});
+
+// });
+
+Route::get('/testing', [ProjectController::class, 'testing']);
 
 Route::group(['middleware' => 'userauth:api'], function() {
     //Refresh Token
@@ -73,7 +79,9 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/multipleuploadfile',[DocumentController::class, 'multipledocUpload']);
     Route::post('/generateupload', [DocumentController::class, 'generateUpload']);
 
-    
+    Route::post('/propertyfileupload',[DocumentController::class, 'propertyfileupload']);
+
+
      //organisations
      Route::get('/org', [OrganisationsController::class, 'index']);
      Route::get('/org/{id}',[OrganisationsController::class, 'getOrgbyid']);
@@ -89,6 +97,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/properties/members/{orgid}/{propid}',[PropertiesController::class, 'getMembers']);
     Route::post('/properties/members',[PropertiesController::class, 'addMembers']);
     Route::get('/properties/user/{memid}',[PropertiesController::class, 'retrievememberProperties']);
+    Route::post('/properties/user/org/{id}',[PropertiesController::class, 'retrieveForUser']);
 
     //units
     Route::get('/units', [UnitsController::class, 'index']);
@@ -110,8 +119,10 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/members/getMembers',[MembersController::class, 'retreiveMembersforProject']);
     Route::post('/members/getdesignation',[MembersController::class, 'getdesignationdetails']);
     Route::get('/members/project/{org_id}',[MembersController::class, 'getallMembersForProject']);
-    
-    
+    Route::get('/members/projectdes/{org_id}/{des_id}/{companyID_id}',[MembersController::class, 'getallMembersForProjectdes']);
+
+    Route::post('/members/designationtypes',[MembersController::class, 'getMembersByDesignationTypes']);
+
 
 
     //designation
@@ -122,7 +133,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/designation/update',[DesignationController::class, 'update']);
     Route::get('/designation/org/{id}',[DesignationController::class, 'retrieveByOrg']);
     Route::get('/attendeedesignation/org/{id}',[DesignationController::class, 'retrieveAttendeedesignation']);
-    
+
 
     //memberlevel
     Route::get('/level', [LevelController::class, 'index']);
@@ -207,7 +218,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/inchecklist/update',[InspectionchecklistController::class, 'update']);
     Route::post('/inchecklist/del/{id}',[InspectionchecklistController::class, 'updateDeletion']);
     Route::post('/inchecklist/org/{id}/{tempid}',[InspectionchecklistController::class, 'retrievebyOrg']);
-   
+
 
 
     //Template Controller
@@ -230,7 +241,12 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::get('/phase', [PhaseController::class, 'retrieveByorg']);
     Route::post('/phase', [PhaseController::class, 'store']);
     Route::delete('/phase/{phase_id}', [PhaseController::class, 'deletePhase']);
-    
+
+
+    //Template Pre Opening docs
+    Route::patch('/templatepreopeningdocs', [TemplatePreOpeningdocsController::class, 'store']);
+    Route::get('/templatepreopeningdocs/list/{id}', [TemplatePreOpeningdocsController::class, 'retrieveList']);
+
     /**Transactional Data Api's **/
 
     //Project Controller
@@ -314,9 +330,9 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/addcomment',[ProjectController::class, 'addComments']);
     /* Adding task comments - Meeting tasks */
     Route::post('/addtaskcomment',[ProjectController::class, 'addTaskcomment']);
-    
 
-    
+
+
 
 
     //Inspection checklist controller
@@ -327,31 +343,33 @@ Route::group(['middleware' => 'userauth:api'], function() {
      /* Reschedule Inspection request */
      Route::patch('/inspectionreschedule', [InspectionrequestController::class, 'rddperforminspectionreschedule']);
      /* Save and Send Inspection report  */
-     Route::patch('/sendinspectiondata', [InspectionrequestController::class, 'rddSendinspectiondata']); 
+     Route::patch('/sendinspectiondata', [InspectionrequestController::class, 'rddSendinspectiondata']);
      /* Generate Inspection report  */
-     Route::patch('/inspectionReport', [InspectionrequestController::class, 'rddGenerateinspectionReport']); 
+     Route::patch('/inspectionReport', [InspectionrequestController::class, 'rddGenerateinspectionReport']);
      /* Create Site Inspection report  */
      Route::post('/siteinspectionrequest',[InspectionrequestController::class, 'createSiteinspectionRequest']);
      /*Get selected Site Inspection data */
      Route::post('/siteinspectiondata', [InspectionrequestController::class, 'rddretrievesiteInspectiondata']);
      /* Update site Inspection report data with attachments  */
-     Route::patch('/updatesiteinspectiondetails', [InspectionrequestController::class, 'rddUpdatesiteIspectiondata']); 
-    
+     Route::patch('/updatesiteinspectiondetails', [InspectionrequestController::class, 'rddUpdatesiteIspectiondata']);
+     /* Send site Inspection report data with attachments  */
+     Route::post('/sendsiteinspectionreport', [InspectionrequestController::class, 'rddSendSiteInspectionReport']);
+
+
+     
+
+     Route::get('/getprojectcontacts/{project_id}', [MembersController::class, 'getprojectcontacts']);
 
 
 
 
 
-
-
-    
-    
     //performing action on uploaded documents
     Route::post('/memdocAction', [ProjectController::class, 'performDocaction']);
-    
+
     //completing tasks
     Route::post('/completetask', [ProjectController::class, 'completetask']);
-    
+
 
 
     //configurations
@@ -373,7 +391,7 @@ Route::group(['middleware' => 'userauth:api'], function() {
     /*Get all config  master*/
     Route::get('/config/milestone/master', [ConfigController::class, 'getMilestonemaster']);
 
-    
+
     //authorization Group
     /*Get auth group workspace sections master */
     Route::get('/authgrp/workspacesections', [AuthorizationgrpController::class, 'getWorkspacesections']);
@@ -418,10 +436,12 @@ Route::group(['middleware' => 'userauth:api'], function() {
     Route::post('/phasezip', [DocumentController::class, 'phaseDocszip']);
     /* All document docs zip API*/
     Route::post('/alldocumentszip', [DocumentController::class, 'alldocumentzip']);
+
+
+    //Report Section
+    Route::post('/report', [ReportController::class, 'generateReport']);
 });
 
-
-Route::get('/check/{project_id}',[PDFController::class, 'checking']);
 
 
 Route::group(['middleware' => 'tenantauth:api'], function() {
@@ -464,7 +484,7 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
     Route::get('/investor/getprogresscount/{pid}', [ProjectController::class, 'getProjectstatus']);
     //project pre docs path retrieval
     Route::post('/investor/getPredocspath', [ProjectController::class, 'investorgetPredocspath']);
-    //project update predocs  
+    //project update predocs
     Route::post('/investor/updatepredoc', [ProjectController::class, 'investorcreatePredoc']);
     //get uploaded pre opening docs list
     Route::get('/investor/predocslist/{projectid}', [ProjectController::class, 'investorgetPredocslist']);
@@ -474,14 +494,18 @@ Route::group(['middleware' => 'tenantauth:api'], function() {
     Route::get('/investor/meetingapprovalstatus/{projectid}/{taskid}',[ProjectController::class, 'investorretrievetaskApprovalstatus']);
     /* Investor retrieve doc history */
     Route::get('/investor/dochistory/{docid}',[ProjectController::class, 'getDochistory']);
+    Route::get('/investor/dochistory/{docid}/{inv}',[ProjectController::class, 'getDochistoryinv']);
+
     /* Document tasks send notify to manager */
     Route::patch('/investor/docnotifymanager', [ProjectController::class, 'investorSenddocmailtomanager']);
     /* get project document directories - Document section */
     Route::post('/investor/projectdocs', [ProjectController::class, 'getProjectdocs']);
-    
+    /* Investor removing Uploaded file */
+    Route::patch('/investor/removedoc', [ProjectController::class, 'investordocRemovalActions']);
 
 
-     
+
+
 
      //Inspection Request controller
      /* Get requested Inspection */
@@ -525,7 +549,7 @@ Route::get('/clear-cache', function() {
     if(Artisan::call('cache:clear'))
     {
          return "Cache is cleared";
-    }   
+    }
 });
 
 Route::get('/config-cache', function() {
@@ -546,3 +570,26 @@ Route::get('/router-clear', function() {
    $exitCode = Artisan::call('route:clear');
    return $exitCode;
 });
+
+
+Route::get('/gethtml',[ProjectController::class, 'gethtml']);
+Route::get('/getapprovedstatus/{doc_id}/{project_id}/{user_id}',[ProjectController::class, 'getapprovedstatus']);
+Route::get('/getdesignation/{user_id}',[ProjectController::class, 'getdesignation']);
+
+
+Route::get('/getpath/{project_id}/{property_id}',[DocumentController::class, 'getpath']);
+
+// Route::get('/investorgetpath/{property_id}',[DocumentController::class, 'investorgetpath']);
+Route::post('downloadbob',[DocumentController::class, 'downloadbob']);
+
+Route::get('/_invgetpath/{project_id}',[DocumentController::class, '_invgetpath']);
+
+Route::get('/getfloor_by_property/{property_id}',[DocumentController::class, 'getfloor_by_property']);
+Route::get('/getunit_by_floor/{floor_id}/{property_id}',[DocumentController::class, 'getunit_by_floor']);
+Route::get('/investorgetpath/{property_id}/{floor_id}/{unit_id}',[DocumentController::class, 'investorgetpath']);
+Route::post('/sendmailpdf', [InspectionrequestController::class, 'sendmailpdf']);
+
+Route::post('/copytemplate',[TemplateController::class,'copystore']);
+Route::post('/deleteemplate',[TemplateController::class,'deleteemplate']);
+Route::get('/project/dochistoryinv/{docid}',[ProjectController::class, 'getDochistory']);
+Route::get('/getapprovemeetings/{projecttemplateid}/{status}',[ProjectController::class, 'getapprovemeetings']);

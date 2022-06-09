@@ -1,0 +1,1 @@
+{!! sprintf($fff['content'], $fff['investername'] , $fff['meeting_date']) !!}

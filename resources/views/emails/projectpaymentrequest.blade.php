@@ -23,6 +23,8 @@
         <div>Appreciate if the receipt could be provided in case of payment.</div><br/>
         <div>Many thanks.</div><br/>
         <div>Regards,</div>
-        <div>{{$mem_name}}</div>
+        <br>
+        <div>This is system generated mail, Please do not reply.  </div>
+        {{-- <div>{{$mem_name}}</div> --}}
     </body>
 </html>

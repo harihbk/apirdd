@@ -39,7 +39,9 @@ class ChecklisttemplateController extends Controller
 
     function retrievebyOrg(Request $request,$orgid)
     {
-        $templates = Checklisttemplate::where("org_id",$orgid)->where("isDeleted",0)->get();
+        $templates = Checklisttemplate::where("org_id",$orgid)->where("isDeleted",0)->where("id","<>",3)->get();
+
+       // $templates = Checklisttemplate::where("org_id",$orgid)->where("isDeleted",0)->where("id","<>",1)->get();
         return $templates; 
     }
 }

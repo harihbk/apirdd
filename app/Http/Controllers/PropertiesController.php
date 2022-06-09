@@ -14,6 +14,8 @@ use App\Models\Members;
 use App\Models\Centermanager;
 use Response;
 use Validator;
+use File;
+
 
 class PropertiesController extends Controller
 {
@@ -33,6 +35,7 @@ class PropertiesController extends Controller
         $validator = Validator::make($request->all(), [ 
             'org_id' => 'required', 
             'property_name' => 'required', 
+            'property_logo' => 'required', 
             'no_of_floors' => 'required', 
             'user_id' => 'required'
         ]);
@@ -51,6 +54,9 @@ class PropertiesController extends Controller
 
         $properties->org_id = $request->input('org_id');
         $properties->property_name = $request->input('property_name');
+        $properties->property_logo = $request->input('property_logo');
+        $properties->property_files = $request->input('property_files');
+        $properties->property_links = $request->input('property_links');
         $properties->no_of_floors = $request->input('no_of_floors');
         $properties->created_at = date('Y-m-d h:i:s');
         $properties->updated_at = date('Y-m-d h:i:s');
@@ -84,6 +90,7 @@ class PropertiesController extends Controller
         $validator = Validator::make($request->all(), [ 
             'property_id' => 'required',
             'property_name' => 'required', 
+            'property_logo' => 'required', 
             'user_id' => 'required',
             'active_status' => 'required'
         ]);
@@ -101,6 +108,9 @@ class PropertiesController extends Controller
         $properties = Properties::where("property_id",$request->input('property_id'))->update( 
                             array( 
                              "property_name" => $request->input('property_name'),
+                             "property_logo" => $request->input('property_logo'),
+                             "property_files" => $request->input('property_files'),
+                             "property_links" => $request->input('property_links'),
                              "updated_at" => date('Y-m-d h:i:s'),
                              "created_by" => $request->input('user_id'),
                              "active_status" => $request->input('active_status')
@@ -115,18 +125,47 @@ class PropertiesController extends Controller
     }
     function retrieve(Request $request,$id)
     {
+        $validator = Validator::make($request->all(), [ 
+            'doc_path' => 'required',
+        ]);
+
+        if ($validator->fails()) { 
+            return response()->json(['error'=>$validator->errors()], 401);            
+        }
+
         $searchTerm = $request->input('searchkey');
 
-        $query = Properties::where("org_id",$id)->select('property_id','property_name','no_of_floors','created_at','updated_at','active_status');
+        $query = Properties::where("org_id",$id)->select('property_id','property_name','property_logo','property_files','property_links','no_of_floors','created_at','updated_at','active_status');
 
         if (!empty($request->input('searchkey')))
         {
             $query->whereLike(['property_name'], $searchTerm);
         }
         $properties = $query->orderBy('property_name','ASC')->get();
-        return $properties;
+        $doc_path = public_path()."".$request->input('doc_path')."settings/properties";
+        if(!File::isDirectory($doc_path)){
+               File::makeDirectory($doc_path, 0777, true, true);
+        }
+        $data = array ("data" => $properties,"doc_path" => $doc_path);
+        $response = Response::json(['response'=>$data]);
+        return $response;
     }
 
+    function retrieveForUser(Request $request,$id)
+    {
+         $searchTerm = $request->input('searchkey');
+
+         $query = Properties::where("org_id",$id)->select('property_id','property_name','property_logo','property_files','property_links','no_of_floors','created_at','updated_at','active_status');
+
+         if (!empty($request->input('searchkey')))
+         {
+            $query->whereLike(['property_name'], $searchTerm);
+         }
+         $properties = $query->orderBy('property_name','ASC')->get();
+         $data = array ("data" => $properties);
+         $response = Response::json(['response'=>$data]);
+         return $response;
+    }
     function addMembers(Request $request)
     {
         $validator = Validator::make($request->all(), [ 
@@ -249,11 +288,11 @@ class PropertiesController extends Controller
     }
     function getMembers($orgid,$propid)
     {
-        $finance_team = Financeteam::where('org_id',$orgid)->where('property_id',$propid)->where('isdeleted',0)->select('email','property_id')->get();
-        $operations_team = Operationsmntteam::where('org_id',$orgid)->where('property_id',$propid)->where('isdeleted',0)->select('email','property_id')->get();
-        $maintainence_team = Maintainenceteam::where('org_id',$orgid)->where('property_id',$propid)->where('isdeleted',0)->select('email','property_id')->get();
-        $marketing_team = Marketingteam::where('org_id',$orgid)->where('property_id',$propid)->where('isdeleted',0)->select('email','property_id')->get();
-        $center_manager = Centermanager::where('org_id',$orgid)->where('property_id',$propid)->where('isdeleted',0)->select('email','property_id')->get();
+        $finance_team = Financeteam::where('org_id',$orgid)->where('property_id',$propid)->where('isDeleted',0)->select('email','property_id')->get();
+        $operations_team = Operationsmntteam::where('org_id',$orgid)->where('property_id',$propid)->where('isDeleted',0)->select('email','property_id')->get();
+        $maintainence_team = Maintainenceteam::where('org_id',$orgid)->where('property_id',$propid)->where('isDeleted',0)->select('email','property_id')->get();
+        $marketing_team = Marketingteam::where('org_id',$orgid)->where('property_id',$propid)->where('isDeleted',0)->select('email','property_id')->get();
+        $center_manager = Centermanager::where('org_id',$orgid)->where('property_id',$propid)->where('isDeleted',0)->select('email','property_id')->get();
 
         return response()->json(['finance_team'=>$finance_team,'operations_team'=>$operations_team,'maintainence_team'=>$maintainence_team,'marketing_team'=>$marketing_team,'center_manager' => $center_manager], 200);
     }

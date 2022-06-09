@@ -154,8 +154,8 @@
                         <p class="text-danger header-content">Handover Certificate</p>
                     </div>
                 </div>
-                <div style="position:absolute; right:-50pt;top:15pt; width:172pt;">
-                        <h2>{{$property_name}}</h2>
+                <div style="position:absolute; right:-50pt;top:-20px; width:172pt;">
+                    <img style="height:50pt; width:50pt;" class="logo-img" src ="{{ $property_name }}" alt="no_image">
                 </div>
         </header>
         <section class="page-1">

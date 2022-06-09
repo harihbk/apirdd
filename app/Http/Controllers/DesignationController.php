@@ -93,7 +93,10 @@ class DesignationController extends Controller
     }
     function retrieveByOrg(Request $request,$id)
     {
-        $designation = Designation::where("org_id",$id)->where('designation_user_type',1)->where('active_status',1)->get();
+       // $designation = Designation::where("org_id",$id)->where('designation_user_type',1)->where('active_status',1)->get();
+        $designation = Designation::where("org_id",$id)->whereIn('designation_user_type',[1,2])->where('active_status',1)->get();
+
+        
         return Response::json(["response"=>$designation],'200');
     }
     function retrieveAttendeedesignation(Request $request,$id)

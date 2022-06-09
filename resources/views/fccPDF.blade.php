@@ -1,349 +1,614 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Fitout Completion Certificate</title>
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
-		<style>
-		@page
-		{
-		   /* size: A4 portrait; */
-           margin: 90px 25px;
-		}
-        header {
-                position: fixed;
-                top: -75px;
-                left: 0px;
-                right: 0px;
-                height: 50px;
-                clear: both;
-            }
-
-            footer {
-                position: fixed; 
-                bottom: -100px; 
-                left: 0px; 
-                right: 0px;
-                height: 50px; 
-                font-size:11px;
-            }
-	  	.page {
-			  width: 100%;
-			  min-height: 100%;
-			  padding: 10px;
-			  margin: auto;
-			  background: white;
-			  font-size:0.9rem;
-			}
-		.header-sec
-		{
-			background: #cacaca;
-            border:1px solid black;
-            height:30px;
-		}
-		.pt-30 {
-		  padding-top: 30px;
-		}
-        .pt-50 {
-		  padding-top: 50px;
-		}
-		.pl-10
-		{
-			padding-left: 25px;
-		}
-		.header-value
-		{
-			font-weight:bolder;
-		}
-		.pt-10
-		{
-			padding-top: 10px;
-		}
-		.header-content
-		{
-            text-align:center;
-            font-weight:bolder;
-		}
-		.logo-img
-		{
-			width:40%;
-			height:auto;
-			padding:10px;
-		}
-        .td-width
-        {
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate</title>
+    <style>
+        body{
+            font-family: sans-serif;
+        }
+        .header {
+            text-transform: uppercase;
+            border: 1px solid #ccc;
+            background: linear-gradient(to bottom, #fff, #dedced);
+            padding: 10px;
+            text-align: center;
+            color: #d05677;
+            font-weight: bold;
+            margin-bottom: 31px;
+        }
+        span.small-text {
+            font-size: 12px;
+            padding-left: 10px;
+        }
+        td.th_heading {
+            vertical-align: bottom;
             font-size:12px;
-            padding-right:10px;
         }
-        table>tbody>tr>td>div>span 
-        {
-            padding-left:10px;
+        th.attendes_title {
+            text-transform: uppercase;
+            text-align: left;
+            font-weight: bold;
+            padding-bottom: 4px;
         }
-        dt {
-            float: left;
-            clear: left;
-            width: auto;
-            font-weight:lighter;
+        .header_form_data {
+            text-align: left;
+            padding-bottom: 20px;
+            font-weight: 800;
+            padding-top: 21px;
         }
-  
-        dd {
-            margin: 0 0 0 50px;
-            padding: 0 0 0.5em 0;
-            word-wrap:break-word;
+        span.smalltext {
+            font-size: 13px;
+            line-height: 16px;
+            font-weight: 100;
         }
-        .seperator {
-            border: 3px solid black;
-            }
-        /* .value-content::before {
-                content:" ";
-                position: absolute;
-                border-bottom:1px solid red;
-                width:100%; 
-                height:1.1em; 
-        } */
-        .fs-11
-        {
-            font-size:11px;
+        .value{
+            font-size: 12px;
         }
-        .checklist-table tr th  {
-        border: 1px solid black;
+        table {
+            font-size: 10px;
         }
-        .checklist-table tr td  {
-        border: 1px solid black;
-        }
-        .compliance-table tr td 
-        {
-            border: 1px solid black;
-            text-indent: 10px;
-        }
-        .authorization-table tr th  {
-        border: 1px solid black;
-        }
-        .authorization-table tr td  {
-        border: 1px solid black;
-        }
-        ul.copy-lists {
-            list-style-type: none;
-            margin: 0;
-            padding: 0;     
-            font-size:11px;        
-        }
-		</style>
+    </style>
+</head>
+<body class="">
 
-    </head>
-    <body>
-        <script type='text/php'>
-        if ( isset($pdf) ) { 
-            $font = $fontMetrics->get_font('helvetica', 'bolder');
-            $size = 9;
-            $y = $pdf->get_height() - 24;
-            $x = $pdf->get_width() - 300 - $fontMetrics->get_text_width('1/1', $font, $size);
-            $pdf->page_text($x, $y, 'Page {PAGE_NUM} of {PAGE_COUNT}', $font, $size);
-        } 
-        </script>
-        <header>
-                <div style="clear:both; position:relative;">
-                    <div style="position:absolute; left:0pt; width:192pt;">
-                        <img class="logo-img" src = "images/tamdeen-logo.png" alt="">
-                    </div>
+        <table class="cert_table" style="width: 100%;" id="fullpage">
+            <td style="width: 20%;">
+           
+                            <img width="50" height="50" class="logo-img" src = "images/tamdeen-logo.png" alt="no_image">
+                      
+                <!-- <img src="images/tamdeen-logo.png" alt=""> -->
+            </td>
+            <td>
+                <div class="header header1">
+                    fitout completion certificate
                 </div>
-                <div style="margin-left:170pt; width:192pt;" class="pt-30">
-                    <div class="header-sec">
-                        <p class="text-danger header-content">Fitout Completion Certificate</p>
-                    </div>
-                </div>
-                <div style="position:absolute; right:-50pt;top:15pt; width:172pt;">
-                        <h2>{{$property_name}}</h2>
-                </div>
-        </header>
-        <section class="page-1">
-        <table class="table-borderless pt-50" style="width:100%; padding-bottom:10px;">
-            <tbody>
-                <tr>
-                    <td class="td-width">
-                        <dl>
-                        <dt>Premises Numbers : </dt>
-                        <dd class="header-value">{{$unit_name}}</dd>
-                        </dl>
-                    </td>
-                    <td class="td-width">
-                        <dl>
-                        <dt>Premises location : </dt>
-                        <dd class="header-value">Main Level</dd>
-                        </dl>
-                    </td>
-                </tr>
-                <tr>
-                <td class="td-width">
-                        <dl>
-                        <dt>Investor Brand Name  : </dt>
-                        <dd class="header-value">{{$investor_brand}}</dd>
-                        </dl>
-                    </td>
-                <td class="td-width">
-                        <dl>
-                        <dt>Concept Zone(if applicable) : </dt>
-                        <dd class="header-value">-</dd>
-                        </dl>
-                </td>
-                </tr>
+            </td>
+            <td  style="width: 20%;    text-align: center;">
+                        <img width="50" height="50" class="logo-img" src ="{{ $property_name }}" alt="no_image">
+            </td>
+        </table>
+
+    <table style="table-layout: fixed;width: 100%;border-bottom: 4px groove #000000a6;padding-bottom: 8px;margin-bottom: 8px;">
+        <tr>
+            <td class="th_heading">
+                Premises Number(s)
+            </td>
+            <td class="value value_underline" style="border-bottom: 1px solid #000;">
+            {{$unit_name}}
+            </td>
+            <td class="th_heading">
+                Premises Location(s)
+            </td>
+            <td class="value value_underline" style="border-bottom: 1px solid #000;">
+            Main Level
+            </td>
+            <td class="th_heading">
+                Concept Zone<br>
+                <span class="small-text">( if applicable )</span>
+            </td>
+            <td class="value value_underline" style="border-bottom: 1px solid #000;">
+
+            </td>
+        </tr>
+
+        <tr>
+            <td class="th_heading">
+                Investor Brand name
+            </td>
+            <td class="value value_underline" style="border-bottom: 1px solid #000;">
+            {{$investor_brand}}
+            </td>
+            <td class="th_heading">
+                Inspection Date
+            </td>
+            <td class="value value_underline" style="border-bottom: 1px solid #000;">
+
+            </td>
+            <td class="th_heading" style="padding-top: 6px;">
+                Fitout Completion<br>
+                <span class="small-text"> Date(Actual)</span>
+            </td>
+            <td class="value value_underline" style="border-bottom: 1px solid #000;">
+
+            </td>
+        </tr>
+
+        <tr>
+            <td class="th_heading" style="padding-top: 13px;">
+               Invester Company Name
+            </td>
+            <td class="value value_underline"  colspan="5" style="border-bottom: 1px solid #000;">
+            {{$company_name}}
+            </td>
+        </tr>
+    </table>
+
+    <table class="attendees_table" style="width: 100%;border-bottom: 4px groove #000000a6;padding-bottom: 8px">
+        <tr>
+            <th class="attendes_title" >
+                attendees
+            </th>
+        </tr>
+        <tr >
+            <td class="th_heading" style="width: 220px;vertical-align: bottom;padding-top: 15px;">
+                RDD Project Manager
+            </td>
+            <td class="value value_underline"  colspan="5" style="border-bottom: 1px solid #000;">
+
+            </td>
+        </tr>
+        <tr>
+            <td class="th_heading" style="width: 220px;vertical-align: bottom;padding-top: 15px;">
+                TMM MEP Consultant
+            </td>
+            <td class="value value_underline"  colspan="5" style="border-bottom: 1px solid #000;">
+
+            </td>
+        </tr>
+        <tr>
+            <td class="th_heading" style="width: 220px; padding-top: 15px;">
+                Invester's Authorized Signatory
+            </td>
+            <td class="value value_underline"  colspan="5" style="border-bottom: 1px solid #000;">
+
+            </td>
+        </tr>
+        <tr>
+            <td class="th_heading" style="width: 220px; padding-top: 15px;">
+                Investor's Shop fitter
+            </td>
+            <td class="value value_underline"  colspan="5" style="border-bottom: 1px solid #000;">
+            </td>
+        </tr>
+    </table>
+
+    <div class="form_data">
+        <div class="header_form_data">
+            Inspection Checklist <span class="smalltext">( in strict compilance with the investor Fitout & Design Guidelines and the aproved Detailed Design Drawings )</span>
+        </div>
+
+        <table class="formdata_table" style="width: 100%;border-collapse: collapse;" border="1" cellspacing="0" cellpadding="8">
             <tr>
-                <td class="td-width">
-                        <dl>
-                        <dt>Investor Company Name  : </dt>
-                        <dd class="header-value">{{$company_name}}</dd>
-                        </dl>
-                </td>
-                <td class="td-width">
-                        <dl>
-                        <dt>Inspection Date  : </dt>
-                        <dd class="header-value">{{$inspection_date}}</dd>
-                        </dl>
-                    </td>
+                <th class="th_title" style="width: 23%;">
+                    Architectural
+                </th>
+                <th class="th_title" style="width: 23%;">
+                    Comments/Defects
+                </th>
+                <th class="th_title" style="width: 23%;">
+                    Action
+                </th>
+                <th class="th_title" style="width: 23%;">
+                    Finish Date<br>
+                    ( By Invester )
+                </th>
             </tr>
-			<tr>
-                <td class="td-width">
-                        <dl>
-                        <dt>Fitout Completion : </dt>
-                        <dd class="header-value"></dd>
-                        </dl>
+
+            <tr>
+                <td class="title_left" style="width: 23%;">
+                    Shopfront
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                    
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                    
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
                 </td>
             </tr>
-            </tbody>
-            </table>
-            </section>
-            <hr class="seperator">
-            <section>
-                <div style="clear:both; position:relative;">
-                   <h6 class="header-value">ATTENDEES</h6>
-                </div>
-                <table class="table-borderless pt-10" style="width:100%;">
-                        <tbody>
-                        <tr>
-                            <td class="td-width">
-                                <dl>
-                                <dt>RDD Project Manager : </dt>
-                                <dd class="header-value">{{$rdd_manager}}</dd>
-                                </dl>
-                            </td>
-                        </tr>
-                        <tr>
-                        <td class="td-width">
-                                <dl>
-                                <dt>TMM MEP Consultant  : </dt>
-                                <dd class="header-value">-</dd>
-                                </dl>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="td-width">
-                                    <dl>
-                                    <dt>Investor’s Authorized Signatory  : </dt>
-                                    <dd class="header-value">-</dd>
-                                    </dl>
-                                </td>
-                        </tr>
-                        <tr>
-                            <td class="td-width">
-                                    <dl>
-                                    <dt>Investor’s Shop fitter  : </dt>
-                                    <dd class="header-value">-</dd>
-                                    </dl>
-                            </td>
-                        </tr>
-                        </tbody>
-             </table>
-            </section>
-            <hr class="seperator">
-            <section>
-            <p><span class="header-value">Inspection Checklist</span> <span class="fs-11">(in strict compliance with the Investor Fitout & Design Guidelines and the approved Detailed Design drawings)</span></p>
-            <table class="checklist-table  pt-10" style="width:100%;">
-            @foreach($inspection_data as $master_key=>$master_value)
-					<tr>
-					<th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">{{$master_key}}</th>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Comments/defects</th>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Action</th>
-                        <th style="background:#cacaca; font-size:12px; padding:2px; height:20px;" class="header-content">Finish Date (By Investor)</th>
-					</tr>
-                @foreach($master_value as $key=>$value)
-					<tr>
-                        <td style="width:40%;height:35px; font-size:12px;text-align:center">{{$value->checklist_desc}}</td>
-                        <td style="width:30%;height:35px; font-size:12px;text-align:center"></td>
-                        <td style="width:15%;height:35px; font-size:12px;text-align:center"></td>
-                        <td style="width:15%;height:35px; font-size:12px;text-align:center"></td>
-						
-                    </tr>
-                @endforeach
-            @endforeach
-            </table>
-            </section>
-            <hr class="seperator">
-            <section>
-            <table class="compliance-table  pt-10" style="width:100%;">
-                    <tr>
-                        <th style="width:80%; height:20px; text-align:left" class="header-content"><span class="header-value">Fitout Completion Date Compliance </span> <span class="fs-11">(by Investor)</span></th>
-                        <th style="width:20%; height:20px;" class="header-content">YES / NO</th>
-                    </tr>
-                    <tr>
-                        <td style="width:80%;height:30px; font-size:10px;">Payment of all / any outstanding monies owed to TMM and / or Owner</td>
-                        <td style="width:20%;height:30px;font-size:10px;"></td>
-                    </tr>
-                    <tr>
-                        <td style="width:80%;height:30px; font-size:10px;">Hard Copy submission of all applicable fitout related approvals (Kuwait Municipality , KFD, etc)</td>
-                        <td style="width:20%;height:30px; font-size:10px;"></td>
-                    </tr>
-                    <tr>
-                        <td style="width:80%;height:30px; font-size:10px;">Hard and soft Copy of all “as built” drawings</td>
-                        <td style="width:20%;height:30px; font-size:10px;"></td>
-                    </tr>
-                    <tr>
-                        <td style="width:80%;height:30px; font-size:10px;">Investor or Investor’s Authorised Signatory</td>
-                        <td style="width:20%;height:30px; font-size:10px;"></td>
-                    </tr>
-            </table>
-            </section>
-            <hr class="seperator">
-            <section>
-                <table class="authorization-table  pt-10" style="width:100%;">
-                        <tr>
-                            <th style="width:30%; font-size:12px; height:20px;" class="header-content"><span class="header-value">Authorization</span></th>
-                            <th style="width:40%; font-size:12px; height:20px;" class="header-content"><span class="header-value">Name</span></th>
-                            <th style="width:15%; font-size:12px; height:20px;" class="header-content"><span class="header-value">Signature</span></th>
-                            <th style="width:15%; font-size:12px; height:20px;" class="header-content"><span class="header-value">Date</span></th>
-                        </tr>
-                        <tr>
-                            <td style="width:30%;height:30px;"></td>
-                            <td style="width:40%;height:30px;"></td>
-                            <td style="width:15%;height:30px;"></td>
-                            <td style="width:15%;height:30px;"></td>
-                        </tr>
-                        <tr>
-                            <td style="width:30%;height:30px;"></td>
-                            <td style="width:40%;height:30px;"></td>
-                            <td style="width:15%;height:30px;"></td>
-                            <td style="width:15%;height:30px;"></td>
-                        </tr>
-                        <tr>
-                            <td style="width:30%;height:30px;"></td>
-                            <td style="width:40%;height:30px;"></td>
-                            <td style="width:15%;height:30px;"></td>
-                            <td style="width:15%;height:30px;"></td>
-                        </tr>
-                </table>
-            </section>
-            <section class="pt-50">
-                <ul class="copy-lists">
-                    <li>Copy to</li>
-                    <li>Chief Operating Office</li>
-                    <li>General Manager - Leasing</li>
-                    <li>General Manager – Operations & Marketing</li>
-                    <li>General Manager – Retail Design & Delivery</li>
-                    <li>Centre Manager</li>
-                </ul>
-            </section>
-        <footer>
-             <p class="page"> </p>
-        </footer>
-	</body>
+
+            <tr>
+                <td class="title_left" style="width: 23%;">
+                    Signage
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left" style="width: 23%;">
+                    Ceiling
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left" style="width: 23%;">
+                    Walls
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left" style="width: 23%;">
+                    Floors & Waterproofing
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left" style="width: 23%;">
+                    Shop Fittings
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left" style="width: 23%;">
+                    Exit & Emergency Lighting
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left" style="width: 23%;">
+                    Fire Exit Doors<br> ( if applicable )
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left" style="width: 23%;">
+                    Other
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+                <td class="value td_value" style="width: 23%;">
+                   
+                </td>
+            </tr>
+
+            <!-- heading  -->
+            <tr>
+                <th class="th_title" style="width:25%">
+                    MEP
+                </th>
+                <th class="th_title" style="width:25%">
+                    Comments/Defects
+                </th>
+                <th class="th_title" style="width:25%">
+                    Action
+                </th>
+                <th class="th_title" style="width:25%">
+                    Finish Date<br>
+                    ( By Invester )
+                </th>
+            </tr>
+
+            <tr>
+                <td class="title_left">
+                    MDB Installation & Electricity Connected
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left">
+                    Electromechanical meter(s) <br>
+                    ( Electricity & Water )
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+            </tr>
+
+
+            <tr>
+                <td class="title_left">
+                   Airconditiong ( AHU's / Fan Coil Units )
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left">
+                   Thermostats
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+            </tr>
+
+
+  
+         
+
+            <tr>
+                <td class="title_left">
+                   Fire Fighting Detectors & Smoke Alarms, Extinguishers
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <th class="th_title" style="width:23%">
+                    MEP
+                </th>
+                <th class="th_title" style="width:23%">
+                    Comments/Defects
+                </th>
+                <th class="th_title" style="width:23%">
+                    Action
+                </th>
+                <th class="th_title" style="width:23%">
+                    Finish Date<br>
+                    ( By Invester )
+                </th>
+            </tr>
+
+            <tr>
+                <td class="title_left">
+                   Lighting Layout
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left">
+                   Celling Access Panels
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left">
+                  Gas and detector system installed and connected
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left">
+                  Waterproofing, drainage and plumbing
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left">
+                  Grase Traps and / or slower
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+            </tr>
+
+            <tr>
+                <td class="title_left">
+                  Kitchen & Toilet Exhust
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+                <td class="value td_value" style="width:23%">
+                   
+                </td>
+            </tr>
+        </table>
+
+        <table style="width: 100%;margin-top: 20px;margin-bottom: 10px;">
+            <td>
+               <span style="font-weight: bold;"> Fitout Completion Date Compilance</span> <span>(by Investor)</span>
+            </td>
+            <td style="width: 280px; text-align: center;font-weight: bold;">
+                YES / NO
+            </td>
+        </table>
+        
+        <table  style="width: 100%;border-collapse: collapse;" border="1" cellspacing="0" cellpadding="8">
+            <tr>
+                <td>
+                    Payment of all / any outstanding monies owed to TMM and / or Owner
+                </td>
+                <td style="width: 280px;">
+
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                   Hard Copy submission of all applicable fitout related approvals (Kuwait Municipalty, KFD, etc)
+                </td>
+                <td style="width: 280px;">
+
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                   Hard and soft copy of all 'as built' drawings
+                </td>
+                <td style="width: 280px;">
+
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                   Investor or Investor's Authorised Signatory
+                </td>
+                <td style="width: 280px;">
+
+                </td>
+            </tr>
+        </table>
+
+        <table  style="width: 100%;border-collapse: collapse;margin-top: 30px" border="1" cellspacing="0" cellpadding="8">
+            <tr>
+                <th style="width: 33%;">Authorization</th>
+                <th>Name</th>
+                <th style="width: 33%;">Signature</th>
+                <th style="width: 33%;">Date</th>
+            </tr>
+
+            <tr>
+                <td style="width: 33%;">RDD Project Manager</td>
+                <td style="width: 33%;"></td>
+                <td style="width: 33%;"></td>
+                <td style="width: 33%;"></td>
+            </tr>
+            <tr>
+                <td style="width: 33%;">Investor's Authorised Signatory</td>
+                <td style="width: 33%;"> </td>
+                <td style="width: 33%;"></td>
+                <td style="width: 33%;"></td>
+            </tr>
+            <tr>
+                <td style="width: 33%;">Investor's Shop filter</td>
+                <td style="width: 33%;"> </td>
+                <td style="width: 33%;"></td>
+                <td style="width: 33%;"></td>
+            </tr>
+            <tr>
+                <td style="width: 33%;">Owner's Project Manager</td>
+                <td style="width: 33%;"> </td>
+                <td style="width: 33%;"></td>
+                <td style="width: 33%;"></td>
+            </tr>
+        </table>
+    </div>
+    
+ 
+</body>
 </html>
